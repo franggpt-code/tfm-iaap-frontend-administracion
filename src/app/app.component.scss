@@ -1,0 +1,123 @@
+.app-header {
+  background: #fff;
+  border-bottom: 4px solid var(--jda-primary);
+}
+
+.app-header__inner,
+.app-main,
+.app-footer__inner {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.app-header__inner {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  min-height: 72px;
+}
+
+.brand {
+  align-items: center;
+  color: var(--jda-neutral-dark);
+  display: inline-flex;
+  gap: 0.75rem;
+  min-width: 250px;
+  text-decoration: none;
+}
+
+.brand:hover,
+.brand:focus {
+  color: var(--jda-neutral-dark);
+}
+
+.brand__mark {
+  align-items: center;
+  background: var(--jda-primary);
+  color: #fff;
+  display: inline-flex;
+  font-family: Montserrat, "Source Sans 3", Arial, sans-serif;
+  font-weight: 700;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.brand span span {
+  color: var(--jda-neutral-mid);
+  display: block;
+}
+
+.app-nav {
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+}
+
+.app-nav a {
+  border-bottom: 3px solid transparent;
+  color: var(--jda-neutral-dark);
+  font-weight: 700;
+  padding: 1.4rem 0.25rem;
+  text-decoration: none;
+}
+
+.app-nav a.is-active {
+  border-bottom-color: var(--jda-primary);
+  color: var(--jda-primary-dark);
+}
+
+.session {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.session span {
+  color: var(--jda-neutral-mid);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-main {
+  min-height: calc(100vh - 146px);
+  padding-bottom: 2rem;
+  padding-top: 1.5rem;
+}
+
+.app-footer {
+  background: var(--jda-primary-dark);
+  color: #fff;
+}
+
+.app-footer__inner {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  min-height: 72px;
+  padding-bottom: 1rem;
+  padding-top: 1rem;
+}
+
+@media (max-width: 820px) {
+  .app-header__inner,
+  .app-footer__inner,
+  .session {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .app-header__inner {
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+  }
+
+  .app-nav a {
+    padding: 0.25rem 0;
+  }
+}
