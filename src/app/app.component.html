@@ -1,0 +1,33 @@
+<header class="app-header">
+  <div class="app-header__inner">
+    <a class="brand" routerLink="/admin" aria-label="Ir al inicio de SICOL">
+      <span class="brand__mark" aria-hidden="true">JA</span>
+      <span>
+        <strong>Junta de Andalucía</strong>
+        <span>SICOL Administración</span>
+      </span>
+    </a>
+
+    @if (isAuthenticated()) {
+      <nav class="app-nav" aria-label="Navegación principal">
+        <a routerLink="/admin" routerLinkActive="is-active">Administración</a>
+      </nav>
+
+      <div class="session">
+        <span>{{ user()?.nombreCompleto || user()?.login }}</span>
+        <button class="button button--secondary" type="button" (click)="logout()">Cerrar sesión</button>
+      </div>
+    }
+  </div>
+</header>
+
+<main class="app-main">
+  <router-outlet />
+</main>
+
+<footer class="app-footer">
+  <div class="app-footer__inner">
+    <span>Instituto Andaluz de Administración Pública</span>
+    <span>Sistema IAAP de Colaboradores</span>
+  </div>
+</footer>
