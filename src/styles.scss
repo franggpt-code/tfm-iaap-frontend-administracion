@@ -130,6 +130,10 @@ select {
   padding: 0;
 }
 
+.filter-toggle {
+  white-space: nowrap;
+}
+
 .field {
   display: grid;
   gap: 0.35rem;
@@ -234,5 +238,73 @@ select {
 
   .button {
     width: 100%;
+  }
+
+  .table-wrap {
+    background: transparent;
+    border: 0;
+    overflow: visible;
+  }
+
+  .admin-table {
+    background: transparent;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 0;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .admin-table tr {
+    background: #fff;
+    border: 1px solid var(--jda-neutral-border);
+    border-left: 4px solid var(--jda-primary);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .admin-table td {
+    border-bottom: 1px solid #e5e5e5;
+    display: grid;
+    gap: 0.25rem;
+    grid-template-columns: minmax(112px, 0.4fr) minmax(0, 1fr);
+    padding: 0.65rem 0.75rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .admin-table td::before {
+    color: var(--jda-neutral-mid);
+    content: attr(data-label);
+    font-weight: 700;
+  }
+
+  .admin-table td:not([data-label])::before,
+  .admin-table td[data-label=""]::before {
+    content: none;
+  }
+
+  .admin-table .number-cell {
+    text-align: left;
+    white-space: normal;
   }
 }

@@ -2,7 +2,22 @@ import { HttpClient, HttpParams } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { forkJoin, Observable } from "rxjs";
 import { environment } from "../../environments/environment";
-import { ApiPage, Colaborador, Examen, ExamenAula, ProcesoSelectivo } from "./api.models";
+import {
+  ApiPage,
+  AsignacionColaborador,
+  AsignacionColaboradorCreate,
+  AsignacionColaboradorPatch,
+  CentroExamen,
+  Colaborador,
+  Examen,
+  ExamenAula,
+  HojasFirma,
+  ImporteAsignacion,
+  PagosColaboradores,
+  PerfilColaboracion,
+  ProcesoSelectivo,
+  ResumenColaboraciones,
+} from "./api.models";
 
 @Injectable({ providedIn: "root" })
 export class AdminApiService {
@@ -37,6 +52,46 @@ export class AdminApiService {
 
   listAulas(examenId: string): Observable<ExamenAula[]> {
     return this.http.get<ExamenAula[]>(`${this.adminUrl}/examenes/${examenId}/aulas`);
+  }
+
+  listCentros(examenId: string): Observable<CentroExamen[]> {
+    return this.http.get<CentroExamen[]>(`${this.adminUrl}/examenes/${examenId}/centros`);
+  }
+
+  listPerfilesColaboracion(): Observable<PerfilColaboracion[]> {
+    return this.http.get<PerfilColaboracion[]>(`${this.adminUrl}/perfiles-colaboracion`);
+  }
+
+  listAsignaciones(examenId: string): Observable<AsignacionColaborador[]> {
+    return this.http.get<AsignacionColaborador[]>(`${this.adminUrl}/examenes/${examenId}/asignaciones`);
+  }
+
+  createAsignacion(examenId: string, request: AsignacionColaboradorCreate): Observable<AsignacionColaborador> {
+    return this.http.post<AsignacionColaborador>(`${this.adminUrl}/examenes/${examenId}/asignaciones`, request);
+  }
+
+  getAsignacion(asignacionId: string): Observable<AsignacionColaborador> {
+    return this.http.get<AsignacionColaborador>(`${this.adminUrl}/asignaciones/${asignacionId}`);
+  }
+
+  patchAsignacion(asignacionId: string, request: AsignacionColaboradorPatch): Observable<AsignacionColaborador> {
+    return this.http.patch<AsignacionColaborador>(`${this.adminUrl}/asignaciones/${asignacionId}`, request);
+  }
+
+  getImporteAsignacion(asignacionId: string): Observable<ImporteAsignacion> {
+    return this.http.get<ImporteAsignacion>(`${this.adminUrl}/asignaciones/${asignacionId}/importe`);
+  }
+
+  getResumenColaboraciones(examenId: string): Observable<ResumenColaboraciones> {
+    return this.http.get<ResumenColaboraciones>(`${this.adminUrl}/examenes/${examenId}/resumen-colaboraciones`);
+  }
+
+  getHojasFirma(examenId: string): Observable<HojasFirma> {
+    return this.http.get<HojasFirma>(`${this.adminUrl}/examenes/${examenId}/hojas-firma`);
+  }
+
+  getPagos(examenId: string): Observable<PagosColaboradores> {
+    return this.http.get<PagosColaboradores>(`${this.adminUrl}/examenes/${examenId}/pagos`);
   }
 
   loadDashboard(): Observable<{

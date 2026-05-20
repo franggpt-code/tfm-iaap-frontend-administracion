@@ -1,6 +1,6 @@
 <header class="app-header">
   <div class="app-header__inner">
-    <a class="brand" routerLink="/admin" aria-label="Ir al inicio de SICOL">
+    <a class="brand" routerLink="/admin" aria-label="Ir al inicio de SICOL" (click)="closeMenu()">
       <span class="brand__mark" aria-hidden="true">JA</span>
       <span>
         <strong>Junta de Andalucía</strong>
@@ -9,13 +9,33 @@
     </a>
 
     @if (isAuthenticated()) {
-      <nav class="app-nav" aria-label="Navegación principal">
-        <a routerLink="/admin" routerLinkActive="is-active">Administración</a>
-      </nav>
+      <button
+        class="menu-toggle"
+        type="button"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="main-navigation"
+      >
+        <span class="menu-toggle__icon" aria-hidden="true"></span>
+        Menú
+      </button>
 
-      <div class="session">
-        <span>{{ user()?.nombreCompleto || user()?.login }}</span>
-        <button class="button button--secondary" type="button" (click)="logout()">Cerrar sesión</button>
+      <div class="nav-panel" [class.is-open]="menuOpen()">
+        <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
+          <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Inicio</a>
+          <a routerLink="/admin/colaboradores" routerLinkActive="is-active" (click)="closeMenu()">Colaboradores</a>
+          <a routerLink="/admin/procesos" routerLinkActive="is-active" (click)="closeMenu()">Procesos</a>
+          <a routerLink="/admin/perfiles" routerLinkActive="is-active" (click)="closeMenu()">Perfiles</a>
+          <a routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">Asignaciones</a>
+          <a routerLink="/admin/control" routerLinkActive="is-active" (click)="closeMenu()">Control</a>
+          <a routerLink="/admin/firmas" routerLinkActive="is-active" (click)="closeMenu()">Firmas</a>
+          <a routerLink="/admin/pagos" routerLinkActive="is-active" (click)="closeMenu()">Pagos</a>
+        </nav>
+
+        <div class="session">
+          <span>{{ user()?.nombreCompleto || user()?.login }}</span>
+          <button class="button button--secondary" type="button" (click)="logout()">Cerrar sesión</button>
+        </div>
       </div>
     }
   </div>

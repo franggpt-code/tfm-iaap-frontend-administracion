@@ -1,0 +1,109 @@
+<section class="admin-page" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Miga de pan">
+    <a href="/admin">Inicio</a><span>/</span><span>Procesos y exámenes</span>
+  </nav>
+
+  <div class="page-heading">
+    <div>
+      <h1 id="page-title">Procesos y exámenes</h1>
+      <p>Consulta de procesos selectivos, exámenes, centros y aulas vinculadas.</p>
+    </div>
+    <button class="button button--secondary" type="button" (click)="loadProcesos()" [disabled]="loading()">Actualizar</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert">{{ error() }}</div>
+  }
+
+  <div class="split-layout">
+    <section class="panel" aria-labelledby="procesos-title">
+      <div class="panel__header">
+        <h2 id="procesos-title">Procesos</h2>
+        @if (loading()) { <span class="muted">Cargando...</span> }
+      </div>
+      <div class="item-list" role="list">
+        @for (proceso of procesos(); track proceso.id) {
+          <button class="list-button" type="button" [class.is-selected]="selectedProceso()?.id === proceso.id" (click)="selectProceso(proceso)">
+            <strong>{{ proceso.nombre }}</strong>
+            <span>{{ proceso.oep }} · {{ proceso.cuerpo }} · {{ proceso.acceso }}</span>
+          </button>
+        } @empty {
+          <div class="empty-state">No hay procesos selectivos disponibles.</div>
+        }
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="examenes-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="examenes-title">Exámenes y aulas</h2>
+          <p>{{ selectedProceso()?.nombre || "Selecciona un proceso" }}</p>
+        </div>
+        @if (loadingDetail()) { <span class="muted">Cargando...</span> }
+      </div>
+
+      @if (examenes().length) {
+        <div class="tabs" role="list" aria-label="Exámenes">
+          @for (examen of examenes(); track examen.id) {
+            <button class="tab-button" type="button" [class.is-selected]="selectedExamen()?.id === examen.id" (click)="selectExamen(examen)">
+              {{ examen.numeroEjercicio }}. {{ examen.nombre }}
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">No hay exámenes asociados al proceso.</div>
+      }
+
+      @if (selectedExamen(); as examen) {
+        <dl class="definition-list">
+          <div><dt>Fecha</dt><dd>{{ examen.fechaHora | date: "dd/MM/yyyy HH:mm" }}</dd></div>
+          <div><dt>Ejercicio</dt><dd>{{ examen.numeroEjercicio }}</dd></div>
+          <div><dt>Observaciones</dt><dd>{{ examen.observaciones || "Sin observaciones" }}</dd></div>
+        </dl>
+
+        <h3>Centros</h3>
+        @if (centros().length) {
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>Centro</th><th>Provincia</th><th>Aulas</th></tr>
+              </thead>
+              <tbody>
+                @for (centro of centros(); track centro.nombre) {
+                  <tr>
+                    <td data-label="Centro"><strong>{{ centro.nombre }}</strong></td>
+                    <td data-label="Provincia">{{ centro.provincia || "-" }}</td>
+                    <td data-label="Aulas">{{ centro.aulas.length }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <h3>Aulas</h3>
+        @if (aulas().length) {
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr><th>Aula</th><th>Centro</th><th>Provincia</th><th>Colaboradores</th></tr>
+              </thead>
+              <tbody>
+                @for (aula of aulas(); track aula.id) {
+                  <tr>
+                    <td data-label="Aula"><strong>{{ aula.aulaNombre }}</strong></td>
+                    <td data-label="Centro">{{ aula.centroNombre || "-" }}</td>
+                    <td data-label="Provincia">{{ aula.provincia || "-" }}</td>
+                    <td data-label="Colaboradores">{{ aula.colaboradoresAsignados?.length || 0 }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state">No hay aulas asociadas al examen.</div>
+        }
+      }
+    </section>
+  </div>
+</section>

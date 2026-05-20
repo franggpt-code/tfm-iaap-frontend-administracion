@@ -1,0 +1,104 @@
+<section class="admin-page" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Miga de pan">
+    <a href="/admin">Inicio</a><span>/</span><span>Colaboradores</span>
+  </nav>
+
+  <div class="page-heading">
+    <div>
+      <h1 id="page-title">Colaboradores</h1>
+      <p>Consulta de personas colaboradoras con filtros administrativos.</p>
+    </div>
+    <button class="button button--secondary" type="button" (click)="search()" [disabled]="loading()">Actualizar</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert">{{ error() }}</div>
+  }
+
+  <section class="panel" aria-labelledby="filters-title">
+    <div class="panel__header">
+      <div>
+        <h2 id="filters-title">Filtros</h2>
+        <p>{{ total() }} colaboradores encontrados.</p>
+      </div>
+      <button
+        class="button button--secondary filter-toggle"
+        type="button"
+        (click)="toggleFilters()"
+        [attr.aria-expanded]="filtersOpen()"
+        aria-controls="colaboradores-filters"
+      >
+        {{ filtersOpen() ? "Ocultar filtros" : "Mostrar filtros" }}
+      </button>
+    </div>
+    @if (filtersOpen()) {
+      <form id="colaboradores-filters" class="filters" [formGroup]="filters" (ngSubmit)="search()">
+        <div class="field">
+          <label for="provincia">Provincia</label>
+          <input id="provincia" type="text" formControlName="provincia" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="localidad">Localidad</label>
+          <input id="localidad" type="text" formControlName="localidad" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="estado">Estado</label>
+          <select id="estado" formControlName="estado">
+            <option value="">Todos</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="PENDIENTE_VALIDACION">Pendiente de validación</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </div>
+        <div class="filters__actions">
+          <button class="button button--secondary" type="button" (click)="clear()">Limpiar</button>
+          <button class="button button--primary" type="submit" [disabled]="loading()">Buscar</button>
+        </div>
+      </form>
+    }
+  </section>
+
+  <section class="panel" aria-labelledby="list-title">
+    <div class="panel__header">
+      <h2 id="list-title">Listado</h2>
+      @if (loading()) {
+        <span class="muted">Cargando...</span>
+      }
+    </div>
+    @if (colaboradores().length) {
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Documento</th>
+              <th>Contacto</th>
+              <th>Territorio</th>
+              <th>Roles preferidos</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (colaborador of colaboradores(); track colaborador.id) {
+              <tr>
+                <td data-label="Nombre"><strong>{{ colaborador.nombreCompleto }}</strong></td>
+                <td data-label="Documento">{{ colaborador.dni }}{{ colaborador.letra }}</td>
+                <td data-label="Contacto">
+                  <a [href]="'mailto:' + colaborador.correoCorporativo">{{ colaborador.correoCorporativo }}</a>
+                  @if (colaborador.telefono) {
+                    <span class="muted">{{ colaborador.telefono }}</span>
+                  }
+                </td>
+                <td data-label="Territorio">{{ colaborador.localidad || "-" }}, {{ colaborador.provincia || "-" }}</td>
+                <td data-label="Roles preferidos">{{ colaborador.rolesPreferidos.join(", ") || "Sin roles" }}</td>
+                <td data-label="Estado"><span class="status-pill">{{ estadoLabel(colaborador.estado) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">No hay colaboradores para los filtros seleccionados.</div>
+    }
+  </section>
+</section>

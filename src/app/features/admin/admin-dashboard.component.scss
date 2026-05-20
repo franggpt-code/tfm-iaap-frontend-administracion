@@ -38,6 +38,27 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.quick-link {
+  border: 1px solid var(--jda-primary);
+  border-radius: 4px;
+  color: var(--jda-primary);
+  font-weight: 700;
+  padding: 0.55rem 0.75rem;
+  text-decoration: none;
+}
+
+.quick-link:hover,
+.quick-link:focus {
+  border-color: var(--jda-primary-dark);
+  color: var(--jda-primary-dark);
+}
+
 .metric {
   background: #fff;
   border: 1px solid var(--jda-neutral-border);
@@ -163,6 +184,7 @@
 
 @media (max-width: 900px) {
   .summary-grid,
+  .quick-links,
   .filters,
   .process-layout,
   .definition-list {
@@ -185,5 +207,9 @@
     border-top: 4px solid var(--jda-primary);
     padding-left: 0;
     padding-top: 1rem;
+  }
+
+  .admin-table--compact {
+    min-width: 0;
   }
 }
