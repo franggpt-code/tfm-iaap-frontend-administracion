@@ -8,11 +8,67 @@
       <h1 id="page-title">Procesos y exámenes</h1>
       <p>Consulta de procesos selectivos, exámenes, centros y aulas vinculadas.</p>
     </div>
-    <button class="button button--secondary" type="button" (click)="loadProcesos()" [disabled]="loading()">Actualizar</button>
+    <div class="actions-row">
+      <label class="button button--secondary file-button">
+        Importar procesos JSON
+        <input type="file" accept="application/json" (change)="importProcesosJson($event)">
+      </label>
+      <button class="button button--primary" type="button" (click)="newProceso()">Nuevo proceso</button>
+      <button class="button button--secondary" type="button" (click)="loadProcesos()" [disabled]="loading()">Actualizar</button>
+    </div>
   </div>
 
   @if (error()) {
     <div class="alert alert--error" role="alert">{{ error() }}</div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">{{ success() }}</div>
+  }
+
+  @if (procesoEditorOpen()) {
+    <section class="panel" aria-labelledby="proceso-editor-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="proceso-editor-title">{{ editingProcesoId() ? "Editar proceso" : "Nuevo proceso" }}</h2>
+          <p>Datos básicos del proceso selectivo.</p>
+        </div>
+        <button class="button button--secondary" type="button" (click)="procesoEditorOpen.set(false)">Cerrar</button>
+      </div>
+      <form class="form-grid" [formGroup]="procesoForm" (ngSubmit)="saveProceso()">
+        <div class="field field--wide">
+          <label for="proceso-nombre">Nombre</label>
+          <input id="proceso-nombre" type="text" formControlName="nombre">
+        </div>
+        <div class="field">
+          <label for="proceso-oep">OEP</label>
+          <input id="proceso-oep" type="text" formControlName="oep">
+        </div>
+        <div class="field">
+          <label for="proceso-acceso">Acceso</label>
+          <input id="proceso-acceso" type="text" formControlName="acceso">
+        </div>
+        <div class="field">
+          <label for="proceso-cuerpo">Cuerpo</label>
+          <input id="proceso-cuerpo" type="text" formControlName="cuerpo">
+        </div>
+        <div class="field">
+          <label for="proceso-modo">Modo</label>
+          <input id="proceso-modo" type="text" formControlName="modo">
+        </div>
+        <div class="field">
+          <label for="proceso-estado">Estado</label>
+          <select id="proceso-estado" formControlName="estado">
+            <option value="BORRADOR">Borrador</option>
+            <option value="PUBLICADO">Publicado</option>
+            <option value="CERRADO">Cerrado</option>
+          </select>
+        </div>
+        <div class="form-actions field--wide">
+          <button class="button button--secondary" type="button" (click)="procesoEditorOpen.set(false)">Cancelar</button>
+          <button class="button button--primary" type="submit" [disabled]="saving()">Guardar</button>
+        </div>
+      </form>
+    </section>
   }
 
   <div class="split-layout">
@@ -23,10 +79,16 @@
       </div>
       <div class="item-list" role="list">
         @for (proceso of procesos(); track proceso.id) {
-          <button class="list-button" type="button" [class.is-selected]="selectedProceso()?.id === proceso.id" (click)="selectProceso(proceso)">
-            <strong>{{ proceso.nombre }}</strong>
-            <span>{{ proceso.oep }} · {{ proceso.cuerpo }} · {{ proceso.acceso }}</span>
-          </button>
+          <div class="list-row">
+            <button class="list-button" type="button" [class.is-selected]="selectedProceso()?.id === proceso.id" (click)="selectProceso(proceso)">
+              <strong>{{ proceso.nombre }}</strong>
+              <span>{{ proceso.oep || "-" }} · {{ proceso.cuerpo || "-" }} · {{ proceso.acceso || "-" }}</span>
+            </button>
+            <div class="inline-actions">
+              <button class="button button--secondary" type="button" (click)="editProceso(proceso)">Editar</button>
+              <button class="button button--danger" type="button" (click)="deleteProceso(proceso)" [disabled]="saving()">Eliminar</button>
+            </div>
+          </div>
         } @empty {
           <div class="empty-state">No hay procesos selectivos disponibles.</div>
         }
@@ -39,8 +101,49 @@
           <h2 id="examenes-title">Exámenes y aulas</h2>
           <p>{{ selectedProceso()?.nombre || "Selecciona un proceso" }}</p>
         </div>
-        @if (loadingDetail()) { <span class="muted">Cargando...</span> }
+        <div class="actions-row">
+          @if (loadingDetail()) { <span class="muted">Cargando...</span> }
+          <label class="button button--secondary file-button" [class.is-disabled]="!selectedProceso()">
+            Importar exámenes JSON
+            <input type="file" accept="application/json" (change)="importExamenesJson($event)" [disabled]="!selectedProceso()">
+          </label>
+          <button class="button button--primary" type="button" (click)="newExamen()" [disabled]="!selectedProceso()">Nuevo examen</button>
+        </div>
       </div>
+
+      @if (examenEditorOpen()) {
+        <section class="subpanel" aria-labelledby="examen-editor-title">
+          <div class="panel__header">
+            <div>
+              <h3 id="examen-editor-title">{{ editingExamenId() ? "Editar examen" : "Nuevo examen" }}</h3>
+              <p>Ejercicio asociado al proceso seleccionado.</p>
+            </div>
+            <button class="button button--secondary" type="button" (click)="examenEditorOpen.set(false)">Cerrar</button>
+          </div>
+          <form class="form-grid" [formGroup]="examenForm" (ngSubmit)="saveExamen()">
+            <div class="field">
+              <label for="examen-nombre">Nombre</label>
+              <input id="examen-nombre" type="text" formControlName="nombre">
+            </div>
+            <div class="field">
+              <label for="examen-fecha">Fecha y hora</label>
+              <input id="examen-fecha" type="datetime-local" formControlName="fechaHora">
+            </div>
+            <div class="field">
+              <label for="examen-ejercicio">Ejercicio</label>
+              <input id="examen-ejercicio" type="number" min="1" formControlName="numeroEjercicio">
+            </div>
+            <div class="field field--wide">
+              <label for="examen-observaciones">Observaciones</label>
+              <textarea id="examen-observaciones" formControlName="observaciones" rows="3"></textarea>
+            </div>
+            <div class="form-actions field--wide">
+              <button class="button button--secondary" type="button" (click)="examenEditorOpen.set(false)">Cancelar</button>
+              <button class="button button--primary" type="submit" [disabled]="saving()">Guardar</button>
+            </div>
+          </form>
+        </section>
+      }
 
       @if (examenes().length) {
         <div class="tabs" role="list" aria-label="Exámenes">
@@ -55,6 +158,11 @@
       }
 
       @if (selectedExamen(); as examen) {
+        <div class="actions-row detail-actions">
+          <button class="button button--secondary" type="button" (click)="editExamen(examen)">Editar examen</button>
+          <button class="button button--danger" type="button" (click)="deleteExamen(examen)" [disabled]="saving()">Eliminar examen</button>
+        </div>
+
         <dl class="definition-list">
           <div><dt>Fecha</dt><dd>{{ examen.fechaHora | date: "dd/MM/yyyy HH:mm" }}</dd></div>
           <div><dt>Ejercicio</dt><dd>{{ examen.numeroEjercicio }}</dd></div>

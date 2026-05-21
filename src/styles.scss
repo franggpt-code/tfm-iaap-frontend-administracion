@@ -76,7 +76,8 @@ h3 {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   letter-spacing: 0;
 }
@@ -123,6 +124,19 @@ select {
   color: var(--jda-primary-dark);
 }
 
+.button--danger {
+  background: #fff;
+  border-color: var(--jda-error);
+  color: var(--jda-error);
+}
+
+.button--danger:hover,
+.button--danger:focus {
+  background: #fff5f5;
+  border-color: #9f241f;
+  color: #9f241f;
+}
+
 .button--link {
   background: transparent;
   color: var(--jda-primary);
@@ -144,13 +158,18 @@ select {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   background: #fff;
   border: 1px solid #9f9f9f;
   border-radius: 4px;
   min-height: 42px;
   padding: 0.45rem 0.6rem;
   width: 100%;
+}
+
+.field textarea {
+  resize: vertical;
 }
 
 .field input[aria-invalid="true"] {

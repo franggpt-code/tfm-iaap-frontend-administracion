@@ -1,0 +1,76 @@
+<section class="admin-page" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Miga de pan">
+    <a href="/admin">Inicio</a><span>/</span><span>Importaciones</span>
+  </nav>
+
+  <div class="page-heading">
+    <div>
+      <h1 id="page-title">Importaciones</h1>
+      <p>Carga asistida de datos base desde plantilla Excel u ODS.</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert">{{ error() }}</div>
+  }
+
+  <section class="panel" aria-labelledby="import-title">
+    <div class="panel__header">
+      <div>
+        <h2 id="import-title">Importar plantilla de datos base</h2>
+        <p>Formatos admitidos: .ods, .xlsx, .xlsm y .xls.</p>
+      </div>
+      @if (loading()) {
+        <span class="muted">Importando...</span>
+      }
+    </div>
+
+    <div class="notice-block">
+      <strong>Soporte actual de la plantilla</strong>
+      <p>La carga está orientada especialmente a las hojas EXAMENES o EXAMANES y AULAS. La hoja CUERPOS es opcional si los procesos selectivos ya existen en backend y pueden enlazarse por cuerpo.</p>
+    </div>
+
+    <div class="upload-box">
+      <div class="field">
+        <label for="datos-base-file">Fichero de plantilla *</label>
+        <input
+          #fileInput
+          id="datos-base-file"
+          type="file"
+          accept=".ods,.xlsx,.xlsm,.xls"
+          (change)="onFileSelected($event)"
+          [attr.aria-invalid]="fileError() ? 'true' : null"
+        >
+        <span class="muted">{{ selectedFileName() }}</span>
+        @if (fileError()) {
+          <span class="field-error">{{ fileError() }}</span>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button class="button button--secondary" type="button" (click)="clearFile(fileInput)" [disabled]="loading()">Limpiar</button>
+        <button class="button button--primary" type="button" (click)="import()" [disabled]="!canImport()">Importar</button>
+      </div>
+    </div>
+  </section>
+
+  @if (result()) {
+    <section class="panel" aria-labelledby="result-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="result-title">Resultado de importación</h2>
+          <p>Resumen devuelto por SICOL tras procesar la plantilla.</p>
+        </div>
+      </div>
+
+      <div class="counter-grid">
+        @for (counter of counters(); track counter.label) {
+          <div class="counter-card">
+            <span>{{ counter.label }}</span>
+            <strong>{{ counter.value }}</strong>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</section>

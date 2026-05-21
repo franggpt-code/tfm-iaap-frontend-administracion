@@ -48,6 +48,39 @@ export interface Colaborador {
   updatedAt?: string;
 }
 
+export interface ColaboradorCreate {
+  dni: string;
+  letra: string;
+  nombreCompleto: string;
+  sexo: string;
+  iban: string;
+  correoCorporativo: string;
+  telefono: string;
+  observaciones?: string;
+  perteneceCentroDirectivo: boolean;
+  provincia?: string;
+  localidad?: string;
+  rolesPreferidos?: string[];
+  disponibilidad?: Disponibilidad[];
+}
+
+export interface ColaboradorPatch {
+  dni?: string;
+  letra?: string;
+  nombreCompleto?: string;
+  sexo?: string;
+  iban?: string;
+  correoCorporativo?: string;
+  telefono?: string;
+  observaciones?: string;
+  perteneceCentroDirectivo?: boolean;
+  provincia?: string;
+  localidad?: string;
+  rolesPreferidos?: string[];
+  disponibilidad?: Disponibilidad[];
+  estado?: string;
+}
+
 export interface Disponibilidad {
   desde: string;
   hasta: string;
@@ -65,6 +98,18 @@ export interface ProcesoSelectivo {
   updatedAt?: string;
 }
 
+export interface ProcesoSelectivoCreate {
+  nombre: string;
+  oep?: string;
+  acceso?: string;
+  cuerpo?: string;
+  modo?: string;
+}
+
+export interface ProcesoSelectivoPatch extends Partial<ProcesoSelectivoCreate> {
+  estado?: string;
+}
+
 export interface Examen {
   id: string;
   procesoSelectivoId: string;
@@ -72,6 +117,23 @@ export interface Examen {
   fechaHora: string;
   numeroEjercicio: number;
   observaciones?: string;
+}
+
+export interface ExamenCreate {
+  nombre: string;
+  fechaHora: string;
+  numeroEjercicio: number;
+  observaciones?: string;
+}
+
+export type ExamenPatch = Partial<ExamenCreate>;
+
+export interface ImportacionDatosBaseResultado {
+  perfilesImportados: number;
+  procesosDetectados: number;
+  examenesImportados: number;
+  aulasImportadas: number;
+  colaboradoresImportados: number;
 }
 
 export interface ExamenAula {

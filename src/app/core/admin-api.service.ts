@@ -9,13 +9,20 @@ import {
   AsignacionColaboradorPatch,
   CentroExamen,
   Colaborador,
+  ColaboradorCreate,
+  ColaboradorPatch,
   Examen,
   ExamenAula,
+  ExamenCreate,
+  ExamenPatch,
   HojasFirma,
   ImporteAsignacion,
+  ImportacionDatosBaseResultado,
   PagosColaboradores,
   PerfilColaboracion,
   ProcesoSelectivo,
+  ProcesoSelectivoCreate,
+  ProcesoSelectivoPatch,
   ResumenColaboraciones,
 } from "./api.models";
 
@@ -36,6 +43,22 @@ export class AdminApiService {
     });
   }
 
+  createColaborador(request: ColaboradorCreate): Observable<Colaborador> {
+    return this.http.post<Colaborador>(`${this.adminUrl}/colaboradores`, request);
+  }
+
+  importColaboradores(request: ColaboradorCreate[]): Observable<Colaborador[]> {
+    return this.http.post<Colaborador[]>(`${this.adminUrl}/colaboradores/importacion`, request);
+  }
+
+  patchColaborador(id: string, request: ColaboradorPatch): Observable<Colaborador> {
+    return this.http.patch<Colaborador>(`${this.adminUrl}/colaboradores/${id}`, request);
+  }
+
+  deleteColaborador(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/colaboradores/${id}`);
+  }
+
   listProcesosSelectivos(page = 0, size = 10): Observable<ApiPage<ProcesoSelectivo>> {
     return this.http.get<ApiPage<ProcesoSelectivo>>(`${this.adminUrl}/procesos-selectivos`, {
       params: this.toParams({ page, size }),
@@ -46,8 +69,46 @@ export class AdminApiService {
     return this.http.get<ProcesoSelectivo>(`${this.adminUrl}/procesos-selectivos/${id}`);
   }
 
+  createProcesoSelectivo(request: ProcesoSelectivoCreate): Observable<ProcesoSelectivo> {
+    return this.http.post<ProcesoSelectivo>(`${this.adminUrl}/procesos-selectivos`, request);
+  }
+
+  importProcesosSelectivos(request: ProcesoSelectivoCreate[]): Observable<ProcesoSelectivo[]> {
+    return this.http.post<ProcesoSelectivo[]>(`${this.adminUrl}/procesos-selectivos/importacion`, request);
+  }
+
+  patchProcesoSelectivo(id: string, request: ProcesoSelectivoPatch): Observable<ProcesoSelectivo> {
+    return this.http.patch<ProcesoSelectivo>(`${this.adminUrl}/procesos-selectivos/${id}`, request);
+  }
+
+  deleteProcesoSelectivo(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/procesos-selectivos/${id}`);
+  }
+
   listExamenes(procesoSelectivoId: string): Observable<Examen[]> {
     return this.http.get<Examen[]>(`${this.adminUrl}/procesos-selectivos/${procesoSelectivoId}/examenes`);
+  }
+
+  createExamen(procesoSelectivoId: string, request: ExamenCreate): Observable<Examen> {
+    return this.http.post<Examen>(`${this.adminUrl}/procesos-selectivos/${procesoSelectivoId}/examenes`, request);
+  }
+
+  importExamenes(procesoSelectivoId: string, request: ExamenCreate[]): Observable<Examen[]> {
+    return this.http.post<Examen[]>(`${this.adminUrl}/procesos-selectivos/${procesoSelectivoId}/examenes/importacion`, request);
+  }
+
+  patchExamen(id: string, request: ExamenPatch): Observable<Examen> {
+    return this.http.patch<Examen>(`${this.adminUrl}/examenes/${id}`, request);
+  }
+
+  deleteExamen(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/examenes/${id}`);
+  }
+
+  importDatosBase(fichero: File): Observable<ImportacionDatosBaseResultado> {
+    const formData = new FormData();
+    formData.append("fichero", fichero);
+    return this.http.post<ImportacionDatosBaseResultado>(`${this.adminUrl}/importaciones/datos-base`, formData);
   }
 
   listAulas(examenId: string): Observable<ExamenAula[]> {

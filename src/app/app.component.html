@@ -22,14 +22,42 @@
 
       <div class="nav-panel" [class.is-open]="menuOpen()">
         <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
-          <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Inicio</a>
-          <a routerLink="/admin/colaboradores" routerLinkActive="is-active" (click)="closeMenu()">Colaboradores</a>
-          <a routerLink="/admin/procesos" routerLinkActive="is-active" (click)="closeMenu()">Procesos</a>
-          <a routerLink="/admin/perfiles" routerLinkActive="is-active" (click)="closeMenu()">Perfiles</a>
-          <a routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">Asignaciones</a>
-          <a routerLink="/admin/control" routerLinkActive="is-active" (click)="closeMenu()">Control</a>
-          <a routerLink="/admin/firmas" routerLinkActive="is-active" (click)="closeMenu()">Firmas</a>
-          <a routerLink="/admin/pagos" routerLinkActive="is-active" (click)="closeMenu()">Pagos</a>
+          <a class="nav-item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--home" aria-hidden="true"></span>
+            <span>Inicio</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/colaboradores" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--users" aria-hidden="true"></span>
+            <span>Colaboradores</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/procesos" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--process" aria-hidden="true"></span>
+            <span>Procesos</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/importaciones" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--upload" aria-hidden="true"></span>
+            <span>Importaciones</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/perfiles" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--profiles" aria-hidden="true"></span>
+            <span>Perfiles</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--assignment" aria-hidden="true"></span>
+            <span>Asignaciones</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/control" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--control" aria-hidden="true"></span>
+            <span>Control</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/firmas" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--sign" aria-hidden="true"></span>
+            <span>Firmas</span>
+          </a>
+          <a class="nav-item" routerLink="/admin/pagos" routerLinkActive="is-active" (click)="closeMenu()">
+            <span class="nav-icon nav-icon--payments" aria-hidden="true"></span>
+            <span>Pagos</span>
+          </a>
         </nav>
 
         <div class="session">
