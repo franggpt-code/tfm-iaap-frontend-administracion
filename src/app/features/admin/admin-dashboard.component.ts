@@ -1,13 +1,14 @@
 import { Component, computed, inject, signal } from "@angular/core";
 import { DatePipe } from "@angular/common";
 import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
+import { RouterLink } from "@angular/router";
 import { finalize } from "rxjs";
 import { AdminApiService } from "../../core/admin-api.service";
 import { ApiError, Colaborador, Examen, ProcesoSelectivo } from "../../core/api.models";
 
 @Component({
   selector: "app-admin-dashboard",
-  imports: [DatePipe, ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: "./admin-dashboard.component.html",
   styleUrl: "./admin-dashboard.component.scss",
 })
@@ -24,6 +25,7 @@ export class AdminDashboardComponent {
   readonly examenes = signal<Examen[]>([]);
   readonly totalColaboradores = signal(0);
   readonly totalProcesos = signal(0);
+  readonly filtersOpen = signal(false);
 
   readonly filters = this.fb.nonNullable.group({
     provincia: [""],
@@ -34,6 +36,10 @@ export class AdminDashboardComponent {
   readonly activeColaboradores = computed(
     () => this.colaboradores().filter((colaborador) => colaborador.estado === "ACTIVO").length,
   );
+
+  toggleFilters(): void {
+    this.filtersOpen.update((open) => !open);
+  }
 
   constructor() {
     this.loadDashboard();

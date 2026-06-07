@@ -1,4 +1,4 @@
-import { Component, computed, inject } from "@angular/core";
+import { Component, computed, inject, signal } from "@angular/core";
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { AuthService } from "./core/auth.service";
 
@@ -14,8 +14,18 @@ export class AppComponent {
 
   readonly user = this.auth.user;
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
+  readonly menuOpen = signal(false);
+
+  toggleMenu(): void {
+    this.menuOpen.update((open) => !open);
+  }
+
+  closeMenu(): void {
+    this.menuOpen.set(false);
+  }
 
   logout(): void {
+    this.closeMenu();
     this.auth.logout().subscribe({
       next: () => void this.router.navigateByUrl("/login"),
       error: () => void this.router.navigateByUrl("/login"),
