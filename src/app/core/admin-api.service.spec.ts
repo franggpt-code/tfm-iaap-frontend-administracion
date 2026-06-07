@@ -128,10 +128,10 @@ describe("AdminApiService", () => {
     createProcesoRequest.flush({
       id: "proceso-1",
       nombre: "Proceso 2026",
-      oep: "",
-      acceso: "",
-      cuerpo: "",
-      modo: "",
+      oeps: [],
+      tipoAcceso: undefined,
+      cuerpo: undefined,
+      tipoVinculacion: undefined,
       estado: "BORRADOR",
     });
 
@@ -145,10 +145,10 @@ describe("AdminApiService", () => {
       {
         id: "proceso-2",
         nombre: "Proceso importado",
-        oep: "",
-        acceso: "",
-        cuerpo: "",
-        modo: "",
+        oeps: [],
+        tipoAcceso: undefined,
+        cuerpo: undefined,
+        tipoVinculacion: undefined,
         estado: "BORRADOR",
       },
     ]);
@@ -162,10 +162,10 @@ describe("AdminApiService", () => {
     patchProcesoRequest.flush({
       id: "proceso-1",
       nombre: "Proceso 2026",
-      oep: "",
-      acceso: "",
-      cuerpo: "",
-      modo: "",
+      oeps: [],
+      tipoAcceso: undefined,
+      cuerpo: undefined,
+      tipoVinculacion: undefined,
       estado: "PUBLICADO",
     });
 

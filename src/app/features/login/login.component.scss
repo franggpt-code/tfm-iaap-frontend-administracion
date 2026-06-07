@@ -1,65 +1,80 @@
 .login-page {
-  align-items: start;
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
-}
-
-.login-intro {
-  display: grid;
-  gap: 1rem;
-  padding-top: 0.5rem;
-}
-
-.login-intro p {
-  color: var(--jda-neutral-mid);
-  font-size: 1.05rem;
-  max-width: 680px;
-}
-
-.breadcrumb {
   align-items: center;
+  background: #f4f6f8;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  justify-content: center;
+  min-height: min(68vh, 42rem);
+  padding: 2rem 1rem;
 }
 
-.breadcrumb span {
-  color: var(--jda-neutral-mid);
-}
-
-.login-form {
+.login-panel {
   background: #fff;
-  border: 1px solid var(--jda-neutral-border);
-  border-top: 4px solid var(--jda-primary);
-  border-radius: 8px;
+  border: 1px solid #d8dee4;
+  border-left: 4px solid var(--jda-reference-green);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 8%);
   display: grid;
   gap: 1rem;
-  padding: 1.25rem;
+  padding: 2rem;
+  width: min(100%, 28rem);
+}
+
+.login-heading {
+  margin-bottom: 0.25rem;
+}
+
+.login-kicker {
+  color: #49635a;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+h1 {
+  color: #1f2a24;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .required-note {
   color: var(--jda-neutral-mid);
-  margin: -0.5rem 0 0;
+  margin: -0.4rem 0 0;
 }
 
 .password-field {
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #49635a;
+  cursor: pointer;
+  display: inline-flex;
+  height: calc(100% - 2px);
+  justify-content: center;
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  width: 2.75rem;
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+  color: #1f2a24;
 }
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
 }
 
-@media (max-width: 840px) {
-  .login-page {
-    grid-template-columns: 1fr;
-  }
-
-  .password-field {
-    grid-template-columns: 1fr;
-  }
+.form-actions .button {
+  width: 100%;
 }

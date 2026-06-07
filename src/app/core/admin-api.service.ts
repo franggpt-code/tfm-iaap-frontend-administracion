@@ -11,6 +11,8 @@ import {
   Colaborador,
   ColaboradorCreate,
   ColaboradorPatch,
+  Cuerpo,
+  CuerpoCreateUpdate,
   Examen,
   ExamenAula,
   ExamenCreate,
@@ -18,12 +20,19 @@ import {
   HojasFirma,
   ImporteAsignacion,
   ImportacionDatosBaseResultado,
+  ImportacionProcesosSelectivosResultado,
+  Oep,
+  OepCreateUpdate,
   PagosColaboradores,
   PerfilColaboracion,
   ProcesoSelectivo,
   ProcesoSelectivoCreate,
   ProcesoSelectivoPatch,
   ResumenColaboraciones,
+  TipoAcceso,
+  TipoAccesoCreateUpdate,
+  TipoVinculacion,
+  TipoVinculacionCreateUpdate,
 } from "./api.models";
 
 @Injectable({ providedIn: "root" })
@@ -57,6 +66,70 @@ export class AdminApiService {
 
   deleteColaborador(id: string): Observable<void> {
     return this.http.delete<void>(`${this.adminUrl}/colaboradores/${id}`);
+  }
+
+  listOep(): Observable<Oep[]> {
+    return this.http.get<Oep[]>(`${this.adminUrl}/oep`);
+  }
+
+  createOep(request: OepCreateUpdate): Observable<Oep> {
+    return this.http.post<Oep>(`${this.adminUrl}/oep`, request);
+  }
+
+  updateOep(idOep: number, request: OepCreateUpdate): Observable<Oep> {
+    return this.http.put<Oep>(`${this.adminUrl}/oep/${idOep}`, request);
+  }
+
+  deleteOep(idOep: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/oep/${idOep}`);
+  }
+
+  listTiposAcceso(): Observable<TipoAcceso[]> {
+    return this.http.get<TipoAcceso[]>(`${this.adminUrl}/tipos-acceso`);
+  }
+
+  createTipoAcceso(request: TipoAccesoCreateUpdate): Observable<TipoAcceso> {
+    return this.http.post<TipoAcceso>(`${this.adminUrl}/tipos-acceso`, request);
+  }
+
+  updateTipoAcceso(idTipoAcceso: number, request: TipoAccesoCreateUpdate): Observable<TipoAcceso> {
+    return this.http.put<TipoAcceso>(`${this.adminUrl}/tipos-acceso/${idTipoAcceso}`, request);
+  }
+
+  deleteTipoAcceso(idTipoAcceso: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/tipos-acceso/${idTipoAcceso}`);
+  }
+
+  listTiposVinculacion(): Observable<TipoVinculacion[]> {
+    return this.http.get<TipoVinculacion[]>(`${this.adminUrl}/tipos-vinculacion`);
+  }
+
+  createTipoVinculacion(request: TipoVinculacionCreateUpdate): Observable<TipoVinculacion> {
+    return this.http.post<TipoVinculacion>(`${this.adminUrl}/tipos-vinculacion`, request);
+  }
+
+  updateTipoVinculacion(idTipoVinculacion: number, request: TipoVinculacionCreateUpdate): Observable<TipoVinculacion> {
+    return this.http.put<TipoVinculacion>(`${this.adminUrl}/tipos-vinculacion/${idTipoVinculacion}`, request);
+  }
+
+  deleteTipoVinculacion(idTipoVinculacion: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/tipos-vinculacion/${idTipoVinculacion}`);
+  }
+
+  listCuerpos(): Observable<Cuerpo[]> {
+    return this.http.get<Cuerpo[]>(`${this.adminUrl}/cuerpos`);
+  }
+
+  createCuerpo(request: CuerpoCreateUpdate): Observable<Cuerpo> {
+    return this.http.post<Cuerpo>(`${this.adminUrl}/cuerpos`, request);
+  }
+
+  updateCuerpo(idCuerpo: number, request: CuerpoCreateUpdate): Observable<Cuerpo> {
+    return this.http.put<Cuerpo>(`${this.adminUrl}/cuerpos/${idCuerpo}`, request);
+  }
+
+  deleteCuerpo(idCuerpo: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/cuerpos/${idCuerpo}`);
   }
 
   listProcesosSelectivos(page = 0, size = 10): Observable<ApiPage<ProcesoSelectivo>> {
@@ -109,6 +182,12 @@ export class AdminApiService {
     const formData = new FormData();
     formData.append("fichero", fichero);
     return this.http.post<ImportacionDatosBaseResultado>(`${this.adminUrl}/importaciones/datos-base`, formData);
+  }
+
+  importProcesosSelectivosXlsx(fichero: File): Observable<ImportacionProcesosSelectivosResultado> {
+    const formData = new FormData();
+    formData.append("fichero", fichero);
+    return this.http.post<ImportacionProcesosSelectivosResultado>(`${this.adminUrl}/importaciones/procesos-selectivos`, formData);
   }
 
   listAulas(examenId: string): Observable<ExamenAula[]> {

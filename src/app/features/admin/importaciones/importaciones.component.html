@@ -13,6 +13,9 @@
   @if (error()) {
     <div class="alert alert--error" role="alert">{{ error() }}</div>
   }
+  @if (procesosError()) {
+    <div class="alert alert--error" role="alert">{{ procesosError() }}</div>
+  }
 
   <section class="panel" aria-labelledby="import-title">
     <div class="panel__header">
@@ -71,6 +74,89 @@
           </div>
         }
       </div>
+    </section>
+  }
+
+  <section class="panel" aria-labelledby="procesos-import-title">
+    <div class="panel__header">
+      <div>
+        <h2 id="procesos-import-title">Importar procesos selectivos</h2>
+        <p>Formato admitido: XLSX normalizado de seguimiento de convocatorias.</p>
+      </div>
+      @if (procesosLoading()) {
+        <span class="muted">Importando...</span>
+      }
+    </div>
+
+    <div class="notice-block">
+      <strong>Procesos y exámenes</strong>
+      <p>Cada fila crea o actualiza un proceso por código SIRHUS. Los bloques Ejer_1 a Ejer_6 crean exámenes asociados cuando tienen fecha de ejercicio.</p>
+    </div>
+
+    <div class="upload-box">
+      <div class="field">
+        <label for="procesos-file">Fichero normalizado *</label>
+        <input
+          #procesosFileInput
+          id="procesos-file"
+          type="file"
+          accept=".xlsx"
+          (change)="onProcesosFileSelected($event)"
+          [attr.aria-invalid]="procesosFileError() ? 'true' : null"
+        >
+        <span class="muted">{{ selectedProcesosFileName() }}</span>
+        @if (procesosFileError()) {
+          <span class="field-error">{{ procesosFileError() }}</span>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button class="button button--secondary" type="button" (click)="clearProcesosFile(procesosFileInput)" [disabled]="procesosLoading()">Limpiar</button>
+        <button class="button button--primary" type="button" (click)="importProcesos()" [disabled]="!canImportProcesos()">Importar procesos</button>
+      </div>
+    </div>
+  </section>
+
+  @if (procesosResult()) {
+    <section class="panel" aria-labelledby="procesos-result-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="procesos-result-title">Resultado de procesos selectivos</h2>
+          <p>Resumen devuelto por SICOL tras procesar el XLSX normalizado.</p>
+        </div>
+      </div>
+
+      <div class="counter-grid">
+        @for (counter of procesosCounters(); track counter.label) {
+          <div class="counter-card">
+            <span>{{ counter.label }}</span>
+            <strong>{{ counter.value }}</strong>
+          </div>
+        }
+      </div>
+
+      @if (procesosResult()?.avisos?.length) {
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fila</th>
+                <th>Campo</th>
+                <th>Aviso</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (aviso of procesosResult()?.avisos; track aviso.fila + "-" + aviso.campo + "-" + aviso.mensaje) {
+                <tr>
+                  <td class="number-cell">{{ aviso.fila }}</td>
+                  <td>{{ aviso.campo }}</td>
+                  <td>{{ aviso.mensaje }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </section>
   }
 </section>

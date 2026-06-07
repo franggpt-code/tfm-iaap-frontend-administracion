@@ -1,0 +1,266 @@
+<section class="admin-page" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Miga de pan">
+    <a href="/admin">Inicio</a><span>/</span><span>Datos Maestros</span>
+  </nav>
+
+  <div class="page-heading">
+    <div>
+      <h1 id="page-title">Datos Maestros</h1>
+      <p>Gestión de catálogos administrativos utilizados por los procesos selectivos.</p>
+    </div>
+    <button class="button button--secondary" type="button" (click)="loadDatosMaestros()" [disabled]="loading()">Actualizar</button>
+  </div>
+
+  @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
+  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+
+  <div class="split-layout">
+    <section class="panel" aria-labelledby="oep-form-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="oep-form-title">{{ editingOepId() ? "Editar OEP" : "Nueva OEP" }}</h2>
+          <p>* Campos obligatorios</p>
+        </div>
+        <button class="button button--secondary" type="button" (click)="newOep()">Limpiar</button>
+      </div>
+
+      <form class="form-grid" [formGroup]="oepForm" (ngSubmit)="saveOep()">
+        <div class="field">
+          <label for="oep-anio">Año *</label>
+          <input id="oep-anio" type="number" min="2000" formControlName="anio">
+        </div>
+        <div class="field">
+          <label for="oep-descripcion">Descripción</label>
+          <input id="oep-descripcion" type="text" formControlName="descripcion">
+        </div>
+        <div class="field">
+          <label for="oep-boja">Referencia BOJA</label>
+          <input id="oep-boja" type="text" formControlName="bojaRef">
+        </div>
+        <div class="form-actions field--wide">
+          <button class="button button--primary" type="submit" [disabled]="saving()">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="oep-list-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="oep-list-title">OEP</h2>
+          <p>{{ oeps().length }} ofertas registradas.</p>
+        </div>
+        @if (loading()) { <span class="muted">Cargando...</span> }
+      </div>
+
+      @if (oeps().length) {
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="number-cell">ID</th>
+                <th>Año</th>
+                <th>Descripción</th>
+                <th>BOJA</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (oep of oeps(); track oep.idOep) {
+                <tr>
+                  <td class="number-cell" data-label="ID">{{ oep.idOep }}</td>
+                  <td data-label="Año"><strong>{{ oep.anio }}</strong></td>
+                  <td data-label="Descripción">{{ oep.descripcion || "-" }}</td>
+                  <td data-label="BOJA">{{ oep.bojaRef || "-" }}</td>
+                  <td data-label="Acciones">
+                    <div class="inline-actions">
+                      <button class="button button--secondary" type="button" (click)="editOep(oep)">Editar</button>
+                      <button class="button button--danger" type="button" (click)="deleteOep(oep)" [disabled]="saving()">Borrar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">No hay OEP registradas.</div>
+      }
+    </section>
+  </div>
+
+  <div class="split-layout">
+    <section class="panel" aria-labelledby="tipos-acceso-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="tipos-acceso-title">{{ editingTipoAccesoId() ? "Editar tipo de acceso" : "Nuevo tipo de acceso" }}</h2>
+          <p>{{ tiposAcceso().length }} tipos registrados.</p>
+        </div>
+        <button class="button button--secondary" type="button" (click)="newTipoAcceso()">Limpiar</button>
+      </div>
+
+      <form class="form-grid" [formGroup]="tipoAccesoForm" (ngSubmit)="saveTipoAcceso()">
+        <div class="field">
+          <label for="tipo-acceso-codigo">Código *</label>
+          <input id="tipo-acceso-codigo" type="text" formControlName="codigo">
+        </div>
+        <div class="field">
+          <label for="tipo-acceso-descripcion">Descripción *</label>
+          <input id="tipo-acceso-descripcion" type="text" formControlName="descripcion">
+        </div>
+        <div class="form-actions">
+          <button class="button button--primary" type="submit" [disabled]="saving()">Guardar</button>
+        </div>
+      </form>
+
+      @if (tiposAcceso().length) {
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="number-cell">ID</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (tipo of tiposAcceso(); track tipo.idTipoAcceso) {
+                <tr>
+                  <td class="number-cell" data-label="ID">{{ tipo.idTipoAcceso }}</td>
+                  <td data-label="Código"><strong>{{ tipo.codigo }}</strong></td>
+                  <td data-label="Descripción">{{ tipo.descripcion }}</td>
+                  <td data-label="Acciones">
+                    <div class="inline-actions">
+                      <button class="button button--secondary" type="button" (click)="editTipoAcceso(tipo)">Editar</button>
+                      <button class="button button--danger" type="button" (click)="deleteTipoAcceso(tipo)" [disabled]="saving()">Borrar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">No hay tipos de acceso registrados.</div>
+      }
+    </section>
+
+    <section class="panel" aria-labelledby="tipos-vinculacion-title">
+      <div class="panel__header">
+        <div>
+          <h2 id="tipos-vinculacion-title">{{ editingTipoVinculacionId() ? "Editar tipo de vinculación" : "Nuevo tipo de vinculación" }}</h2>
+          <p>{{ tiposVinculacion().length }} tipos registrados.</p>
+        </div>
+        <button class="button button--secondary" type="button" (click)="newTipoVinculacion()">Limpiar</button>
+      </div>
+
+      <form class="form-grid" [formGroup]="tipoVinculacionForm" (ngSubmit)="saveTipoVinculacion()">
+        <div class="field">
+          <label for="tipo-vinculacion-codigo">Código *</label>
+          <input id="tipo-vinculacion-codigo" type="text" formControlName="codigo">
+        </div>
+        <div class="field">
+          <label for="tipo-vinculacion-descripcion">Descripción *</label>
+          <input id="tipo-vinculacion-descripcion" type="text" formControlName="descripcion">
+        </div>
+        <div class="form-actions">
+          <button class="button button--primary" type="submit" [disabled]="saving()">Guardar</button>
+        </div>
+      </form>
+
+      @if (tiposVinculacion().length) {
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="number-cell">ID</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (tipo of tiposVinculacion(); track tipo.idTipoVinculacion) {
+                <tr>
+                  <td class="number-cell" data-label="ID">{{ tipo.idTipoVinculacion }}</td>
+                  <td data-label="Código"><strong>{{ tipo.codigo }}</strong></td>
+                  <td data-label="Descripción">{{ tipo.descripcion }}</td>
+                  <td data-label="Acciones">
+                    <div class="inline-actions">
+                      <button class="button button--secondary" type="button" (click)="editTipoVinculacion(tipo)">Editar</button>
+                      <button class="button button--danger" type="button" (click)="deleteTipoVinculacion(tipo)" [disabled]="saving()">Borrar</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">No hay tipos de vinculación registrados.</div>
+      }
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="cuerpos-title">
+    <div class="panel__header">
+      <div>
+        <h2 id="cuerpos-title">{{ editingCuerpoId() ? "Editar cuerpo" : "Nuevo cuerpo" }}</h2>
+        <p>{{ cuerpos().length }} cuerpos registrados.</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="newCuerpo()">Limpiar</button>
+    </div>
+
+    <form class="form-grid" [formGroup]="cuerpoForm" (ngSubmit)="saveCuerpo()">
+      <div class="field">
+        <label for="cuerpo-codigo">Código *</label>
+        <input id="cuerpo-codigo" type="text" formControlName="codigo">
+      </div>
+      <div class="field">
+        <label for="cuerpo-grupo">Grupo *</label>
+        <input id="cuerpo-grupo" type="text" formControlName="grupo">
+      </div>
+      <div class="field">
+        <label for="cuerpo-descripcion">Descripción *</label>
+        <input id="cuerpo-descripcion" type="text" formControlName="descripcion">
+      </div>
+      <div class="form-actions field--wide">
+        <button class="button button--primary" type="submit" [disabled]="saving()">Guardar</button>
+      </div>
+    </form>
+
+    @if (cuerpos().length) {
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th class="number-cell">ID</th>
+              <th>Código</th>
+              <th>Grupo</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cuerpo of cuerpos(); track cuerpo.idCuerpo) {
+              <tr>
+                <td class="number-cell" data-label="ID">{{ cuerpo.idCuerpo }}</td>
+                <td data-label="Código"><strong>{{ cuerpo.codigo }}</strong></td>
+                <td data-label="Grupo">{{ cuerpo.grupo }}</td>
+                <td data-label="Descripción">{{ cuerpo.descripcion }}</td>
+                <td data-label="Acciones">
+                  <div class="inline-actions">
+                    <button class="button button--secondary" type="button" (click)="editCuerpo(cuerpo)">Editar</button>
+                    <button class="button button--danger" type="button" (click)="deleteCuerpo(cuerpo)" [disabled]="saving()">Borrar</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">No hay cuerpos registrados.</div>
+    }
+  </section>
+</section>

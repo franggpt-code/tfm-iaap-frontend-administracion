@@ -1,71 +1,86 @@
-<header class="app-header">
-  <div class="app-header__inner">
-    <a class="brand" routerLink="/admin" aria-label="Ir al inicio de SICOL" (click)="closeMenu()">
-      <span class="brand__mark" aria-hidden="true">JA</span>
-      <span>
-        <strong>Junta de Andalucía</strong>
-        <span>SICOL Administración</span>
-      </span>
-    </a>
+<header class="app-header" role="banner" aria-label="Cabecera de sitio">
+  <div class="app-header__top">
+    <div class="app-header__inner app-header__top-inner">
+      <nav class="secondary-nav" aria-label="Navegación secundaria">
+        <a href="https://www.juntadeandalucia.es/informacion/contacto.html">Contacto</a>
+        <a href="https://www.juntadeandalucia.es/informacion/mapaweb.html">Mapa web</a>
+      </nav>
+      @if (isAuthenticated()) {
+        <span class="connected-user">Conectado: <strong>{{ user()?.nombreCompleto || user()?.login }}</strong></span>
+      }
+    </div>
+  </div>
 
-    @if (isAuthenticated()) {
-      <button
-        class="menu-toggle"
-        type="button"
-        (click)="toggleMenu()"
-        [attr.aria-expanded]="menuOpen()"
-        aria-controls="main-navigation"
-      >
-        <span class="menu-toggle__icon" aria-hidden="true"></span>
-        Menú
-      </button>
+  <div class="app-header__main">
+    <div class="app-header__inner app-header__main-inner">
+      <a class="brand brand--junta" href="https://www.juntadeandalucia.es/" aria-label="Junta de Andalucía"></a>
 
-      <div class="nav-panel" [class.is-open]="menuOpen()">
-        <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
-          <a class="nav-item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--home" aria-hidden="true"></span>
-            <span>Inicio</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/colaboradores" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--users" aria-hidden="true"></span>
-            <span>Colaboradores</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/procesos" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--process" aria-hidden="true"></span>
-            <span>Procesos</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/importaciones" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--upload" aria-hidden="true"></span>
-            <span>Importaciones</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/perfiles" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--profiles" aria-hidden="true"></span>
-            <span>Perfiles</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--assignment" aria-hidden="true"></span>
-            <span>Asignaciones</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/control" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--control" aria-hidden="true"></span>
-            <span>Control</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/firmas" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--sign" aria-hidden="true"></span>
-            <span>Firmas</span>
-          </a>
-          <a class="nav-item" routerLink="/admin/pagos" routerLinkActive="is-active" (click)="closeMenu()">
-            <span class="nav-icon nav-icon--payments" aria-hidden="true"></span>
-            <span>Pagos</span>
-          </a>
-        </nav>
+      @if (isAuthenticated()) {
+        <button
+          class="menu-toggle"
+          type="button"
+          (click)="toggleMenu()"
+          [attr.aria-expanded]="menuOpen()"
+          aria-controls="main-navigation"
+        >
+          <i class="fa fa-bars" aria-hidden="true"></i>
+          <span>Menú</span>
+        </button>
 
-        <div class="session">
-          <span>{{ user()?.nombreCompleto || user()?.login }}</span>
-          <button class="button button--secondary" type="button" (click)="logout()">Cerrar sesión</button>
+        <div class="nav-panel" [class.is-open]="menuOpen()">
+          <a class="brand brand--project" routerLink="/admin" aria-label="Ir al inicio de SICOL" (click)="closeMenu()">
+            SICOL Administración
+          </a>
+          <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
+            <a class="nav-item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
+              <i class="fa fa-home" aria-hidden="true"></i>
+              <span>Inicio</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/colaboradores" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-users" aria-hidden="true"></i>
+              <span>Colaboradores</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/procesos" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-list-alt" aria-hidden="true"></i>
+              <span>Procesos</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/datos-maestros" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-database" aria-hidden="true"></i>
+              <span>Datos Maestros</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/importaciones" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-file-upload" aria-hidden="true"></i>
+              <span>Importaciones</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/perfiles" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-id-badge" aria-hidden="true"></i>
+              <span>Perfiles</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-tasks" aria-hidden="true"></i>
+              <span>Asignaciones</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/control" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-chart-bar" aria-hidden="true"></i>
+              <span>Control</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/firmas" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-signature" aria-hidden="true"></i>
+              <span>Firmas</span>
+            </a>
+            <a class="nav-item" routerLink="/admin/pagos" routerLinkActive="is-active" (click)="closeMenu()">
+              <i class="fa fa-euro-sign" aria-hidden="true"></i>
+              <span>Pagos</span>
+            </a>
+          </nav>
+
+          <button class="session-logout" type="button" (click)="logout()">
+            <i class="fa fa-sign-out-alt" aria-hidden="true"></i>
+            <span>Cerrar sesión</span>
+          </button>
         </div>
-      </div>
-    }
+      }
+    </div>
   </div>
 </header>
 

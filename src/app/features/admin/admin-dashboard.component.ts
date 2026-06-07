@@ -5,6 +5,12 @@ import { RouterLink } from "@angular/router";
 import { finalize } from "rxjs";
 import { AdminApiService } from "../../core/admin-api.service";
 import { ApiError, Colaborador, Examen, ProcesoSelectivo } from "../../core/api.models";
+import {
+  formatProcesoCuerpo,
+  formatProcesoOeps,
+  formatProcesoTipoAcceso,
+  formatProcesoTipoVinculacion,
+} from "./shared/admin-ui";
 
 @Component({
   selector: "app-admin-dashboard",
@@ -119,5 +125,21 @@ export class AdminDashboardComponent {
       return "status-pill status-pill--warning";
     }
     return "status-pill";
+  }
+
+  formatOeps(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoOeps(proceso);
+  }
+
+  formatTipoAcceso(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoTipoAcceso(proceso);
+  }
+
+  formatCuerpo(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoCuerpo(proceso);
+  }
+
+  formatTipoVinculacion(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoTipoVinculacion(proceso);
   }
 }

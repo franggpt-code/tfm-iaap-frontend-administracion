@@ -3,6 +3,7 @@ import { adminGuard } from "./core/admin.guard";
 import { AsignacionesComponent } from "./features/admin/asignaciones/asignaciones.component";
 import { ColaboradoresComponent } from "./features/admin/colaboradores/colaboradores.component";
 import { ControlComponent } from "./features/admin/control/control.component";
+import { DatosMaestrosComponent } from "./features/admin/datos-maestros/datos-maestros.component";
 import { FirmasComponent } from "./features/admin/firmas/firmas.component";
 import { ImportacionesComponent } from "./features/admin/importaciones/importaciones.component";
 import { AdminDashboardComponent } from "./features/admin/admin-dashboard.component";
@@ -16,6 +17,7 @@ export const routes: Routes = [
   { path: "login", component: LoginComponent },
   { path: "admin", component: AdminDashboardComponent, canActivate: [adminGuard] },
   { path: "admin/colaboradores", component: ColaboradoresComponent, canActivate: [adminGuard] },
+  { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminGuard] },
   { path: "admin/procesos", component: ProcesosComponent, canActivate: [adminGuard] },
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminGuard] },
   { path: "admin/perfiles", component: PerfilesComponent, canActivate: [adminGuard] },
