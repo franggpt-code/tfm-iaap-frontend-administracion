@@ -20,6 +20,30 @@ export interface AuthenticatedUser {
   colaboradorId?: string;
 }
 
+export type UsuarioRol = "ADMIN" | "GESTOR" | "COLABORADOR";
+
+export interface UsuarioAdmin {
+  idUsuario: string;
+  login: string;
+  nombreCompleto: string;
+  email: string;
+  activo: boolean;
+  ldapBypass: boolean;
+  roles: UsuarioRol[];
+  permisos: string[];
+  colaboradorId?: string | null;
+}
+
+export interface UsuarioAdminCreateUpdate {
+  login: string;
+  nombreCompleto: string;
+  email: string;
+  activo: boolean;
+  ldapBypass: boolean;
+  roles: UsuarioRol[];
+  passwordLocal?: string;
+}
+
 export interface ApiPage<T> {
   content: T[];
   page: number;

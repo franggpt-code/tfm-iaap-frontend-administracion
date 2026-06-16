@@ -48,13 +48,15 @@
               <i class="fa fa-database" aria-hidden="true"></i>
               <span>Datos Maestros</span>
             </a>
+            @if (isAdmin()) {
+              <a class="nav-item" routerLink="/admin/usuarios" routerLinkActive="is-active" (click)="closeMenu()">
+                <i class="fa fa-user-shield" aria-hidden="true"></i>
+                <span>Usuarios</span>
+              </a>
+            }
             <a class="nav-item" routerLink="/admin/importaciones" routerLinkActive="is-active" (click)="closeMenu()">
               <i class="fa fa-file-upload" aria-hidden="true"></i>
               <span>Importaciones</span>
-            </a>
-            <a class="nav-item" routerLink="/admin/perfiles" routerLinkActive="is-active" (click)="closeMenu()">
-              <i class="fa fa-id-badge" aria-hidden="true"></i>
-              <span>Perfiles</span>
             </a>
             <a class="nav-item" routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">
               <i class="fa fa-tasks" aria-hidden="true"></i>

@@ -33,12 +33,30 @@ import {
   TipoAccesoCreateUpdate,
   TipoVinculacion,
   TipoVinculacionCreateUpdate,
+  UsuarioAdmin,
+  UsuarioAdminCreateUpdate,
 } from "./api.models";
 
 @Injectable({ providedIn: "root" })
 export class AdminApiService {
   private readonly http = inject(HttpClient);
   private readonly adminUrl = `${environment.apiBaseUrl}/admin`;
+
+  listUsuariosAdmin(): Observable<UsuarioAdmin[]> {
+    return this.http.get<UsuarioAdmin[]>(`${this.adminUrl}/usuarios`);
+  }
+
+  createUsuarioAdmin(request: UsuarioAdminCreateUpdate): Observable<UsuarioAdmin> {
+    return this.http.post<UsuarioAdmin>(`${this.adminUrl}/usuarios`, request);
+  }
+
+  updateUsuarioAdmin(idUsuario: string, request: UsuarioAdminCreateUpdate): Observable<UsuarioAdmin> {
+    return this.http.put<UsuarioAdmin>(`${this.adminUrl}/usuarios/${idUsuario}`, request);
+  }
+
+  deleteUsuarioAdmin(idUsuario: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/usuarios/${idUsuario}`);
+  }
 
   listColaboradores(filters: {
     provincia?: string;
