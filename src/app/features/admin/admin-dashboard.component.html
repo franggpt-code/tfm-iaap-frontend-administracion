@@ -43,6 +43,7 @@
       </div>
     </div>
     <div class="quick-links">
+      <a class="quick-link" routerLink="/admin/datos-maestros">Datos Maestros y OEP</a>
       <a class="quick-link" routerLink="/admin/importaciones">Importar plantilla de datos base</a>
       <a class="quick-link" routerLink="/admin/procesos">Procesos, exámenes y aulas</a>
       <a class="quick-link" routerLink="/admin/asignaciones">Asignaciones y horas</a>
@@ -152,7 +153,7 @@
             (click)="selectProceso(proceso)"
           >
             <span>{{ proceso.nombre }}</span>
-            <small>{{ proceso.oep }} · {{ proceso.cuerpo }} · {{ proceso.acceso }}</small>
+            <small>{{ formatOeps(proceso) }} · {{ formatCuerpo(proceso) }} · {{ formatTipoAcceso(proceso) }}</small>
             <span [class]="estadoClass(proceso.estado)">{{ estadoLabel(proceso.estado) }}</span>
           </button>
         } @empty {
@@ -166,11 +167,11 @@
           <dl class="definition-list">
             <div>
               <dt>OEP</dt>
-              <dd>{{ proceso.oep }}</dd>
+              <dd>{{ formatOeps(proceso) }}</dd>
             </div>
             <div>
-              <dt>Modo</dt>
-              <dd>{{ proceso.modo }}</dd>
+              <dt>Vinculación</dt>
+              <dd>{{ formatTipoVinculacion(proceso) }}</dd>
             </div>
             <div>
               <dt>Última actualización</dt>

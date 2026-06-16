@@ -12,7 +12,7 @@ import {
   PerfilColaboracion,
   ProcesoSelectivo,
 } from "../../../core/api.models";
-import { conflictMessage, errorMessage, formatMoney } from "../shared/admin-ui";
+import { conflictMessage, errorMessage, formatMoney, formatProcesoCuerpo, formatProcesoOeps } from "../shared/admin-ui";
 
 @Component({
   selector: "app-asignaciones",
@@ -38,6 +38,8 @@ export class AsignacionesComponent {
   readonly selectedExamen = signal<Examen | null>(null);
   readonly importes = signal<Record<string, ImporteAsignacion>>({});
   readonly money = formatMoney;
+  readonly formatOeps = formatProcesoOeps;
+  readonly formatCuerpo = formatProcesoCuerpo;
 
   readonly createForm = this.fb.nonNullable.group({
     examenAulaId: ["", Validators.required],

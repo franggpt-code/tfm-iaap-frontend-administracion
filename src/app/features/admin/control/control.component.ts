@@ -2,7 +2,7 @@ import { Component, inject, signal } from "@angular/core";
 import { finalize } from "rxjs";
 import { AdminApiService } from "../../../core/admin-api.service";
 import { Examen, ProcesoSelectivo, ResumenColaboraciones } from "../../../core/api.models";
-import { errorMessage, formatMoney } from "../shared/admin-ui";
+import { errorMessage, formatMoney, formatProcesoCuerpo, formatProcesoOeps } from "../shared/admin-ui";
 
 @Component({
   selector: "app-control",
@@ -20,6 +20,8 @@ export class ControlComponent {
   readonly selectedExamen = signal<Examen | null>(null);
   readonly resumen = signal<ResumenColaboraciones | null>(null);
   readonly money = formatMoney;
+  readonly formatOeps = formatProcesoOeps;
+  readonly formatCuerpo = formatProcesoCuerpo;
 
   constructor() {
     this.loadProcesos();

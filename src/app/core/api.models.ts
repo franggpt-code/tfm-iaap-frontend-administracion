@@ -20,6 +20,30 @@ export interface AuthenticatedUser {
   colaboradorId?: string;
 }
 
+export type UsuarioRol = "ADMIN" | "GESTOR" | "COLABORADOR";
+
+export interface UsuarioAdmin {
+  idUsuario: string;
+  login: string;
+  nombreCompleto: string;
+  email: string;
+  activo: boolean;
+  ldapBypass: boolean;
+  roles: UsuarioRol[];
+  permisos: string[];
+  colaboradorId?: string | null;
+}
+
+export interface UsuarioAdminCreateUpdate {
+  login: string;
+  nombreCompleto: string;
+  email: string;
+  activo: boolean;
+  ldapBypass: boolean;
+  roles: UsuarioRol[];
+  passwordLocal?: string;
+}
+
 export interface ApiPage<T> {
   content: T[];
   page: number;
@@ -89,21 +113,73 @@ export interface Disponibilidad {
 export interface ProcesoSelectivo {
   id: string;
   nombre: string;
-  oep: string;
-  acceso: string;
-  cuerpo: string;
-  modo: string;
+  oeps?: Oep[];
+  tipoAcceso?: TipoAcceso;
+  cuerpo?: Cuerpo;
+  codigoSirhus?: string;
+  urlWebProceso?: string;
+  tipoVinculacion?: TipoVinculacion;
   estado: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
+export interface Oep {
+  idOep: number;
+  anio: number;
+  descripcion?: string;
+  bojaRef?: string;
+}
+
+export interface OepCreateUpdate {
+  anio: number;
+  descripcion?: string;
+  bojaRef?: string;
+}
+
+export interface TipoAcceso {
+  idTipoAcceso: number;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface TipoAccesoCreateUpdate {
+  codigo: string;
+  descripcion: string;
+}
+
+export interface TipoVinculacion {
+  idTipoVinculacion: number;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface TipoVinculacionCreateUpdate {
+  codigo: string;
+  descripcion: string;
+}
+
+export interface Cuerpo {
+  idCuerpo: number;
+  codigo: string;
+  descripcion: string;
+  grupo: string;
+}
+
+export interface CuerpoCreateUpdate {
+  codigo: string;
+  descripcion: string;
+  grupo: string;
+}
+
 export interface ProcesoSelectivoCreate {
   nombre: string;
-  oep?: string;
-  acceso?: string;
-  cuerpo?: string;
-  modo?: string;
+  oepIds?: number[];
+  idTipoAcceso?: number | null;
+  idCuerpo?: number | null;
+  codigoSirhus?: string;
+  urlWebProceso?: string;
+  idTipoVinculacion?: number | null;
 }
 
 export interface ProcesoSelectivoPatch extends Partial<ProcesoSelectivoCreate> {
@@ -134,6 +210,21 @@ export interface ImportacionDatosBaseResultado {
   examenesImportados: number;
   aulasImportadas: number;
   colaboradoresImportados: number;
+}
+
+export interface ImportacionProcesoSelectivoAviso {
+  fila: number;
+  campo: string;
+  mensaje: string;
+}
+
+export interface ImportacionProcesosSelectivosResultado {
+  filasLeidas: number;
+  procesosCreados: number;
+  procesosActualizados: number;
+  examenesCreados: number;
+  examenesOmitidos: number;
+  avisos: ImportacionProcesoSelectivoAviso[];
 }
 
 export interface ExamenAula {

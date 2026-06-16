@@ -1,19 +1,9 @@
 <section class="login-page" aria-labelledby="login-title">
-  <div class="login-intro">
-    <nav class="breadcrumb" aria-label="Miga de pan">
-      <a routerLink="/login">Inicio</a>
-      <span aria-hidden="true">/</span>
-      <span>Acceso</span>
-    </nav>
-
-    <h1 id="login-title">Acceso a SICOL Administración</h1>
-    <p>
-      Gestión interna del ciclo de vida de colaboradores, procesos selectivos, exámenes y organización de aulas.
-    </p>
-  </div>
-
-  <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <h2>Identificación</h2>
+  <form class="login-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="login-heading">
+      <span class="login-kicker">Backoffice</span>
+      <h1 id="login-title">SICOL Administración</h1>
+    </div>
     <p class="required-note">* Campos obligatorios</p>
 
     @if (error()) {
@@ -45,12 +35,14 @@
           [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
         >
         <button
-          class="button button--secondary"
+          class="password-toggle"
           type="button"
           [attr.aria-pressed]="showPassword()"
+          [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          [attr.title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
           (click)="showPassword.set(!showPassword())"
         >
-          {{ showPassword() ? "Ocultar" : "Mostrar" }}
+          <i [class]="showPassword() ? 'fa fa-eye-slash' : 'fa fa-eye'" aria-hidden="true"></i>
         </button>
       </div>
       @if (form.controls.password.invalid && form.controls.password.touched) {
