@@ -18,3 +18,5 @@ vercel --local-config despliegue/vercel/vercel.json
 ```
 
 Tambien se deja un `vercel.json` equivalente en la raiz del repositorio para que Vercel lo detecte automaticamente al conectar el proyecto desde su interfaz.
+
+La rama `feature/despliegue-vercel` puede usarse para validar el trigger de despliegue automatico en Vercel.
