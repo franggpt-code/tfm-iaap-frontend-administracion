@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - tfm-iaap-frontend-administracion-deploy.yaml
+  - tfm-iaap-frontend-administracion-route.yaml
+  - tfm-iaap-frontend-administracion-svc.yaml
+  - tfm-iaap-frontend-administracion-configmap-inject-file.yaml
+images:

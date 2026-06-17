@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: tfm-iaap-frontend-administracion-test
+  name: tfm-iaap-frontend-administracion-svc-test
+spec:
+  ports:
+    - port: 8043
+      protocol: TCP
+      targetPort: 8043
+  selector:
+    app: tfm-iaap-frontend-administracion-test
+  sessionAffinity: None
+  type: ClusterIP
+---

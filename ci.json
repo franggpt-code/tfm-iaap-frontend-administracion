@@ -1,0 +1,49 @@
+{
+  "pipeline": {
+    "stack": {
+      "node": {
+        "package_path": "./package.json",
+        "nodeVersion": "NodeJs 20.11.0",
+        "installCommands": "npm config set strict-ssl false && npm config set registry https://nexus.paas.junta-andalucia.es/repository/msd.npm-private/ && npm config set registry https://registry.npmjs.org/ && export NODE_OPTIONS=\"--use-openssl-ca --tls-min-v1.2 --tls-max-v1.2\" && npm install --force --cache /tmp/npm-cache",
+        "buildCommands": "npm run build -- && npm pack",
+        "testCommands": ""
+      }
+    },
+    "artifactInfo": {
+      "artifactName": "tfm-iaap-frontend-administracion"
+    },
+    "cluster": "cica",
+    "createArgoCdResourcesInEnvironments": ["test", "pre", "pro"],
+    "createAutoSyncForEnvironments": ["test"],
+    "deployTo": ["OpenShift"],
+    "gitRepo": {
+      "repoURL": "https://fuentes.juntadeandalucia.es/iaap-seleccion/si-sicol/sicol-frontend-administracion.git",
+      "repoID": ""
+    },
+    "notifications": {
+      "dev": "email-responsable",
+      "notify_all_stages": true
+    },
+    "e2eFramework": [
+      {
+        "framework": "",
+        "version": "",
+        "test_path": ""
+      }
+    ],
+    "excludedTasks": [],
+    "update_data_model_required": false
+  },
+  "environments": {
+    "TEST": {
+      "contenedores": {
+        "namespace": "test-plataforma-cicd"
+      }
+    },
+    "PRE": {
+      "contenedores": {
+        "namespace": "pre-plataforma-cicd"
+      }
+    }
+  }
+}
