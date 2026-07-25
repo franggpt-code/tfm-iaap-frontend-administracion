@@ -4,6 +4,23 @@
   min-height: 100vh;
 }
 
+.skip-link {
+  background: #fff;
+  border: 2px solid var(--jda-focus);
+  color: var(--jda-neutral-dark);
+  font-weight: 700;
+  left: 1rem;
+  padding: 0.5rem 0.75rem;
+  position: fixed;
+  text-decoration: none;
+  top: -4rem;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
 .app-header {
   color: var(--jda-neutral-dark);
   position: sticky;
@@ -206,6 +223,10 @@
   padding-bottom: 2rem;
   padding-top: 1.5rem;
   width: 100%;
+}
+
+.app-main:focus {
+  outline: 0;
 }
 
 .app-footer {

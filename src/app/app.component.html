@@ -1,3 +1,5 @@
+<a class="skip-link" href="#main-content">Saltar al contenido principal</a>
+
 <header class="app-header" role="banner" aria-label="Cabecera de sitio">
   <div class="app-header__top">
     <div class="app-header__inner app-header__top-inner">
@@ -32,45 +34,45 @@
             SICOL Administración
           </a>
           <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
-            <a class="nav-item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin" routerLinkActive="is-active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
               <i class="fa fa-home" aria-hidden="true"></i>
               <span>Inicio</span>
             </a>
-            <a class="nav-item" routerLink="/admin/colaboradores" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/colaboradores" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-users" aria-hidden="true"></i>
               <span>Colaboradores</span>
             </a>
-            <a class="nav-item" routerLink="/admin/procesos" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/procesos" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-list-alt" aria-hidden="true"></i>
               <span>Procesos</span>
             </a>
-            <a class="nav-item" routerLink="/admin/datos-maestros" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/datos-maestros" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-database" aria-hidden="true"></i>
               <span>Datos Maestros</span>
             </a>
             @if (isAdmin()) {
-              <a class="nav-item" routerLink="/admin/usuarios" routerLinkActive="is-active" (click)="closeMenu()">
+              <a class="nav-item" routerLink="/admin/usuarios" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
                 <i class="fa fa-user-shield" aria-hidden="true"></i>
                 <span>Usuarios</span>
               </a>
             }
-            <a class="nav-item" routerLink="/admin/importaciones" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/importaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-file-upload" aria-hidden="true"></i>
               <span>Importaciones</span>
             </a>
-            <a class="nav-item" routerLink="/admin/asignaciones" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/asignaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-tasks" aria-hidden="true"></i>
               <span>Asignaciones</span>
             </a>
-            <a class="nav-item" routerLink="/admin/control" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/control" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-chart-bar" aria-hidden="true"></i>
               <span>Control</span>
             </a>
-            <a class="nav-item" routerLink="/admin/firmas" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/firmas" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-signature" aria-hidden="true"></i>
               <span>Firmas</span>
             </a>
-            <a class="nav-item" routerLink="/admin/pagos" routerLinkActive="is-active" (click)="closeMenu()">
+            <a class="nav-item" routerLink="/admin/pagos" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">
               <i class="fa fa-euro-sign" aria-hidden="true"></i>
               <span>Pagos</span>
             </a>
@@ -86,7 +88,7 @@
   </div>
 </header>
 
-<main class="app-main">
+<main id="main-content" class="app-main" tabindex="-1">
   <router-outlet />
 </main>
 

@@ -135,6 +135,12 @@
   box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 8%);
 }
 
+.panel--window .form-actions {
+  border-top: 1px solid #e5e5e5;
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+}
+
 .subpanel {
   background: #fdfdfd;
   border: 1px solid var(--jda-neutral-border);
@@ -302,6 +308,10 @@
 .tab-button:hover,
 .tab-button:focus {
   background: #f6faf7;
+}
+
+.admin-table tbody tr:hover {
+  background: #f8fbf9;
 }
 
 .list-button.is-selected,
@@ -512,6 +522,11 @@
 
   .list-row .inline-actions {
     border-top: 1px solid #e5e5e5;
+  }
+
+  .inline-actions .button,
+  .form-actions .button {
+    width: 100%;
   }
 }
 
