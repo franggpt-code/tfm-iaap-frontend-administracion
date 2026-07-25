@@ -23,8 +23,8 @@ describe("ImportacionesComponent", () => {
   it("renderiza la pantalla de importación", () => {
     const title = fixture.nativeElement.querySelector("h1") as HTMLElement;
     expect(title.textContent).toContain("Importaciones");
-    expect(fixture.nativeElement.textContent).toContain("EXAMENES o EXAMANES");
-    expect(fixture.nativeElement.textContent).toContain("AULAS");
+    expect(fixture.nativeElement.textContent).toContain("Migración inicial");
+    expect(fixture.nativeElement.textContent).toContain("asignaciones");
   });
 
   it("valida la extensión del fichero seleccionado", () => {
@@ -52,6 +52,9 @@ describe("ImportacionesComponent", () => {
       examenesImportados: 2,
       aulasImportadas: 3,
       colaboradoresImportados: 0,
+      asignacionesImportadas: 4,
+      filasOmitidas: 1,
+      avisos: ["1 asignación duplicada omitida."],
     }));
 
     selectFile(file);
@@ -59,11 +62,12 @@ describe("ImportacionesComponent", () => {
     fixture.debugElement.query(By.css(".button--primary")).nativeElement.click();
     fixture.detectChanges();
 
-    expect(api.importDatosBase).toHaveBeenCalledOnceWith(file);
+    expect(api.importDatosBase).toHaveBeenCalledOnceWith(file, true);
     expect(fixture.nativeElement.textContent).toContain("Exámenes importados");
     expect(fixture.nativeElement.textContent).toContain("2");
     expect(fixture.nativeElement.textContent).toContain("Aulas importadas");
     expect(fixture.nativeElement.textContent).toContain("3");
+    expect(fixture.nativeElement.textContent).toContain("1 asignación duplicada omitida.");
   });
 
   it("muestra error cuando falla la importación", () => {
@@ -75,7 +79,7 @@ describe("ImportacionesComponent", () => {
     fixture.debugElement.query(By.css(".button--primary")).nativeElement.click();
     fixture.detectChanges();
 
-    expect(api.importDatosBase).toHaveBeenCalledOnceWith(file);
+    expect(api.importDatosBase).toHaveBeenCalledOnceWith(file, true);
     expect(fixture.nativeElement.textContent).toContain("Error de servidor");
   });
 

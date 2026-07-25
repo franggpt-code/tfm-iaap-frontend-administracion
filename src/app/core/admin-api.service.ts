@@ -196,10 +196,15 @@ export class AdminApiService {
     return this.http.delete<void>(`${this.adminUrl}/examenes/${id}`);
   }
 
-  importDatosBase(fichero: File): Observable<ImportacionDatosBaseResultado> {
+  importDatosBase(fichero: File, anonimizarPersonas = true): Observable<ImportacionDatosBaseResultado> {
     const formData = new FormData();
     formData.append("fichero", fichero);
-    return this.http.post<ImportacionDatosBaseResultado>(`${this.adminUrl}/importaciones/datos-base`, formData);
+    const params = new HttpParams().set("anonimizarPersonas", anonimizarPersonas);
+    return this.http.post<ImportacionDatosBaseResultado>(
+      `${this.adminUrl}/importaciones/datos-base`,
+      formData,
+      { params },
+    );
   }
 
   importProcesosSelectivosXlsx(fichero: File): Observable<ImportacionProcesosSelectivosResultado> {

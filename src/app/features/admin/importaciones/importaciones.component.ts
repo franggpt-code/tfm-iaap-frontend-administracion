@@ -19,6 +19,7 @@ export class ImportacionesComponent {
   private readonly api = inject(AdminApiService);
 
   readonly selectedFile = signal<File | null>(null);
+  readonly anonimizarPersonas = signal(true);
   readonly selectedProcesosFile = signal<File | null>(null);
   readonly fileError = signal<string | null>(null);
   readonly procesosFileError = signal<string | null>(null);
@@ -44,6 +45,8 @@ export class ImportacionesComponent {
       { label: "Exámenes importados", value: result.examenesImportados },
       { label: "Aulas importadas", value: result.aulasImportadas },
       { label: "Colaboradores importados", value: result.colaboradoresImportados },
+      { label: "Asignaciones importadas", value: result.asignacionesImportadas },
+      { label: "Filas omitidas", value: result.filasOmitidas },
     ];
   });
   readonly procesosCounters = computed<ImportacionContador[]>(() => {
@@ -108,6 +111,10 @@ export class ImportacionesComponent {
     this.error.set(null);
   }
 
+  onAnonimizarChange(event: Event): void {
+    this.anonimizarPersonas.set((event.target as HTMLInputElement).checked);
+  }
+
   clearProcesosFile(input: HTMLInputElement): void {
     input.value = "";
     this.selectedProcesosFile.set(null);
@@ -127,7 +134,7 @@ export class ImportacionesComponent {
     this.error.set(null);
     this.result.set(null);
     this.api
-      .importDatosBase(file)
+      .importDatosBase(file, this.anonimizarPersonas())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (result) => this.result.set(result),

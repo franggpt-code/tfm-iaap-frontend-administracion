@@ -6,7 +6,7 @@
   <div class="page-heading">
     <div>
       <h1 id="page-title">Importaciones</h1>
-      <p>Carga asistida de datos base desde plantilla Excel u ODS.</p>
+      <p>Migra la información histórica y continúa la gestión diaria directamente en SICOL.</p>
     </div>
   </div>
 
@@ -17,11 +17,17 @@
     <div class="alert alert--error" role="alert">{{ procesosError() }}</div>
   }
 
+  <ol class="process-steps" aria-label="Flujo de migración">
+    <li><span>1</span><strong>Revisar</strong><small>Comprueba el fichero y activa la protección de datos.</small></li>
+    <li><span>2</span><strong>Migrar</strong><small>SICOL relaciona procesos, exámenes, aulas, personas y asignaciones.</small></li>
+    <li><span>3</span><strong>Gestionar</strong><small>Completa horas, firmas, control y pagos desde la aplicación.</small></li>
+  </ol>
+
   <section class="panel" aria-labelledby="import-title">
     <div class="panel__header">
       <div>
-        <h2 id="import-title">Importar plantilla de datos base</h2>
-        <p>Formatos admitidos: .ods, .xlsx, .xlsm y .xls.</p>
+        <h2 id="import-title">Migración inicial desde la plantilla heredada</h2>
+        <p>Formatos admitidos: ODS, XLSX, XLSM y XLS.</p>
       </div>
       @if (loading()) {
         <span class="muted">Importando...</span>
@@ -29,13 +35,30 @@
     </div>
 
     <div class="notice-block">
-      <strong>Soporte actual de la plantilla</strong>
-      <p>La carga está orientada especialmente a las hojas EXAMENES o EXAMANES y AULAS. La hoja CUERPOS es opcional si los procesos selectivos ya existen en backend y pueden enlazarse por cuerpo.</p>
+      <strong>¿Qué información se migra?</strong>
+      <p>Perfiles, cuerpos, procesos selectivos, exámenes, aulas, colaboradores y asignaciones. Las horas realizadas se incorporan cuando están informadas.</p>
+    </div>
+
+    <div class="privacy-block">
+      <input
+        id="anonimizar-personas"
+        type="checkbox"
+        [checked]="anonimizarPersonas()"
+        (change)="onAnonimizarChange($event)"
+        [disabled]="loading()"
+      >
+      <div>
+        <label for="anonimizar-personas">Anonimizar datos personales durante la migración</label>
+        <p>Recomendado para desarrollo y demostraciones. Sustituye DNI, nombre, IBAN, teléfono y correo, manteniendo correctamente todas las relaciones.</p>
+        @if (!anonimizarPersonas()) {
+          <strong class="privacy-warning">Atención: se importarán los datos personales originales.</strong>
+        }
+      </div>
     </div>
 
     <div class="upload-box">
       <div class="field">
-        <label for="datos-base-file">Fichero de plantilla *</label>
+        <label for="datos-base-file">Fichero de origen *</label>
         <input
           #fileInput
           id="datos-base-file"
@@ -52,7 +75,9 @@
 
       <div class="form-actions">
         <button class="button button--secondary" type="button" (click)="clearFile(fileInput)" [disabled]="loading()">Limpiar</button>
-        <button class="button button--primary" type="button" (click)="import()" [disabled]="!canImport()">Importar</button>
+        <button class="button button--primary" type="button" (click)="import()" [disabled]="!canImport()">
+          {{ loading() ? "Migrando..." : "Iniciar migración" }}
+        </button>
       </div>
     </div>
   </section>
@@ -62,7 +87,7 @@
       <div class="panel__header">
         <div>
           <h2 id="result-title">Resultado de importación</h2>
-          <p>Resumen devuelto por SICOL tras procesar la plantilla.</p>
+          <p>La plantilla se ha procesado. Revisa las omisiones antes de continuar.</p>
         </div>
       </div>
 
@@ -74,13 +99,28 @@
           </div>
         }
       </div>
+
+      @if (result()?.avisos?.length) {
+        <div class="alert alert--warning" role="status">
+          <strong>Revisión necesaria</strong>
+          <ul class="alert-list">
+            @for (aviso of result()?.avisos; track aviso) {
+              <li>{{ aviso }}</li>
+            }
+          </ul>
+        </div>
+      } @else {
+        <div class="alert alert--success" role="status">
+          La migración no ha generado avisos. Ya puedes continuar la gestión en SICOL.
+        </div>
+      }
     </section>
   }
 
   <section class="panel" aria-labelledby="procesos-import-title">
     <div class="panel__header">
       <div>
-        <h2 id="procesos-import-title">Importar procesos selectivos</h2>
+        <h2 id="procesos-import-title">Carga normalizada de procesos selectivos</h2>
         <p>Formato admitido: XLSX normalizado de seguimiento de convocatorias.</p>
       </div>
       @if (procesosLoading()) {

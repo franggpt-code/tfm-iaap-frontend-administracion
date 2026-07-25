@@ -222,12 +222,15 @@ describe("AdminApiService", () => {
   it("importa datos base con multipart/form-data y campo fichero", () => {
     const file = new File(["contenido"], "plantilla.ods", { type: "application/vnd.oasis.opendocument.spreadsheet" });
 
-    service.importDatosBase(file).subscribe((result) => {
+    service.importDatosBase(file, true).subscribe((result) => {
       expect(result.examenesImportados).toBe(1);
       expect(result.aulasImportadas).toBe(1);
     });
 
-    const request = http.expectOne("/api/sicol/admin/importaciones/datos-base");
+    const request = http.expectOne(
+      (candidate) => candidate.url === "/api/sicol/admin/importaciones/datos-base"
+        && candidate.params.get("anonimizarPersonas") === "true",
+    );
     expect(request.request.method).toBe("POST");
     expect(request.request.body instanceof FormData).toBeTrue();
     expect((request.request.body as FormData).get("fichero")).toBe(file);
@@ -238,6 +241,9 @@ describe("AdminApiService", () => {
       examenesImportados: 1,
       aulasImportadas: 1,
       colaboradoresImportados: 0,
+      asignacionesImportadas: 0,
+      filasOmitidas: 0,
+      avisos: [],
     });
   });
 
