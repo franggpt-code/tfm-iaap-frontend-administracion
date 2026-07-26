@@ -8,3 +8,4 @@ npm-debug.log
 # Datos reales o sensibles para desarrollo local: nunca versionar.
 *.ods
 /.local-data/
+/.sites/
