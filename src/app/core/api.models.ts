@@ -210,6 +210,9 @@ export interface ImportacionDatosBaseResultado {
   examenesImportados: number;
   aulasImportadas: number;
   colaboradoresImportados: number;
+  asignacionesImportadas: number;
+  filasOmitidas: number;
+  avisos: string[];
 }
 
 export interface ImportacionProcesoSelectivoAviso {
