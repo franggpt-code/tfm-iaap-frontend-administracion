@@ -1,0 +1,48 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Procesos y ejercicios</span></nav>
+  <header class="page-heading">
+    <div><p class="eyebrow">Datos importados</p><h1>Procesos y ejercicios</h1><p>Selecciona un proceso para consultar sus ejercicios y acceder a las personas convocadas.</p></div>
+    <a class="button button--primary" routerLink="/admin/importaciones/opositores-aulas">Nueva importación</a>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
+
+  <div class="explorer-layout">
+    <section class="explorer-panel" aria-labelledby="procesos-title">
+      <div class="panel-heading"><div><span class="panel-count">{{ procesos().length }}</span><h2 id="procesos-title">Procesos</h2></div></div>
+      <label class="search-field"><span>Buscar proceso</span><input type="search" placeholder="Nombre o código SIRHUS" [value]="search()" (input)="search.set($any($event.target).value)"></label>
+      @if (loading()) { <p class="loading-message">Cargando procesos…</p> }
+      <div class="selection-list">
+        @for (proceso of filteredProcesos(); track proceso.id) {
+          <button type="button" [class.is-selected]="selected()?.id === proceso.id" [attr.aria-pressed]="selected()?.id === proceso.id" (click)="selectProceso(proceso)">
+            <span><strong>{{ proceso.nombre }}</strong><small>{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</small></span>
+            <span class="status-chip">{{ proceso.estado }}</span>
+          </button>
+        } @empty { @if (!loading()) { <p class="empty-state">No hay procesos que coincidan con la búsqueda.</p> } }
+      </div>
+    </section>
+
+    <section class="explorer-panel explorer-panel--detail" aria-labelledby="examenes-title">
+      @if (selected(); as proceso) {
+        <div class="panel-heading">
+          <div><span class="panel-count">{{ examenes().length }}</span><h2 id="examenes-title">Ejercicios</h2><p>{{ proceso.nombre }}</p></div>
+        </div>
+        @if (loadingExamenes()) { <p class="loading-message">Cargando ejercicios…</p> }
+        <div class="exam-list">
+          @for (examen of examenes(); track examen.id) {
+            <article>
+              <div class="exam-number">{{ examen.numeroEjercicio }}</div>
+              <div class="exam-copy"><h3>{{ examen.nombre }}</h3><p>{{ formatDate(examen.fechaHora) }}</p>@if (examen.observaciones) { <small>{{ examen.observaciones }}</small> }</div>
+              <div class="exam-actions">
+                <a class="button button--secondary" [routerLink]="['/admin/importaciones/opositores-aulas']" [queryParams]="{ procesoId: proceso.id, examenId: examen.id }">Importar</a>
+                <a class="button button--primary" [routerLink]="['/admin/procesos-selectivos', proceso.id, 'examenes', examen.id, 'convocados']">Ver convocados</a>
+              </div>
+            </article>
+          } @empty { @if (!loadingExamenes()) { <div class="empty-state"><strong>Este proceso aún no tiene ejercicios.</strong><span>Los ejercicios deben existir antes de importar convocados.</span></div> } }
+        </div>
+      } @else {
+        <div class="empty-state empty-state--large"><span class="empty-state__index">01</span><strong>Selecciona un proceso</strong><span>Sus ejercicios aparecerán aquí sin cambiar de pantalla.</span></div>
+      }
+    </section>
+  </div>
+</div>

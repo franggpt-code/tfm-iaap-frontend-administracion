@@ -14,7 +14,6 @@ export class AppComponent {
 
   readonly user = this.auth.user;
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
-  readonly isAdmin = computed(() => this.user()?.roles?.includes("ADMIN") ?? false);
   readonly menuOpen = signal(false);
 
   toggleMenu(): void {

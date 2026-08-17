@@ -6,6 +6,7 @@
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0 --port 4200",
     "build": "ng build",
+    "generate:api": "openapi-typescript ../tfm-iaap-backend/contracts/openapi/sicol-v1.yaml -o src/app/api/generated/sicol-api.ts",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false"
   },
@@ -31,6 +32,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "openapi-typescript": "^7.10.1",
     "typescript": "~5.9.0"
   }
 }

@@ -1,0 +1,39 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><a routerLink="/admin/procesos">Procesos</a><span aria-hidden="true">/</span><span>Convocados</span></nav>
+  <header class="page-heading">
+    <div><p class="eyebrow">Ejercicio seleccionado</p><h1>Personas convocadas</h1><p>Consulta la distribución por centro y aula. Estar convocado no implica haber asistido.</p></div>
+    <a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas" [queryParams]="{ procesoId, examenId }">Actualizar importación</a>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
+
+  <section class="filter-bar" aria-labelledby="filters-title">
+    <div class="filter-bar__title"><h2 id="filters-title">Filtrar listado</h2><span>{{ filtered().length }} de {{ items().length }}</span></div>
+    <label class="field"><span>Nombre o documento</span><input type="search" placeholder="Buscar…" [value]="text()" (input)="text.set($any($event.target).value)"></label>
+    <label class="field"><span>Centro</span><select [value]="centro()" (change)="onCentro($any($event.target).value)"><option value="">Todos</option>@for (item of centros(); track item) { <option [value]="item">{{ item }}</option> }</select></label>
+    <label class="field"><span>Aula</span><select [value]="aula()" (change)="aula.set($any($event.target).value)"><option value="">Todas</option>@for (item of aulas(); track item) { <option [value]="item">{{ item }}</option> }</select></label>
+    <label class="field"><span>Asistencia</span><select [value]="estado()" (change)="estado.set($any($event.target).value)"><option value="">Todos</option><option value="SIN_REGISTRAR">Sin registrar</option><option value="PRESENTE">Presente</option><option value="AUSENTE">Ausente</option></select></label>
+    <button class="button button--link" type="button" (click)="clearFilters()">Limpiar filtros</button>
+  </section>
+
+  @if (loading()) { <p class="loading-message">Cargando personas convocadas…</p> }
+  @else {
+    <div class="table-wrap">
+      <table class="admin-table convocados-table">
+        <thead><tr><th>Orden</th><th>Persona</th><th>Documento</th><th>Centro y aula</th><th>Asistencia</th><th>Acciones</th></tr></thead>
+        <tbody>
+          @for (item of filtered(); track item.id) {
+            <tr>
+              <td data-label="Orden"><strong>{{ item.ordenAula }}</strong></td>
+              <td data-label="Persona">{{ item.persona.nombreCompleto }}</td>
+              <td data-label="Documento"><span class="masked-value" [attr.aria-label]="'Documento enmascarado ' + maskedDocument(item.persona.documentoIdentidad)">{{ maskedDocument(item.persona.documentoIdentidad) }}</span></td>
+              <td data-label="Centro y aula"><strong>{{ item.centroNombre || "Centro sin informar" }}</strong><br><span>{{ item.aulaNombre || "Aula sin informar" }}</span></td>
+              <td data-label="Asistencia"><span class="attendance attendance--{{ item.estadoAsistencia.toLowerCase() }}">{{ stateLabel(item.estadoAsistencia) }}</span></td>
+              <td data-label="Acciones"><a class="text-link" [routerLink]="['/admin/examenes-aula', item.examenAulaId, 'asistencia']">Controlar aula</a></td>
+            </tr>
+          } @empty { <tr><td colspan="6"><div class="empty-state"><strong>No hay resultados.</strong><span>Prueba a limpiar los filtros o realiza una importación para este ejercicio.</span></div></td></tr> }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,14 @@
+:host { display: block; }
+.location-browser { background: #fff; border: 1px solid var(--jda-neutral-border); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); min-height: 32rem; }
+.location-browser > section { min-width: 0; padding: 1rem; }
+.location-browser > section + section { border-left: 1px solid var(--jda-neutral-border); }
+.location-heading { align-items: center; border-bottom: 1px solid #e5e8e6; display: flex; gap: .65rem; margin-bottom: .75rem; padding-bottom: .75rem; }
+.location-heading > span { align-items: center; background: var(--jda-primary-dark); border-radius: 50%; color: #fff; display: flex; font-weight: 800; height: 2rem; justify-content: center; width: 2rem; }
+.location-heading small { color: var(--jda-neutral-mid); }
+.location-list { display: grid; gap: .35rem; max-height: 27rem; overflow: auto; }
+.location-list button, .location-list--aulas > div { align-items: center; background: #fff; border: 1px solid transparent; border-bottom-color: #e7e9e8; display: flex; justify-content: space-between; gap: .5rem; padding: .7rem; text-align: left; width: 100%; }
+.location-list button { cursor: pointer; }
+.location-list button:hover { background: #f5f8f6; }
+.location-list button.is-selected { background: #eaf4ed; border-color: var(--jda-primary); color: var(--jda-primary-dark); font-weight: 700; }
+.location-list small { color: var(--jda-neutral-mid); }
+@media (max-width: 820px) { .location-browser { grid-template-columns: 1fr; } .location-browser > section + section { border-left: 0; border-top: 1px solid var(--jda-neutral-border); } .location-list { max-height: 18rem; } }

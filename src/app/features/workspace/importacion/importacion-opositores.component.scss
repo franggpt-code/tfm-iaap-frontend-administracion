@@ -1,0 +1,32 @@
+:host { display: block; }
+
+.upload-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.upload-box { background: #fafbfa; border: 1px dashed #7f9187; border-radius: 6px; cursor: pointer; display: grid; gap: .45rem; padding: 1rem; }
+.upload-box:hover { border-color: var(--jda-primary); background: #f5faf7; }
+.upload-box--selected { border-style: solid; border-color: var(--jda-primary); background: #f2f8f4; }
+.upload-box input { margin-top: .4rem; max-width: 100%; }
+.upload-box__tag { color: var(--jda-primary-dark); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
+.upload-box__tag--optional { color: var(--jda-neutral-mid); }
+.file-name { color: var(--jda-neutral-mid); font-size: .875rem; overflow-wrap: anywhere; }
+.privacy-note { color: var(--jda-neutral-mid); margin: 1rem 0 0; }
+
+.simulation { margin-top: 2rem; }
+.metric-groups { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.metric-group { background: #fff; border: 1px solid var(--jda-neutral-border); border-top: 3px solid var(--jda-primary); padding: 1rem; }
+.metric-group h3 { margin-bottom: .75rem; }
+.metric-group dl { display: grid; gap: .45rem; margin: 0; }
+.metric-group dl div { align-items: baseline; border-bottom: 1px solid #ecefec; display: flex; justify-content: space-between; padding-bottom: .4rem; }
+.metric-group dt { color: var(--jda-neutral-mid); }
+.metric-group dd { font-size: 1.15rem; font-weight: 800; margin: 0; }
+.warnings-panel { margin-top: 1.25rem; }
+.warnings-panel h3 span { background: #e9efeb; border-radius: 999px; font-size: .8rem; padding: .15rem .5rem; }
+
+.confirmation-dialog { border: 0; border-radius: 8px; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%); max-width: 34rem; padding: 1.5rem; width: calc(100% - 2rem); }
+.confirmation-dialog::backdrop { background: rgb(3 55 19 / 55%); }
+.confirmation-dialog h2 { margin-bottom: .75rem; }
+.dialog-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+@media (max-width: 760px) {
+  .upload-grid, .metric-groups { grid-template-columns: 1fr; }
+  .dialog-actions { flex-direction: column-reverse; }
+}

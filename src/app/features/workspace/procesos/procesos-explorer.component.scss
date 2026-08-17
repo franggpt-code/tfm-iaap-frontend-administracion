@@ -1,0 +1,22 @@
+:host { display: block; }
+.explorer-layout { display: grid; gap: 1rem; grid-template-columns: minmax(18rem, .8fr) minmax(0, 1.4fr); }
+.explorer-panel { background: #fff; border: 1px solid var(--jda-neutral-border); min-height: 32rem; padding: 1rem; }
+.panel-heading { border-bottom: 1px solid #e6e9e7; margin-bottom: 1rem; padding-bottom: .75rem; }
+.panel-heading > div { align-items: baseline; display: flex; flex-wrap: wrap; gap: .5rem; }
+.panel-heading p { color: var(--jda-neutral-mid); flex-basis: 100%; margin: 0; }
+.panel-count { align-items: center; background: var(--jda-primary-dark); border-radius: 50%; color: #fff; display: inline-flex; font-weight: 800; height: 2rem; justify-content: center; min-width: 2rem; padding: 0 .35rem; }
+.selection-list { display: grid; gap: .4rem; margin-top: .75rem; }
+.selection-list button { align-items: center; background: #fff; border: 1px solid transparent; border-bottom-color: #e5e8e6; cursor: pointer; display: flex; gap: .75rem; justify-content: space-between; padding: .8rem; text-align: left; width: 100%; }
+.selection-list button:hover { background: #f5f8f6; }
+.selection-list button.is-selected { background: #edf6f0; border-color: var(--jda-primary); box-shadow: inset 4px 0 0 var(--jda-primary); }
+.selection-list button > span:first-child { display: grid; gap: .15rem; }
+.selection-list small { color: var(--jda-neutral-mid); }
+.exam-list { display: grid; gap: .75rem; }
+.exam-list article { align-items: center; border: 1px solid var(--jda-neutral-border); border-left: 4px solid var(--jda-primary); display: grid; gap: 1rem; grid-template-columns: auto minmax(0, 1fr) auto; padding: 1rem; }
+.exam-number { align-items: center; background: #eaf4ed; color: var(--jda-primary-dark); display: flex; font-size: 1.3rem; font-weight: 800; height: 2.75rem; justify-content: center; width: 2.75rem; }
+.exam-copy p, .exam-copy small { color: var(--jda-neutral-mid); margin: .2rem 0 0; }
+.exam-actions { display: flex; gap: .5rem; }
+.empty-state--large { align-content: center; display: grid; gap: .4rem; min-height: 24rem; }
+.empty-state__index { color: #c4d2c8; font-size: 3rem; font-weight: 800; }
+@media (max-width: 900px) { .explorer-layout { grid-template-columns: 1fr; } .explorer-panel { min-height: 0; } }
+@media (max-width: 620px) { .exam-list article { align-items: start; grid-template-columns: auto 1fr; } .exam-actions { grid-column: 1 / -1; flex-direction: column; } }

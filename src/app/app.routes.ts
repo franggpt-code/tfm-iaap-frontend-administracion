@@ -1,31 +1,22 @@
 import { Routes } from "@angular/router";
-import { adminGuard, adminRoleGuard } from "./core/admin.guard";
-import { AsignacionesComponent } from "./features/admin/asignaciones/asignaciones.component";
-import { ColaboradoresComponent } from "./features/admin/colaboradores/colaboradores.component";
-import { ControlComponent } from "./features/admin/control/control.component";
-import { DatosMaestrosComponent } from "./features/admin/datos-maestros/datos-maestros.component";
-import { FirmasComponent } from "./features/admin/firmas/firmas.component";
-import { ImportacionesComponent } from "./features/admin/importaciones/importaciones.component";
-import { AdminDashboardComponent } from "./features/admin/admin-dashboard.component";
-import { PagosComponent } from "./features/admin/pagos/pagos.component";
-import { ProcesosComponent } from "./features/admin/procesos/procesos.component";
-import { UsuariosComponent } from "./features/admin/usuarios/usuarios.component";
+import { adminGuard } from "./core/admin.guard";
 import { LoginComponent } from "./features/login/login.component";
+import { AsistenciaComponent } from "./features/workspace/asistencia/asistencia.component";
+import { ConvocadosComponent } from "./features/workspace/convocados/convocados.component";
+import { DashboardComponent } from "./features/workspace/dashboard/dashboard.component";
+import { ImportacionOpositoresComponent } from "./features/workspace/importacion/importacion-opositores.component";
+import { ProcesosExplorerComponent } from "./features/workspace/procesos/procesos-explorer.component";
+import { UbicacionesComponent } from "./features/workspace/ubicaciones/ubicaciones.component";
 
 export const routes: Routes = [
   { path: "", redirectTo: "login", pathMatch: "full" },
   { path: "login", component: LoginComponent },
-  { path: "admin", component: AdminDashboardComponent, canActivate: [adminGuard] },
-  { path: "admin/usuarios", component: UsuariosComponent, canActivate: [adminRoleGuard] },
-  { path: "admin/colaboradores", component: ColaboradoresComponent, canActivate: [adminGuard] },
-  { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminGuard] },
-  { path: "admin/datos-maestros/:catalogo", component: DatosMaestrosComponent, canActivate: [adminGuard] },
-  { path: "admin/procesos", component: ProcesosComponent, canActivate: [adminGuard] },
-  { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminGuard] },
-  { path: "admin/perfiles", redirectTo: "admin/datos-maestros/perfiles", pathMatch: "full" },
-  { path: "admin/asignaciones", component: AsignacionesComponent, canActivate: [adminGuard] },
-  { path: "admin/control", component: ControlComponent, canActivate: [adminGuard] },
-  { path: "admin/firmas", component: FirmasComponent, canActivate: [adminGuard] },
-  { path: "admin/pagos", component: PagosComponent, canActivate: [adminGuard] },
+  { path: "admin", component: DashboardComponent, canActivate: [adminGuard] },
+  { path: "admin/importaciones", redirectTo: "admin/importaciones/opositores-aulas", pathMatch: "full" },
+  { path: "admin/importaciones/opositores-aulas", component: ImportacionOpositoresComponent, canActivate: [adminGuard] },
+  { path: "admin/procesos", component: ProcesosExplorerComponent, canActivate: [adminGuard] },
+  { path: "admin/procesos-selectivos/:procesoId/examenes/:examenId/convocados", component: ConvocadosComponent, canActivate: [adminGuard] },
+  { path: "admin/examenes-aula/:examenAulaId/asistencia", component: AsistenciaComponent, canActivate: [adminGuard] },
+  { path: "admin/ubicaciones", component: UbicacionesComponent, canActivate: [adminGuard] },
   { path: "**", redirectTo: "admin" },
 ];

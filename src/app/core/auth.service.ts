@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { computed, inject, Injectable, signal } from "@angular/core";
 import { catchError, Observable, tap, throwError } from "rxjs";
 import { environment } from "../../environments/environment";
-import { AuthenticatedUser, LoginRequest, LoginResponse } from "./api.models";
+import { AuthenticatedUser, LoginRequest, LoginResponse } from "../api/sicol.types";
 
 interface StoredSession {
   token: string;

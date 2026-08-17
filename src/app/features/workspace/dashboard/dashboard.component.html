@@ -1,0 +1,48 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan"><span>Inicio</span></nav>
+
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Espacio de gestión</p>
+      <h1>Convocados y aulas</h1>
+      <p>Importa los listados de un ejercicio, revisa el resultado y consulta la distribución por centros y aulas.</p>
+    </div>
+    <a class="button button--primary" routerLink="/admin/importaciones/opositores-aulas">Nueva importación</a>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert">{{ error() }}</div>
+  }
+
+  <section class="summary-strip" aria-label="Resumen de datos">
+    <div><strong>{{ loading() ? "—" : procesos() }}</strong><span>Procesos disponibles</span></div>
+    <div><strong>{{ loading() ? "—" : provincias() }}</strong><span>Provincias registradas</span></div>
+    <div><strong>3</strong><span>Estados de asistencia</span></div>
+  </section>
+
+  <section aria-labelledby="acciones-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Tareas frecuentes</p>
+        <h2 id="acciones-title">¿Qué necesitas hacer?</h2>
+      </div>
+    </div>
+    <div class="action-grid">
+      <a class="action-card action-card--primary" routerLink="/admin/importaciones/opositores-aulas">
+        <span class="action-card__number">01</span>
+        <strong>Importar convocados</strong>
+        <span>Simula y confirma los ficheros SIRHUS y Caronte de un ejercicio.</span>
+      </a>
+      <a class="action-card" routerLink="/admin/procesos">
+        <span class="action-card__number">02</span>
+        <strong>Consultar ejercicios</strong>
+        <span>Selecciona un proceso y abre el listado de personas convocadas.</span>
+      </a>
+      <a class="action-card" routerLink="/admin/ubicaciones">
+        <span class="action-card__number">03</span>
+        <strong>Explorar ubicaciones</strong>
+        <span>Revisa provincias, centros y aulas creados por las importaciones.</span>
+      </a>
+    </div>
+  </section>
+</div>
