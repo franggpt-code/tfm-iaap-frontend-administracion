@@ -80,3 +80,11 @@ de forma explícita.
 - No integrar `deploy/sites` en `main`.
 - No incorporar una feature a `origin/main` antes de que su MR esté integrada
   en GitLab.
+
+## Actualizaciones automáticas
+
+Las ramas creadas por Dependabot se revisan e integran también mediante MR en
+GitLab. Antes de fusionarlas se debe regenerar el bloqueo de dependencias cuando
+varias actualizaciones relacionadas coincidan y validar, como mínimo, la
+compilación de producción. GitHub recibe esas actualizaciones únicamente al
+replicar el `main` ya integrado de GitLab.
