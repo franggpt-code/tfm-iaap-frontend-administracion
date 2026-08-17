@@ -1,0 +1,35 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Ubicaciones</span></nav>
+  <header class="page-heading"><div><p class="eyebrow">Datos importados</p><h1>Provincias, centros y aulas</h1><p>Consulta la jerarquía de ubicaciones normalizada por el importador. En esta fase no se editan manualmente.</p></div></header>
+  @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
+
+  <div class="location-browser">
+    <section aria-labelledby="provincias-title">
+      <div class="location-heading"><span>1</span><div><h2 id="provincias-title">Provincia</h2><small>{{ provincias().length }} disponibles</small></div></div>
+      @if (loading()) { <p class="loading-message">Cargando provincias…</p> }
+      <div class="location-list">
+        @for (item of provincias(); track item.id) {
+          <button type="button" [class.is-selected]="provincia()?.id === item.id" [attr.aria-pressed]="provincia()?.id === item.id" (click)="selectProvincia(item)"><span>{{ item.nombre }}</span><small>{{ item.codigo || "—" }}</small></button>
+        }
+      </div>
+    </section>
+
+    <section aria-labelledby="centros-title">
+      <div class="location-heading"><span>2</span><div><h2 id="centros-title">Centro</h2><small>{{ provincia()?.nombre || "Selecciona provincia" }}</small></div></div>
+      <div class="location-list">
+        @for (item of centros(); track item.id) {
+          <button type="button" [class.is-selected]="centro()?.id === item.id" [attr.aria-pressed]="centro()?.id === item.id" (click)="selectCentro(item)"><span>{{ item.nombre }}</span><small>{{ item.activo ? "Activo" : "Inactivo" }}</small></button>
+        } @empty { @if (!loadingChildren()) { <p class="empty-state">{{ provincia() ? "No hay centros en esta provincia." : "Elige una provincia para ver sus centros." }}</p> } }
+      </div>
+    </section>
+
+    <section aria-labelledby="aulas-title">
+      <div class="location-heading"><span>3</span><div><h2 id="aulas-title">Aula</h2><small>{{ centro()?.nombre || "Selecciona centro" }}</small></div></div>
+      <div class="location-list location-list--aulas">
+        @for (item of aulas(); track item.id) {
+          <div><strong>{{ item.nombre }}</strong><span class="status-chip" [class.status-chip--muted]="!item.activo">{{ item.activo ? "Activa" : "Inactiva" }}</span></div>
+        } @empty { @if (!loadingChildren()) { <p class="empty-state">{{ centro() ? "No hay aulas en este centro." : "Elige un centro para ver sus aulas." }}</p> } }
+      </div>
+    </section>
+  </div>
+</div>

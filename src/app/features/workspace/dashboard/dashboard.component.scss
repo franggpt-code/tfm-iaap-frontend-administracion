@@ -1,0 +1,27 @@
+:host { display: block; }
+
+.summary-strip {
+  background: #033713;
+  border-radius: 8px;
+  box-shadow: var(--jda-shadow-md);
+  color: #fff;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 1.5rem 0 2rem;
+  overflow: hidden;
+}
+
+.summary-strip div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 1.15rem 1.25rem;
+}
+
+.summary-strip div + div { border-left: 1px solid rgb(255 255 255 / 24%); }
+.summary-strip strong { font-size: 1.75rem; }
+.summary-strip span { color: #dce9e1; }
+
+@media (max-width: 680px) {
+  .summary-strip { grid-template-columns: 1fr; }
+  .summary-strip div + div { border-left: 0; border-top: 1px solid rgb(255 255 255 / 24%); }
+}

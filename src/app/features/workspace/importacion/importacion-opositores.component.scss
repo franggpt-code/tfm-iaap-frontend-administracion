@@ -1,0 +1,34 @@
+:host { display: block; }
+
+.upload-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.upload-box { background: var(--jda-surface-muted); border: 1px dashed #718279; border-radius: 8px; cursor: pointer; display: grid; gap: .5rem; min-height: 11.5rem; padding: 1.25rem; transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease; }
+.upload-box:hover, .upload-box:focus-within { border-color: var(--jda-primary); background: #f2f8f4; box-shadow: 0 0 0 3px rgb(0 115 62 / 9%); }
+.upload-box--selected { border-style: solid; border-color: var(--jda-primary); background: #f2f8f4; }
+.upload-box input { color: var(--jda-text-subtle); margin-top: auto; max-width: 100%; }
+.upload-box input::file-selector-button { background: #fff; border: 1px solid var(--jda-primary); border-radius: 4px; color: var(--jda-primary); cursor: pointer; font: inherit; font-weight: 700; margin-right: .6rem; min-height: 36px; padding: .35rem .65rem; }
+.upload-box strong { font-size: 1.05rem; }
+.upload-box__tag { color: var(--jda-primary-dark); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
+.upload-box__tag--optional { color: var(--jda-neutral-mid); }
+.file-name { color: var(--jda-neutral-mid); font-size: .875rem; overflow-wrap: anywhere; }
+.privacy-note { color: var(--jda-neutral-mid); margin: 1rem 0 0; }
+
+.simulation { margin-top: 2rem; }
+.metric-groups { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.metric-group { background: #fff; border: 1px solid var(--jda-neutral-border); border-radius: 8px; border-top: 3px solid var(--jda-primary); box-shadow: var(--jda-shadow-sm); padding: 1.15rem; }
+.metric-group h3 { margin-bottom: .75rem; }
+.metric-group dl { display: grid; gap: .45rem; margin: 0; }
+.metric-group dl div { align-items: baseline; border-bottom: 1px solid #ecefec; display: flex; justify-content: space-between; padding-bottom: .4rem; }
+.metric-group dt { color: var(--jda-neutral-mid); }
+.metric-group dd { font-size: 1.15rem; font-variant-numeric: tabular-nums; font-weight: 800; margin: 0; }
+.warnings-panel { margin-top: 1.25rem; }
+.warnings-panel h3 span { background: #e9efeb; border-radius: 999px; font-size: .8rem; padding: .15rem .5rem; }
+
+.confirmation-dialog { border: 0; border-radius: 8px; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%); max-width: 34rem; padding: 1.5rem; width: calc(100% - 2rem); }
+.confirmation-dialog::backdrop { background: rgb(3 55 19 / 55%); }
+.confirmation-dialog h2 { margin-bottom: .75rem; }
+.dialog-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+@media (max-width: 760px) {
+  .upload-grid, .metric-groups { grid-template-columns: 1fr; }
+  .dialog-actions { flex-direction: column-reverse; }
+}

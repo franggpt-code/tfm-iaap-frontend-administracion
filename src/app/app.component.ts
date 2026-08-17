@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from "@angular/core";
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { AuthService } from "./core/auth.service";
+import packageInfo from "../../package.json";
 
 @Component({
   selector: "app-root",
@@ -14,8 +15,8 @@ export class AppComponent {
 
   readonly user = this.auth.user;
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
-  readonly isAdmin = computed(() => this.user()?.roles?.includes("ADMIN") ?? false);
   readonly menuOpen = signal(false);
+  readonly appVersion = packageInfo.version;
 
   toggleMenu(): void {
     this.menuOpen.update((open) => !open);
