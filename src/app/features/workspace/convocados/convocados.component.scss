@@ -1,4 +1,5 @@
 :host { display: block; }
+.convocados-table tbody tr:hover { box-shadow: inset 3px 0 0 var(--jda-primary); }
 .convocados-table td:first-child { font-size: 1.1rem; text-align: center; width: 5rem; }
 .masked-value { background: #f0f2f1; font-family: ui-monospace, monospace; padding: .2rem .45rem; }
 .attendance { border: 1px solid currentColor; border-radius: 999px; display: inline-flex; font-size: .82rem; font-weight: 800; padding: .2rem .55rem; white-space: nowrap; }

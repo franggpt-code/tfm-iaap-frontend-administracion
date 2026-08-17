@@ -2,10 +2,13 @@
 
 .summary-strip {
   background: #033713;
+  border-radius: 8px;
+  box-shadow: var(--jda-shadow-md);
   color: #fff;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   margin: 1.5rem 0 2rem;
+  overflow: hidden;
 }
 
 .summary-strip div {

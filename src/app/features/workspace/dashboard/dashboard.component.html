@@ -1,13 +1,11 @@
 <div class="page-shell">
-  <nav class="breadcrumb" aria-label="Migas de pan"><span>Inicio</span></nav>
-
   <header class="page-heading">
     <div>
       <p class="eyebrow">Espacio de gestión</p>
       <h1>Convocados y aulas</h1>
       <p>Importa los listados de un ejercicio, revisa el resultado y consulta la distribución por centros y aulas.</p>
     </div>
-    <a class="button button--primary" routerLink="/admin/importaciones/opositores-aulas">Nueva importación</a>
+    <a class="button button--primary" routerLink="/admin/importaciones">Nueva importación</a>
   </header>
 
   @if (error()) {
@@ -28,10 +26,10 @@
       </div>
     </div>
     <div class="action-grid">
-      <a class="action-card action-card--primary" routerLink="/admin/importaciones/opositores-aulas">
+      <a class="action-card action-card--primary" routerLink="/admin/importaciones">
         <span class="action-card__number">01</span>
-        <strong>Importar convocados</strong>
-        <span>Simula y confirma los ficheros SIRHUS y Caronte de un ejercicio.</span>
+        <strong>Importar datos</strong>
+        <span>Importa convocatorias o la distribución de personas convocadas por aula.</span>
       </a>
       <a class="action-card" routerLink="/admin/procesos">
         <span class="action-card__number">02</span>

@@ -1,0 +1,10 @@
+:host { display: block; }
+.import-options { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.import-option { background: #fff; border: 1px solid var(--jda-neutral-border); border-radius: 8px; box-shadow: var(--jda-shadow-sm); color: var(--jda-neutral-dark); display: grid; gap: 1.25rem; min-height: 20rem; padding: 1.5rem; text-decoration: none; transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+.import-option:hover, .import-option:focus { border-color: var(--jda-primary); box-shadow: var(--jda-shadow-md); color: var(--jda-neutral-dark); transform: translateY(-2px); }
+.import-option--primary { border-top: 4px solid var(--jda-primary); }
+.import-option__step { color: #7a8a80; font-size: .78rem; font-weight: 800; }
+.import-option h2 { margin-bottom: .65rem; }
+.import-option p:not(.eyebrow) { color: var(--jda-text-subtle); margin: 0; }
+.import-option__action { align-self: end; color: var(--jda-primary); font-weight: 800; }
+@media (max-width: 720px) { .import-options { grid-template-columns: 1fr; } .import-option { min-height: 15rem; } }

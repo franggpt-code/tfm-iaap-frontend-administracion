@@ -1,0 +1,76 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Datos maestros</span></nav>
+
+  <header class="page-heading">
+    <div><p class="eyebrow">Configuración funcional</p><h1>Datos maestros</h1><p>Gestiona los catálogos utilizados por los procesos selectivos. Los registros en uso pueden estar protegidos frente a su eliminación.</p></div>
+    <button class="button button--primary" type="button" (click)="startCreate()">Añadir {{ config().singular }}</button>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+
+  <div class="catalog-tabs" role="tablist" aria-label="Catálogos disponibles">
+    @for (key of catalogKeys; track key) {
+      <button type="button" role="tab" [attr.aria-selected]="activeCatalog() === key" [class.is-active]="activeCatalog() === key" (click)="selectCatalog(key)">{{ catalogs[key].label }}</button>
+    }
+  </div>
+
+  <section class="catalog-toolbar" aria-labelledby="catalog-title">
+    <div><h2 id="catalog-title">{{ config().label }}</h2><p>{{ config().description }}</p></div>
+    <label class="search-field"><span>Buscar</span><input type="search" placeholder="Código o descripción" [value]="search()" (input)="search.set($any($event.target).value)"></label>
+  </section>
+
+  <div class="master-layout" [class.master-layout--editing]="formOpen()">
+    <section class="master-list" aria-label="Listado del catálogo">
+      @if (loading()) { <p class="loading-message">Cargando datos maestros…</p> }
+      @else {
+        <div class="master-table-wrap">
+          <table class="admin-table master-table">
+            <thead><tr><th>{{ activeCatalog() === "oep" ? "Año" : "Código" }}</th><th>Descripción</th><th>{{ activeCatalog() === "oep" ? "Referencia BOJA" : activeCatalog() === "cuerpos" ? "Grupo" : "Tipo" }}</th><th>Acciones</th></tr></thead>
+            <tbody>
+              @for (item of filteredItems(); track itemCode(item)) {
+                <tr>
+                  <td data-label="Código"><strong>{{ itemCode(item) }}</strong></td>
+                  <td data-label="Descripción">{{ itemDescription(item) }}</td>
+                  <td data-label="Información">{{ itemMeta(item) }}</td>
+                  <td data-label="Acciones"><div class="row-actions"><button class="button button--link" type="button" (click)="startEdit(item)">Editar</button><button class="button button--link danger-link" type="button" (click)="askDelete(item)">Eliminar</button></div></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4"><div class="empty-state"><strong>No hay registros.</strong><span>{{ search() ? "Prueba con otra búsqueda." : "Añade el primer registro de este catálogo." }}</span></div></td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (formOpen()) {
+      <aside class="master-form-panel" aria-labelledby="master-form-title">
+        <div class="panel-heading"><div><p class="eyebrow">{{ editingId() === null ? "Nuevo registro" : "Edición" }}</p><h2 id="master-form-title">{{ editingId() === null ? "Añadir" : "Editar" }} {{ config().singular }}</h2></div></div>
+        <p class="required-note">* Campos obligatorios</p>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+          @if (activeCatalog() === "oep") {
+            <div class="field"><label for="master-anio">Año *</label><input id="master-anio" type="number" min="1900" max="2200" formControlName="anio" [attr.aria-invalid]="!!fieldErrors()['anio']">@if (fieldErrors()["anio"]) { <span class="field-error">{{ fieldErrors()["anio"] }}</span> }</div>
+            <div class="field"><label for="master-oep-descripcion">Descripción (opcional)</label><input id="master-oep-descripcion" type="text" maxlength="255" formControlName="descripcion"></div>
+            <div class="field"><label for="master-boja">Referencia BOJA (opcional)</label><input id="master-boja" type="text" maxlength="255" formControlName="bojaRef"></div>
+          } @else {
+            <div class="field"><label for="master-codigo">Código *</label><input id="master-codigo" type="text" maxlength="64" formControlName="codigo" [attr.aria-invalid]="!!fieldErrors()['codigo']">@if (fieldErrors()["codigo"]) { <span class="field-error">{{ fieldErrors()["codigo"] }}</span> }</div>
+            <div class="field"><label for="master-descripcion">Descripción *</label><textarea id="master-descripcion" rows="3" maxlength="500" formControlName="descripcion" [attr.aria-invalid]="!!fieldErrors()['descripcion']"></textarea>@if (fieldErrors()["descripcion"]) { <span class="field-error">{{ fieldErrors()["descripcion"] }}</span> }</div>
+            @if (activeCatalog() === "cuerpos") { <div class="field"><label for="master-grupo">Grupo *</label><input id="master-grupo" type="text" maxlength="16" formControlName="grupo" placeholder="Ej. C1" [attr.aria-invalid]="!!fieldErrors()['grupo']">@if (fieldErrors()["grupo"]) { <span class="field-error">{{ fieldErrors()["grupo"] }}</span> }</div> }
+          }
+          <div class="form-actions"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="cancelForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()" [attr.aria-busy]="saving()">{{ saving() ? "Guardando…" : "Guardar" }}</button></div>
+        </form>
+      </aside>
+    }
+  </div>
+</div>
+
+<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación necesaria</p>
+    <h2 id="delete-title">¿Eliminar este registro?</h2>
+    @if (deleteTarget(); as target) { <p>Se eliminará <strong>{{ itemCode(target.item) }}</strong> · {{ itemDescription(target.item) }}.</p> }
+    <p>Si está siendo utilizado por un proceso, el backend impedirá la eliminación.</p>
+    <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">Cancelar</button><button class="button button--danger" type="button" [disabled]="deleting()" [attr.aria-busy]="deleting()" (click)="confirmDelete()">{{ deleting() ? "Eliminando…" : "Eliminar" }}</button></div>
+  </form>
+</dialog>

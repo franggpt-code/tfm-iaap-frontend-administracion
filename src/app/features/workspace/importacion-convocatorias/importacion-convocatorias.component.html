@@ -1,0 +1,60 @@
+<div class="page-shell page-shell--narrow">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><a routerLink="/admin/importaciones">Importaciones</a><span aria-hidden="true">/</span><span>Convocatorias</span></nav>
+
+  <header class="page-heading">
+    <div><p class="eyebrow">Datamart de seguimiento</p><h1>Importar convocatorias</h1><p>Revisa primero una simulación del informe `.xls`. No se guardará ningún cambio hasta que confirmes el resultado.</p></div>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (confirmed(); as result) {
+    <div class="alert alert--success" role="status"><strong>Importación completada.</strong> Se han procesado {{ result.filasLeidas }} filas. @if (result.importacionId) { Identificador: <code>{{ result.importacionId }}</code>. } <a routerLink="/admin/procesos">Consultar procesos y ejercicios</a></div>
+  }
+
+  <section class="form-card" aria-labelledby="file-title">
+    <div class="section-heading section-heading--compact">
+      <div><span class="step-badge">1</span><h2 id="file-title">Selecciona el informe</h2></div>
+      <span class="required-note">* Campo obligatorio</span>
+    </div>
+
+    <label class="datamart-upload" [class.datamart-upload--selected]="fichero()">
+      <span class="upload-box__tag">Fichero Datamart</span>
+      <strong>Seguimiento de convocatorias (.xls)</strong>
+      <span>Utiliza el informe original exportado desde el Datamart del IAAP.</span>
+      <input type="file" accept=".xls,application/vnd.ms-excel" [disabled]="simulating() || confirming()" (change)="onFile($event)">
+      <span class="file-name">{{ fichero()?.name || "Ningún fichero seleccionado" }}</span>
+    </label>
+    @if (fileError()) { <p class="field-error" role="alert">{{ fileError() }}</p> }
+    <p class="privacy-note">El fichero se envía al backend únicamente al simular o confirmar la importación.</p>
+  </section>
+
+  <div class="sticky-actions">
+    <span>{{ simulation() ? "Simulación vigente y lista para confirmar." : "La simulación analiza el fichero sin escribir datos." }}</span>
+    <div><button class="button button--secondary" type="button" [disabled]="!canSimulate()" [attr.aria-busy]="simulating()" (click)="simulate()">{{ simulating() ? "Simulando…" : simulation() ? "Repetir simulación" : "Simular importación" }}</button><button class="button button--primary" type="button" [disabled]="!simulation() || confirming()" (click)="openConfirmation()">Confirmar importación</button></div>
+  </div>
+
+  @if (simulation(); as result) {
+    <section class="simulation" aria-labelledby="simulation-title">
+      <div class="section-heading"><div><p class="eyebrow">Resultado provisional</p><h2 id="simulation-title">Revisa antes de confirmar</h2></div><span class="status-chip status-chip--info">Sin cambios guardados</span></div>
+
+      <div class="metric-groups">
+        <div class="metric-group"><h3>Fichero</h3><dl><div><dt>Filas leídas</dt><dd>{{ result.filasLeidas }}</dd></div><div><dt>Filas originales</dt><dd>{{ result.filasRawGuardadas }}</dd></div><div><dt>OEP asociadas</dt><dd>{{ result.oepAsociadas }}</dd></div></dl></div>
+        <div class="metric-group"><h3>Procesos selectivos</h3><dl><div><dt>Nuevos</dt><dd>{{ result.procesosCreados }}</dd></div><div><dt>Actualizados</dt><dd>{{ result.procesosActualizados }}</dd></div></dl></div>
+        <div class="metric-group"><h3>Ejercicios y pruebas</h3><dl><div><dt>Ejercicios nuevos</dt><dd>{{ result.examenesCreados }}</dd></div><div><dt>Ejercicios actualizados</dt><dd>{{ result.examenesActualizados }}</dd></div><div><dt>Pruebas nuevas</dt><dd>{{ result.pruebasCreadas }}</dd></div><div><dt>Pruebas actualizadas</dt><dd>{{ result.pruebasActualizadas }}</dd></div></dl></div>
+      </div>
+
+      <div class="warnings-panel"><h3>Avisos de revisión <span>{{ result.avisos.length }}</span></h3><p class="warnings-help">La fila indica la posición original en el XLS. El aviso identifica el valor leído y el dato maestro que se intentó localizar.</p>
+        @if (result.avisos.length === 0) { <div class="empty-state"><strong>No se han detectado avisos.</strong><span>La simulación puede confirmarse.</span></div> }
+        @else { <div class="table-wrap"><table class="admin-table"><thead><tr><th>Fila del XLS</th><th>Campo</th><th>Detalle para revisar</th></tr></thead><tbody>@for (aviso of result.avisos; track $index) { <tr><td data-label="Fila del XLS"><strong>{{ aviso.fila }}</strong></td><td data-label="Campo"><span class="status-chip">{{ aviso.campo }}</span></td><td data-label="Detalle para revisar">{{ aviso.mensaje }}</td></tr> }</tbody></table></div> }
+      </div>
+    </section>
+  }
+</div>
+
+<dialog #confirmationDialog class="confirmation-dialog" aria-labelledby="confirmation-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación necesaria</p><h2 id="confirmation-title">¿Guardar esta importación?</h2>
+    @if (simulation(); as result) { <p>Se procesarán <strong>{{ result.filasLeidas }} filas</strong> y se crearán o actualizarán procesos selectivos, OEP, ejercicios y pruebas.</p> }
+    <p>Se reutilizará el mismo fichero validado en la simulación.</p>
+    <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="confirming()" (click)="closeConfirmation()">Cancelar</button><button class="button button--primary" type="button" [disabled]="confirming()" [attr.aria-busy]="confirming()" (click)="confirm()">{{ confirming() ? "Guardando…" : "Confirmar y guardar" }}</button></div>
+  </form>
+</dialog>

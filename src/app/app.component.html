@@ -1,6 +1,6 @@
 <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 <header class="app-header" role="banner">
-  <div class="app-header__utility"><div class="app-header__inner"><span>Junta de Andalucía · Instituto Andaluz de Administración Pública</span>@if (isAuthenticated()) { <span class="connected-user">{{ user()?.nombreCompleto || user()?.login }}</span> }</div></div>
+  <div class="app-header__utility"><div class="app-header__inner"><span>Junta de Andalucía · Instituto Andaluz de Administración Pública</span><span class="header-meta"><span class="version-badge" title="Versión del frontend">Frontend {{ appVersion }}</span>@if (isAuthenticated()) { <span class="connected-user">{{ user()?.nombreCompleto || user()?.login }}</span> }</span></div></div>
   <div class="app-header__main"><div class="app-header__inner app-header__main-inner">
     <a class="product-brand" routerLink="/admin" (click)="closeMenu()"><span class="product-brand__mark" aria-hidden="true">S</span><span><strong>SICOL</strong><small>Gestión de convocados</small></span></a>
     @if (isAuthenticated()) {
@@ -8,9 +8,10 @@
       <div class="navigation-shell" [class.is-open]="menuOpen()">
         <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
           <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page" (click)="closeMenu()">Inicio</a>
-          <a routerLink="/admin/importaciones/opositores-aulas" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Importar</a>
+          <a routerLink="/admin/importaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Importaciones</a>
           <a routerLink="/admin/procesos" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Procesos y ejercicios</a>
           <a routerLink="/admin/ubicaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Ubicaciones</a>
+          <a routerLink="/admin/datos-maestros" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Datos maestros</a>
         </nav>
         <button class="logout-button" type="button" (click)="logout()">Cerrar sesión</button>
       </div>

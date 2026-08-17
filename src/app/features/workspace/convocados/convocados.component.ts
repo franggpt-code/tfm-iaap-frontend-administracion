@@ -30,7 +30,7 @@ export class ConvocadosComponent implements OnInit {
   readonly filtered = computed(() => {
     const term = this.text().trim().toLocaleLowerCase("es");
     return this.items().filter((item) => {
-      const matchesText = !term || `${item.persona.nombreCompleto} ${item.persona.documentoIdentidad}`.toLocaleLowerCase("es").includes(term);
+      const matchesText = !term || `${this.displayName(item)} ${item.persona.documentoIdentidad}`.toLocaleLowerCase("es").includes(term);
       return matchesText && (!this.centro() || item.centroNombre === this.centro()) && (!this.aula() || item.aulaNombre === this.aula()) && (!this.estado() || item.estadoAsistencia === this.estado());
     });
   });
@@ -46,8 +46,15 @@ export class ConvocadosComponent implements OnInit {
   clearFilters(): void { this.text.set(""); this.centro.set(""); this.aula.set(""); this.estado.set(""); }
 
   maskedDocument(value: string): string {
-    if (value.length <= 4) return "••••";
-    return `${value.slice(0, 2)}${"•".repeat(Math.max(4, value.length - 4))}${value.slice(-2)}`;
+    return `****${value.slice(-4).padStart(4, "*")}*`;
+  }
+
+  displayName(item: ConvocadoExamen): string {
+    const person = item.persona;
+    const surnames = [person.primerApellido, person.segundoApellido].filter(Boolean).join(" ")
+      || person.apellidosTextoSirhus
+      || "";
+    return [surnames, person.nombre].filter(Boolean).join(surnames ? ", " : "") || person.nombreCompleto;
   }
 
   stateLabel(value: EstadoAsistencia): string {

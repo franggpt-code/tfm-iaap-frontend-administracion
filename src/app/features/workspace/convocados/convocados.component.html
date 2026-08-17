@@ -25,7 +25,7 @@
           @for (item of filtered(); track item.id) {
             <tr>
               <td data-label="Orden"><strong>{{ item.ordenAula }}</strong></td>
-              <td data-label="Persona">{{ item.persona.nombreCompleto }}</td>
+              <td data-label="Persona">{{ displayName(item) }}</td>
               <td data-label="Documento"><span class="masked-value" [attr.aria-label]="'Documento enmascarado ' + maskedDocument(item.persona.documentoIdentidad)">{{ maskedDocument(item.persona.documentoIdentidad) }}</span></td>
               <td data-label="Centro y aula"><strong>{{ item.centroNombre || "Centro sin informar" }}</strong><br><span>{{ item.aulaNombre || "Aula sin informar" }}</span></td>
               <td data-label="Asistencia"><span class="attendance attendance--{{ item.estadoAsistencia.toLowerCase() }}">{{ stateLabel(item.estadoAsistencia) }}</span></td>

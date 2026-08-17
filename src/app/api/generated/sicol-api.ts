@@ -185,6 +185,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/importaciones/datamart-convocatorias/simulacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simular la importacion del Datamart de convocatorias
+         * @description Lee el XLS de seguimiento, agrupa procesos, ejercicios y partes sin realizar escrituras.
+         */
+        post: operations["simularImportacionDatamartConvocatorias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/importaciones/datamart-convocatorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar la importacion del Datamart de convocatorias
+         * @description Crea o actualiza procesos, OEP, ejercicios y partes y conserva las filas originales.
+         */
+        post: operations["confirmarImportacionDatamartConvocatorias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/colaboradores/importacion": {
         parameters: {
             query?: never;
@@ -1937,6 +1977,26 @@ export interface components {
             nombre: string;
             activo: boolean;
         };
+        ImportacionDatamartConvocatoriasAviso: {
+            fila: number;
+            campo: string;
+            mensaje: string;
+        };
+        ImportacionDatamartConvocatoriasResultado: {
+            /** Format: uuid */
+            importacionId?: string;
+            simulacion: boolean;
+            filasLeidas: number;
+            procesosCreados: number;
+            procesosActualizados: number;
+            examenesCreados: number;
+            examenesActualizados: number;
+            pruebasCreadas: number;
+            pruebasActualizadas: number;
+            oepAsociadas: number;
+            filasRawGuardadas: number;
+            avisos: components["schemas"]["ImportacionDatamartConvocatoriasAviso"][];
+        };
         ImportacionOpositoresAulasAviso: {
             fila: number;
             /** @enum {string} */
@@ -2539,6 +2599,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportacionProcesosSelectivosResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    simularImportacionDatamartConvocatorias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Simulacion completada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionDatamartConvocatoriasResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    confirmarImportacionDatamartConvocatorias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Importacion confirmada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionDatamartConvocatoriasResultado"];
                 };
             };
             400: components["responses"]["BadRequest"];

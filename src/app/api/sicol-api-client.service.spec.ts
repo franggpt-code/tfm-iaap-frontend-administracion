@@ -38,8 +38,54 @@ describe("SicolApiClient", () => {
     expect((request.request.body as FormData).has("ficheroCaronte")).toBeFalse();
     request.flush({ ...result(false), importacionId: "i1" });
   });
+
+  it("envía el Datamart como multipart con el campo fichero", () => {
+    const fichero = new File(["datamart"], "seguimiento-convocatorias.xls", { type: "application/vnd.ms-excel" });
+    service.simularImportacionDatamart(fichero).subscribe();
+
+    const simulationRequest = http.expectOne("/api/sicol/admin/importaciones/datamart-convocatorias/simulacion");
+    expect(simulationRequest.request.method).toBe("POST");
+    expect(simulationRequest.request.headers.has("Content-Type")).toBeFalse();
+    expect((simulationRequest.request.body as FormData).get("fichero")).toBe(fichero);
+    simulationRequest.flush(datamartResult(true));
+
+    service.confirmarImportacionDatamart(fichero).subscribe();
+    const confirmationRequest = http.expectOne("/api/sicol/admin/importaciones/datamart-convocatorias");
+    expect(confirmationRequest.request.method).toBe("POST");
+    expect(confirmationRequest.request.headers.has("Content-Type")).toBeFalse();
+    expect((confirmationRequest.request.body as FormData).get("fichero")).toBe(fichero);
+    confirmationRequest.flush({ ...datamartResult(false), importacionId: "i2" });
+  });
+
+  it("crea y actualiza procesos y ejercicios con los endpoints del contrato", () => {
+    service.createProceso({ nombre: "Proceso manual", codigoSirhus: "L2A11300" }).subscribe();
+    const createProcess = http.expectOne("/api/sicol/admin/procesos-selectivos");
+    expect(createProcess.request.method).toBe("POST");
+    expect(createProcess.request.body).toEqual({ nombre: "Proceso manual", codigoSirhus: "L2A11300" });
+    createProcess.flush({ id: "p1", nombre: "Proceso manual", codigoSirhus: "L2A11300", estado: "BORRADOR" });
+
+    service.updateProceso("p1", { estado: "PUBLICADO" }).subscribe();
+    const updateProcess = http.expectOne("/api/sicol/admin/procesos-selectivos/p1");
+    expect(updateProcess.request.method).toBe("PATCH");
+    updateProcess.flush({ id: "p1", nombre: "Proceso manual", estado: "PUBLICADO" });
+
+    service.createExamen("p1", { nombre: "Ejercicio 2", numeroEjercicio: 2 }).subscribe();
+    const createExam = http.expectOne("/api/sicol/admin/procesos-selectivos/p1/examenes");
+    expect(createExam.request.method).toBe("POST");
+    createExam.flush({ id: "e2", procesoSelectivoId: "p1", nombre: "Ejercicio 2", numeroEjercicio: 2 });
+
+    service.updateExamen("e2", { fechaHora: "2026-09-20T08:00:00.000Z" }).subscribe();
+    const updateExam = http.expectOne("/api/sicol/admin/examenes/e2");
+    expect(updateExam.request.method).toBe("PATCH");
+    expect(updateExam.request.body).toEqual({ fechaHora: "2026-09-20T08:00:00.000Z" });
+    updateExam.flush({ id: "e2", procesoSelectivoId: "p1", nombre: "Ejercicio 2", numeroEjercicio: 2, fechaHora: "2026-09-20T08:00:00.000Z" });
+  });
 });
 
 function result(simulacion: boolean) {
   return { simulacion, filasSirhus: 1, filasCaronte: 0, personasNuevas: 1, personasActualizadas: 0, convocadosNuevos: 1, convocadosActualizados: 0, provinciasNuevas: 0, centrosNuevos: 0, aulasNuevas: 0, filasCaronteNoUtilizadas: 0, convocadosPreviosNoIncluidos: 0, avisos: [] };
+}
+
+function datamartResult(simulacion: boolean) {
+  return { simulacion, filasLeidas: 20, procesosCreados: 2, procesosActualizados: 1, examenesCreados: 3, examenesActualizados: 0, pruebasCreadas: 3, pruebasActualizadas: 0, oepAsociadas: 2, filasRawGuardadas: 0, avisos: [] };
 }

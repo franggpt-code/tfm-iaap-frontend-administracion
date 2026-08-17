@@ -1,0 +1,21 @@
+<div class="page-shell page-shell--narrow">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Importaciones</span></nav>
+
+  <header class="page-heading">
+    <div><p class="eyebrow">Carga de datos</p><h1>Importaciones</h1><p>Selecciona el tipo de información que necesitas incorporar. Ambos procesos permiten revisar una simulación antes de guardar cambios.</p></div>
+  </header>
+
+  <div class="import-options">
+    <a class="import-option import-option--primary" routerLink="/admin/importaciones/convocatorias">
+      <span class="import-option__step">01</span>
+      <div><p class="eyebrow">Datamart de seguimiento</p><h2>Convocatorias</h2><p>Crea o actualiza procesos selectivos, OEP, ejercicios y pruebas desde el informe `.xls` del Datamart.</p></div>
+      <span class="import-option__action">Abrir importador <span aria-hidden="true">→</span></span>
+    </a>
+
+    <a class="import-option" routerLink="/admin/importaciones/opositores-aulas">
+      <span class="import-option__step">02</span>
+      <div><p class="eyebrow">Distribución por ejercicio</p><h2>Convocados y aulas</h2><p>Asigna personas convocadas, centros y aulas mediante los ficheros SIRHUS y Caronte.</p></div>
+      <span class="import-option__action">Abrir importador <span aria-hidden="true">→</span></span>
+    </a>
+  </div>
+</div>

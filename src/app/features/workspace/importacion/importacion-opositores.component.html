@@ -38,7 +38,7 @@
         <select id="proceso" [value]="procesoId()" [disabled]="loadingProcesos() || simulating() || confirming()" (change)="onProcesoChange($any($event.target).value)">
           <option value="">Selecciona un proceso</option>
           @for (proceso of procesos(); track proceso.id) {
-            <option [value]="proceso.id">{{ proceso.nombre }}</option>
+            <option [value]="proceso.id">{{ proceso.codigoSirhus || "Sin código SIRHUS" }} · {{ proceso.nombre }}</option>
           }
         </select>
         @if (loadingProcesos()) { <small class="field-help">Cargando procesos…</small> }
