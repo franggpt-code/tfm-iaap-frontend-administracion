@@ -1,0 +1,17 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: tfm-iaap-frontend-administracion-route-pre
+  labels:
+    app: tfm-iaap-frontend-administracion-pre
+spec:
+  host: tfm-iaap-frontend-administracion-route-pre.apps.paas-des-cica.junta-andalucia.es
+  to:
+    kind: Service
+    name: tfm-iaap-frontend-administracion-svc-pre
+    weight: 100
+  port:
+    targetPort: 8043
+  tls:
+    termination: edge
+  wildcardPolicy: None
