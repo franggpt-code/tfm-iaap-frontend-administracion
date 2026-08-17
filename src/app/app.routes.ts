@@ -1,24 +1,28 @@
 import { Routes } from "@angular/router";
-import { adminGuard } from "./core/admin.guard";
+import { adminGuard, adminRoleGuard } from "./core/admin.guard";
 import { AsignacionesComponent } from "./features/admin/asignaciones/asignaciones.component";
 import { ColaboradoresComponent } from "./features/admin/colaboradores/colaboradores.component";
 import { ControlComponent } from "./features/admin/control/control.component";
+import { DatosMaestrosComponent } from "./features/admin/datos-maestros/datos-maestros.component";
 import { FirmasComponent } from "./features/admin/firmas/firmas.component";
 import { ImportacionesComponent } from "./features/admin/importaciones/importaciones.component";
 import { AdminDashboardComponent } from "./features/admin/admin-dashboard.component";
 import { PagosComponent } from "./features/admin/pagos/pagos.component";
-import { PerfilesComponent } from "./features/admin/perfiles/perfiles.component";
 import { ProcesosComponent } from "./features/admin/procesos/procesos.component";
+import { UsuariosComponent } from "./features/admin/usuarios/usuarios.component";
 import { LoginComponent } from "./features/login/login.component";
 
 export const routes: Routes = [
   { path: "", redirectTo: "login", pathMatch: "full" },
   { path: "login", component: LoginComponent },
   { path: "admin", component: AdminDashboardComponent, canActivate: [adminGuard] },
+  { path: "admin/usuarios", component: UsuariosComponent, canActivate: [adminRoleGuard] },
   { path: "admin/colaboradores", component: ColaboradoresComponent, canActivate: [adminGuard] },
+  { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminGuard] },
+  { path: "admin/datos-maestros/:catalogo", component: DatosMaestrosComponent, canActivate: [adminGuard] },
   { path: "admin/procesos", component: ProcesosComponent, canActivate: [adminGuard] },
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminGuard] },
-  { path: "admin/perfiles", component: PerfilesComponent, canActivate: [adminGuard] },
+  { path: "admin/perfiles", redirectTo: "admin/datos-maestros/perfiles", pathMatch: "full" },
   { path: "admin/asignaciones", component: AsignacionesComponent, canActivate: [adminGuard] },
   { path: "admin/control", component: ControlComponent, canActivate: [adminGuard] },
   { path: "admin/firmas", component: FirmasComponent, canActivate: [adminGuard] },

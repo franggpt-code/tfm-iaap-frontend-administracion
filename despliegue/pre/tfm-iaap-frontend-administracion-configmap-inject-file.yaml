@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tfm-iaap-frontend-administracion-configmap-inject-file
+data:
+  config.json: |
+    {
+      "apis": {
+        "sicolApi": "/api/sicol"
+      }
+    }

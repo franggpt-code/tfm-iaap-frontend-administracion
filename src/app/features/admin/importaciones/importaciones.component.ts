@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from "@angular/core";
 import { finalize } from "rxjs";
 import { AdminApiService } from "../../../core/admin-api.service";
-import { ImportacionDatosBaseResultado } from "../../../core/api.models";
+import { ImportacionDatosBaseResultado, ImportacionProcesosSelectivosResultado } from "../../../core/api.models";
 import { errorMessage } from "../shared/admin-ui";
 
 interface ImportacionContador {
@@ -19,13 +19,21 @@ export class ImportacionesComponent {
   private readonly api = inject(AdminApiService);
 
   readonly selectedFile = signal<File | null>(null);
+  readonly anonimizarPersonas = signal(true);
+  readonly selectedProcesosFile = signal<File | null>(null);
   readonly fileError = signal<string | null>(null);
+  readonly procesosFileError = signal<string | null>(null);
   readonly loading = signal(false);
+  readonly procesosLoading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly procesosError = signal<string | null>(null);
   readonly result = signal<ImportacionDatosBaseResultado | null>(null);
+  readonly procesosResult = signal<ImportacionProcesosSelectivosResultado | null>(null);
 
   readonly selectedFileName = computed(() => this.selectedFile()?.name ?? "Ningún fichero seleccionado");
+  readonly selectedProcesosFileName = computed(() => this.selectedProcesosFile()?.name ?? "Ningún fichero seleccionado");
   readonly canImport = computed(() => !!this.selectedFile() && !this.fileError() && !this.loading());
+  readonly canImportProcesos = computed(() => !!this.selectedProcesosFile() && !this.procesosFileError() && !this.procesosLoading());
   readonly counters = computed<ImportacionContador[]>(() => {
     const result = this.result();
     if (!result) {
@@ -37,6 +45,21 @@ export class ImportacionesComponent {
       { label: "Exámenes importados", value: result.examenesImportados },
       { label: "Aulas importadas", value: result.aulasImportadas },
       { label: "Colaboradores importados", value: result.colaboradoresImportados },
+      { label: "Asignaciones importadas", value: result.asignacionesImportadas },
+      { label: "Filas omitidas", value: result.filasOmitidas },
+    ];
+  });
+  readonly procesosCounters = computed<ImportacionContador[]>(() => {
+    const result = this.procesosResult();
+    if (!result) {
+      return [];
+    }
+    return [
+      { label: "Filas leídas", value: result.filasLeidas },
+      { label: "Procesos creados", value: result.procesosCreados },
+      { label: "Procesos actualizados", value: result.procesosActualizados },
+      { label: "Exámenes creados", value: result.examenesCreados },
+      { label: "Exámenes omitidos", value: result.examenesOmitidos },
     ];
   });
 
@@ -61,12 +84,43 @@ export class ImportacionesComponent {
     }
   }
 
+  onProcesosFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.procesosResult.set(null);
+    this.procesosError.set(null);
+    this.procesosFileError.set(null);
+    this.selectedProcesosFile.set(file);
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      this.selectedProcesosFile.set(null);
+      this.procesosFileError.set("Selecciona un fichero .xlsx con el formato normalizado.");
+      input.value = "";
+    }
+  }
+
   clearFile(input: HTMLInputElement): void {
     input.value = "";
     this.selectedFile.set(null);
     this.fileError.set(null);
     this.result.set(null);
     this.error.set(null);
+  }
+
+  onAnonimizarChange(event: Event): void {
+    this.anonimizarPersonas.set((event.target as HTMLInputElement).checked);
+  }
+
+  clearProcesosFile(input: HTMLInputElement): void {
+    input.value = "";
+    this.selectedProcesosFile.set(null);
+    this.procesosFileError.set(null);
+    this.procesosResult.set(null);
+    this.procesosError.set(null);
   }
 
   import(): void {
@@ -80,11 +134,30 @@ export class ImportacionesComponent {
     this.error.set(null);
     this.result.set(null);
     this.api
-      .importDatosBase(file)
+      .importDatosBase(file, this.anonimizarPersonas())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (result) => this.result.set(result),
         error: (error) => this.error.set(errorMessage(error, "No se ha podido importar la plantilla. Revisa el formato y vuelve a intentarlo.")),
+      });
+  }
+
+  importProcesos(): void {
+    const file = this.selectedProcesosFile();
+    if (!file) {
+      this.procesosFileError.set("Selecciona un fichero antes de iniciar la importación.");
+      return;
+    }
+
+    this.procesosLoading.set(true);
+    this.procesosError.set(null);
+    this.procesosResult.set(null);
+    this.api
+      .importProcesosSelectivosXlsx(file)
+      .pipe(finalize(() => this.procesosLoading.set(false)))
+      .subscribe({
+        next: (result) => this.procesosResult.set(result),
+        error: (error) => this.procesosError.set(errorMessage(error, "No se ha podido importar el XLSX de procesos selectivos.")),
       });
   }
 }

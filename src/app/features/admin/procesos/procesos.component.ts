@@ -1,17 +1,27 @@
 import { DatePipe } from "@angular/common";
 import { Component, inject, signal } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
-import { finalize } from "rxjs";
+import { finalize, forkJoin } from "rxjs";
 import { AdminApiService } from "../../../core/admin-api.service";
 import {
   CentroExamen,
+  Cuerpo,
   Examen,
   ExamenAula,
   ExamenCreate,
+  Oep,
   ProcesoSelectivo,
   ProcesoSelectivoCreate,
+  TipoAcceso,
+  TipoVinculacion,
 } from "../../../core/api.models";
-import { errorMessage } from "../shared/admin-ui";
+import {
+  errorMessage,
+  formatProcesoCuerpo,
+  formatProcesoOeps,
+  formatProcesoTipoAcceso,
+  formatProcesoTipoVinculacion,
+} from "../shared/admin-ui";
 
 @Component({
   selector: "app-procesos",
@@ -38,13 +48,19 @@ export class ProcesosComponent {
   readonly examenEditorOpen = signal(false);
   readonly editingProcesoId = signal<string | null>(null);
   readonly editingExamenId = signal<string | null>(null);
+  readonly availableOeps = signal<Oep[]>([]);
+  readonly tiposAcceso = signal<TipoAcceso[]>([]);
+  readonly tiposVinculacion = signal<TipoVinculacion[]>([]);
+  readonly cuerpos = signal<Cuerpo[]>([]);
 
-  readonly procesoForm = this.fb.nonNullable.group({
+  readonly procesoForm = this.fb.group({
     nombre: ["", Validators.required],
-    oep: [""],
-    acceso: [""],
-    cuerpo: [""],
-    modo: [""],
+    oepIds: [[] as number[]],
+    idTipoAcceso: [null as number | null],
+    idCuerpo: [null as number | null],
+    codigoSirhus: [""],
+    urlWebProceso: [""],
+    idTipoVinculacion: [null as number | null],
     estado: ["BORRADOR"],
   });
 
@@ -56,7 +72,25 @@ export class ProcesosComponent {
   });
 
   constructor() {
+    this.loadCatalogos();
     this.loadProcesos();
+  }
+
+  loadCatalogos(): void {
+    forkJoin({
+      oeps: this.api.listOep(),
+      tiposAcceso: this.api.listTiposAcceso(),
+      tiposVinculacion: this.api.listTiposVinculacion(),
+      cuerpos: this.api.listCuerpos(),
+    }).subscribe({
+      next: ({ oeps, tiposAcceso, tiposVinculacion, cuerpos }) => {
+        this.availableOeps.set(oeps);
+        this.tiposAcceso.set(tiposAcceso);
+        this.tiposVinculacion.set(tiposVinculacion);
+        this.cuerpos.set(cuerpos);
+      },
+      error: (error) => this.error.set(errorMessage(error, "No se han podido cargar los datos maestros.")),
+    });
   }
 
   loadProcesos(): void {
@@ -132,10 +166,12 @@ export class ProcesosComponent {
     this.editingProcesoId.set(null);
     this.procesoForm.reset({
       nombre: "",
-      oep: "",
-      acceso: "",
-      cuerpo: "",
-      modo: "",
+      oepIds: [],
+      idTipoAcceso: null,
+      idCuerpo: null,
+      codigoSirhus: "",
+      urlWebProceso: "",
+      idTipoVinculacion: null,
       estado: "BORRADOR",
     });
     this.procesoEditorOpen.set(true);
@@ -145,10 +181,12 @@ export class ProcesosComponent {
     this.editingProcesoId.set(proceso.id);
     this.procesoForm.setValue({
       nombre: proceso.nombre,
-      oep: proceso.oep ?? "",
-      acceso: proceso.acceso ?? "",
-      cuerpo: proceso.cuerpo ?? "",
-      modo: proceso.modo ?? "",
+      oepIds: proceso.oeps?.map((oep) => oep.idOep) ?? [],
+      idTipoAcceso: proceso.tipoAcceso?.idTipoAcceso ?? null,
+      idCuerpo: proceso.cuerpo?.idCuerpo ?? null,
+      codigoSirhus: proceso.codigoSirhus ?? "",
+      urlWebProceso: proceso.urlWebProceso ?? "",
+      idTipoVinculacion: proceso.tipoVinculacion?.idTipoVinculacion ?? null,
       estado: proceso.estado,
     });
     this.procesoEditorOpen.set(true);
@@ -162,13 +200,15 @@ export class ProcesosComponent {
     const id = this.editingProcesoId();
     const value = this.procesoForm.getRawValue();
     const request: ProcesoSelectivoCreate = {
-      nombre: value.nombre,
-      oep: value.oep,
-      acceso: value.acceso,
-      cuerpo: value.cuerpo,
-      modo: value.modo,
+      nombre: value.nombre ?? "",
+      oepIds: value.oepIds ?? [],
+      idTipoAcceso: value.idTipoAcceso,
+      idCuerpo: value.idCuerpo,
+      codigoSirhus: value.codigoSirhus ?? "",
+      urlWebProceso: value.urlWebProceso ?? "",
+      idTipoVinculacion: value.idTipoVinculacion,
     };
-    const operation = id ? this.api.patchProcesoSelectivo(id, { ...request, estado: value.estado }) : this.api.createProcesoSelectivo(request);
+    const operation = id ? this.api.patchProcesoSelectivo(id, { ...request, estado: value.estado ?? undefined }) : this.api.createProcesoSelectivo(request);
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
@@ -200,7 +240,36 @@ export class ProcesosComponent {
           this.loadProcesos();
         },
         error: (error) => this.error.set(errorMessage(error, "No se ha podido eliminar el proceso selectivo.")),
-      });
+    });
+  }
+
+  formatOeps(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoOeps(proceso);
+  }
+
+  formatTipoAcceso(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoTipoAcceso(proceso);
+  }
+
+  formatCuerpo(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoCuerpo(proceso);
+  }
+
+  formatTipoVinculacion(proceso: ProcesoSelectivo | null | undefined): string {
+    return formatProcesoTipoVinculacion(proceso);
+  }
+
+  isOepSelected(idOep: number): boolean {
+    return (this.procesoForm.controls.oepIds.value ?? []).includes(idOep);
+  }
+
+  toggleOep(idOep: number, checked: boolean): void {
+    const current = this.procesoForm.controls.oepIds.value ?? [];
+    const next = checked
+      ? Array.from(new Set([...current, idOep])).sort((a, b) => a - b)
+      : current.filter((id) => id !== idOep);
+    this.procesoForm.controls.oepIds.setValue(next);
+    this.procesoForm.controls.oepIds.markAsDirty();
   }
 
   importProcesosJson(event: Event): void {

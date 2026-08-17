@@ -26,29 +26,38 @@
   }
 
   @if (editorOpen()) {
-    <section class="panel" aria-labelledby="editor-title">
+    <section class="panel panel--window" aria-labelledby="editor-title">
       <div class="panel__header">
         <div>
           <h2 id="editor-title">{{ editingId() ? "Editar colaborador" : "Nuevo colaborador" }}</h2>
-          <p>Datos administrativos y de contacto de la persona colaboradora.</p>
+          <p>Datos administrativos y de contacto de la persona colaboradora. * Campos obligatorios</p>
         </div>
         <button class="button button--secondary" type="button" (click)="editorOpen.set(false)">Cerrar</button>
       </div>
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
         <div class="field">
-          <label for="colaborador-dni">DNI</label>
-          <input id="colaborador-dni" type="text" formControlName="dni" maxlength="8" autocomplete="off">
+          <label for="colaborador-dni">DNI *</label>
+          <input id="colaborador-dni" type="text" formControlName="dni" maxlength="8" autocomplete="off" [attr.aria-invalid]="form.controls.dni.invalid && form.controls.dni.touched">
+          @if (form.controls.dni.invalid && form.controls.dni.touched) {
+            <span class="field-error">Introduce los ocho dígitos del DNI.</span>
+          }
         </div>
         <div class="field">
-          <label for="colaborador-letra">Letra</label>
-          <input id="colaborador-letra" type="text" formControlName="letra" maxlength="1" autocomplete="off">
+          <label for="colaborador-letra">Letra *</label>
+          <input id="colaborador-letra" type="text" formControlName="letra" maxlength="1" autocomplete="off" [attr.aria-invalid]="form.controls.letra.invalid && form.controls.letra.touched">
+          @if (form.controls.letra.invalid && form.controls.letra.touched) {
+            <span class="field-error">Introduce la letra del DNI.</span>
+          }
         </div>
         <div class="field">
-          <label for="colaborador-nombre">Nombre completo</label>
-          <input id="colaborador-nombre" type="text" formControlName="nombreCompleto" autocomplete="name">
+          <label for="colaborador-nombre">Nombre completo *</label>
+          <input id="colaborador-nombre" type="text" formControlName="nombreCompleto" autocomplete="name" [attr.aria-invalid]="form.controls.nombreCompleto.invalid && form.controls.nombreCompleto.touched">
+          @if (form.controls.nombreCompleto.invalid && form.controls.nombreCompleto.touched) {
+            <span class="field-error">Introduce el nombre completo.</span>
+          }
         </div>
         <div class="field">
-          <label for="colaborador-sexo">Sexo</label>
+          <label for="colaborador-sexo">Sexo *</label>
           <select id="colaborador-sexo" formControlName="sexo">
             <option value="MUJER">Mujer</option>
             <option value="HOMBRE">Hombre</option>
@@ -56,16 +65,25 @@
           </select>
         </div>
         <div class="field">
-          <label for="colaborador-correo">Correo corporativo</label>
-          <input id="colaborador-correo" type="email" formControlName="correoCorporativo" autocomplete="email">
+          <label for="colaborador-correo">Correo corporativo *</label>
+          <input id="colaborador-correo" type="email" formControlName="correoCorporativo" autocomplete="email" [attr.aria-invalid]="form.controls.correoCorporativo.invalid && form.controls.correoCorporativo.touched">
+          @if (form.controls.correoCorporativo.invalid && form.controls.correoCorporativo.touched) {
+            <span class="field-error">Introduce un correo electrónico válido.</span>
+          }
         </div>
         <div class="field">
-          <label for="colaborador-telefono">Teléfono</label>
-          <input id="colaborador-telefono" type="tel" formControlName="telefono" autocomplete="tel">
+          <label for="colaborador-telefono">Teléfono *</label>
+          <input id="colaborador-telefono" type="tel" formControlName="telefono" autocomplete="tel" [attr.aria-invalid]="form.controls.telefono.invalid && form.controls.telefono.touched">
+          @if (form.controls.telefono.invalid && form.controls.telefono.touched) {
+            <span class="field-error">Introduce un teléfono de contacto.</span>
+          }
         </div>
         <div class="field">
-          <label for="colaborador-iban">IBAN</label>
-          <input id="colaborador-iban" type="text" formControlName="iban" autocomplete="off">
+          <label for="colaborador-iban">IBAN *</label>
+          <input id="colaborador-iban" type="text" formControlName="iban" autocomplete="off" [attr.aria-invalid]="form.controls.iban.invalid && form.controls.iban.touched">
+          @if (form.controls.iban.invalid && form.controls.iban.touched) {
+            <span class="field-error">Introduce el IBAN para los pagos.</span>
+          }
         </div>
         <div class="field">
           <label for="colaborador-provincia">Provincia</label>

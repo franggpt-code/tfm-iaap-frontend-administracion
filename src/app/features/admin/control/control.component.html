@@ -12,7 +12,7 @@
       <div class="item-list">
         @for (proceso of procesos(); track proceso.id) {
           <button class="list-button" type="button" [class.is-selected]="selectedProceso()?.id === proceso.id" (click)="selectProceso(proceso)">
-            <strong>{{ proceso.nombre }}</strong><span>{{ proceso.oep }} · {{ proceso.cuerpo }}</span>
+            <strong>{{ proceso.nombre }}</strong><span>{{ formatOeps(proceso) }} · {{ formatCuerpo(proceso) }}</span>
           </button>
         } @empty { <div class="empty-state">No hay procesos disponibles.</div> }
       </div>
