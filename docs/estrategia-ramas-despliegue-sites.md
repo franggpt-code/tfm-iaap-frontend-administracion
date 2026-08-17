@@ -58,8 +58,9 @@ Pertenecen únicamente a `deploy/sites`:
   con el backend accesible desde Internet.
 
 No se deben añadir a `main` configuraciones específicas de Sites o Vercel. La
-configuración corporativa de OpenShift tampoco debe mezclarse con
-`deploy/sites`.
+configuración corporativa de OpenShift permanece en `main`; puede estar presente
+en `deploy/sites` al sincronizar la base común, pero nunca se mantiene allí como
+una adaptación exclusiva del despliegue de Sites.
 
 ## Configuración local recomendada
 
