@@ -1187,6 +1187,48 @@ export interface paths {
         patch: operations["updateConfirmacionMiAsignacion"];
         trace?: never;
     };
+    "/portal/mis-asignaciones/{asignacionId}/convocados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+            };
+            cookie?: never;
+        };
+        /** Consultar el llamamiento del aula propia como responsable de aula */
+        get: operations["listConvocadosMiAulaResponsable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/portal/mis-asignaciones/{asignacionId}/convocados/{convocadoId}/asistencia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+                /** @description Identificador único de la persona convocada en un examen. */
+                convocadoId: components["parameters"]["convocadoId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Registrar la asistencia de una persona convocada en el aula propia */
+        patch: operations["updateAsistenciaMiAulaResponsable"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1480,7 +1522,6 @@ export interface components {
         };
         /** @description Datos que la persona colaboradora puede mantener desde su área personal. */
         ColaboradorPortalPatch: {
-            nombreCompleto?: string;
             sexo?: components["schemas"]["SexoColaborador"];
             iban?: string;
             telefono?: string;
@@ -2540,6 +2581,8 @@ export interface components {
         asistenciaId: string;
         /** @description Identificador único de la asignación de colaborador. */
         asignacionId: string;
+        /** @description Identificador único de la persona convocada en un examen. */
+        convocadoId: string;
     };
     requestBodies: never;
     headers: never;
@@ -5123,6 +5166,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AsignacionColaborador"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listConvocadosMiAulaResponsable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Llamamiento del aula asignada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConvocadoExamen"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateAsistenciaMiAulaResponsable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+                /** @description Identificador único de la persona convocada en un examen. */
+                convocadoId: components["parameters"]["convocadoId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AsistenciaConvocadoUpdate"];
+            };
+        };
+        responses: {
+            /** @description Asistencia actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConvocadoExamen"];
                 };
             };
             400: components["responses"]["BadRequest"];

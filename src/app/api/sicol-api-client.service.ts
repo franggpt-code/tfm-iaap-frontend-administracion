@@ -92,6 +92,17 @@ export class SicolApiClient {
     return this.http.patch<AsignacionColaborador>(`${this.portalUrl}/mis-asignaciones/${id}/confirmacion`, payload);
   }
 
+  listMisConvocadosAulaResponsable(asignacionId: string): Observable<ConvocadoExamen[]> {
+    return this.http.get<ConvocadoExamen[]>(`${this.portalUrl}/mis-asignaciones/${asignacionId}/convocados`);
+  }
+
+  updateAsistenciaMiAulaResponsable(asignacionId: string, convocadoId: string, payload: AsistenciaUpdate): Observable<ConvocadoExamen> {
+    return this.http.patch<ConvocadoExamen>(
+      `${this.portalUrl}/mis-asignaciones/${asignacionId}/convocados/${convocadoId}/asistencia`,
+      payload,
+    );
+  }
+
   listProcesos(page = 0, size = 100, search = ""): Observable<PaginaProcesosSelectivos> {
     const params: Record<string, string | number> = { page, size };
     if (search.trim()) params["search"] = search.trim();

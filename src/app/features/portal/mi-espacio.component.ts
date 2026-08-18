@@ -1,14 +1,17 @@
 import { DatePipe, DecimalPipe } from "@angular/common";
-import { Component, inject, OnInit, signal } from "@angular/core";
+import { Component, computed, inject, OnInit, signal } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
+import { RouterLink } from "@angular/router";
 import { finalize, forkJoin } from "rxjs";
 import { apiErrorMessage } from "../../api/api-error";
 import { SicolApiClient } from "../../api/sicol-api-client.service";
 import { AsignacionColaborador, Colaborador, ColaboradorPortalPatch, EstadoConfirmacionAsignacion } from "../../api/sicol.types";
 
+type MiEspacioSection = "datos" | "proximas" | "historico";
+
 @Component({
   selector: "app-mi-espacio",
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule],
+  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, RouterLink],
   templateUrl: "./mi-espacio.component.html",
   styleUrl: "./mi-espacio.component.scss",
 })
@@ -23,9 +26,15 @@ export class MiEspacioComponent implements OnInit {
   readonly pending = signal(new Set<string>());
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
+  readonly activeSection = signal<MiEspacioSection>("proximas");
+  readonly proximasAsignaciones = computed(() => this.asignaciones()
+    .filter((item) => !item.fechaHora || new Date(item.fechaHora).getTime() >= Date.now())
+    .sort((a, b) => this.assignmentTime(a) - this.assignmentTime(b)));
+  readonly asignacionesHistoricas = computed(() => this.asignaciones()
+    .filter((item) => item.fechaHora && new Date(item.fechaHora).getTime() < Date.now())
+    .sort((a, b) => this.assignmentTime(b) - this.assignmentTime(a)));
 
   readonly form = this.fb.nonNullable.group({
-    nombreCompleto: ["", Validators.required],
     sexo: ["NO_INFORMA"],
     iban: ["", Validators.maxLength(34)],
     telefono: ["", Validators.maxLength(50)],
@@ -46,7 +55,6 @@ export class MiEspacioComponent implements OnInit {
           this.asignaciones.set(asignaciones);
           const availability = perfil.disponibilidad?.[0];
           this.form.setValue({
-            nombreCompleto: perfil.nombreCompleto,
             sexo: perfil.sexo,
             iban: perfil.iban ?? "",
             telefono: perfil.telefono ?? "",
@@ -75,7 +83,6 @@ export class MiEspacioComponent implements OnInit {
       return;
     }
     const payload: ColaboradorPortalPatch = {
-      nombreCompleto: value.nombreCompleto.trim(),
       sexo: value.sexo as Colaborador["sexo"],
       iban: value.iban.trim(),
       telefono: value.telefono.trim(),
@@ -123,5 +130,19 @@ export class MiEspacioComponent implements OnInit {
   scopeLabel(item: AsignacionColaborador): string {
     if (item.aulaNombre) return `${item.centroNombre ?? "Centro"} · ${item.aulaNombre}`;
     return item.subcategoriaGeneral ? `Ámbito general · ${item.subcategoriaGeneral}` : "Ámbito general";
+  }
+
+  isResponsableAula(item: AsignacionColaborador): boolean {
+    return item.perfilCodigo === "RESPONSABLE_DE_AULA" && !!item.examenAulaId;
+  }
+
+  confirmationLabel(item: AsignacionColaborador): string {
+    if (item.estadoConfirmacion === "CONFIRMADA") return "Asistencia confirmada";
+    if (item.estadoConfirmacion === "RECHAZADA") return "Asignación rechazada";
+    return "Pendiente de respuesta";
+  }
+
+  private assignmentTime(item: AsignacionColaborador): number {
+    return item.fechaHora ? new Date(item.fechaHora).getTime() : Number.MAX_SAFE_INTEGER;
   }
 }

@@ -33,5 +33,6 @@ export const routes: Routes = [
   { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminRoleGuard] },
   { path: "admin/usuarios", component: UsuariosComponent, canActivate: [adminRoleGuard] },
   { path: "mi-espacio", component: MiEspacioComponent, canActivate: [collaboratorGuard] },
+  { path: "mi-espacio/asignaciones/:asignacionId/llamamiento", component: AsistenciaComponent, canActivate: [collaboratorGuard] },
   { path: "**", redirectTo: "login" },
 ];

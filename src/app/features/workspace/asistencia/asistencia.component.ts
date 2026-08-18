@@ -15,6 +15,8 @@ export class AsistenciaComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly route = inject(ActivatedRoute);
   readonly examenAulaId = this.route.snapshot.paramMap.get("examenAulaId") ?? "";
+  readonly asignacionId = this.route.snapshot.paramMap.get("asignacionId") ?? "";
+  readonly portalResponsable = Boolean(this.asignacionId);
   readonly items = signal<ConvocadoExamen[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -23,7 +25,10 @@ export class AsistenciaComponent implements OnInit {
   readonly rowErrors = signal<Record<string, string>>({});
 
   ngOnInit(): void {
-    this.api.listConvocadosByAula(this.examenAulaId).pipe(finalize(() => this.loading.set(false))).subscribe({
+    const request = this.portalResponsable
+      ? this.api.listMisConvocadosAulaResponsable(this.asignacionId)
+      : this.api.listConvocadosByAula(this.examenAulaId);
+    request.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (items) => {
         this.items.set(items);
         this.observations.set(Object.fromEntries(items.map((item) => [item.id, item.asistenciaObservaciones ?? ""])));
@@ -44,7 +49,10 @@ export class AsistenciaComponent implements OnInit {
     this.pending.update((current) => new Set(current).add(item.id));
     this.rowErrors.update((current) => ({ ...current, [item.id]: "" }));
 
-    this.api.updateAsistencia(item.id, { estado, observaciones: this.observations()[item.id] || undefined })
+    const request = this.portalResponsable
+      ? this.api.updateAsistenciaMiAulaResponsable(this.asignacionId, item.id, { estado })
+      : this.api.updateAsistencia(item.id, { estado, observaciones: this.observations()[item.id] || undefined });
+    request
       .pipe(finalize(() => this.pending.update((current) => { const next = new Set(current); next.delete(item.id); return next; })))
       .subscribe({
         next: (updated) => this.items.update((items) => items.map((candidate) => candidate.id === item.id ? updated : candidate)),
