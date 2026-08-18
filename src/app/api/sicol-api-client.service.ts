@@ -1,4 +1,4 @@
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpResponse } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "../../environments/environment";
@@ -27,17 +27,81 @@ import {
   TipoAccesoCreateUpdate,
   TipoVinculacion,
   TipoVinculacionCreateUpdate,
+  Colaborador,
+  ColaboradorCreate,
+  ColaboradorPatch,
+  PaginaColaboradores,
+  EstadoColaborador,
+  CambioEstadoColaboradores,
+  PerfilColaboracion,
+  PerfilColaboracionCreateUpdate,
+  ImportacionColaboradoresResultado,
+  AsignacionColaborador,
+  AsignacionColaboradorCreate,
+  AsignacionColaboradorPatch,
+  CambioHorasAsignaciones,
+  ContextoAsignacion,
+  ExamenAula,
+  CentroExamen,
+  ResumenColaboraciones,
+  HojasFirma,
+  PagosColaboradores,
+  ConfiguracionInformes,
+  ConfiguracionInformesUpdate,
+  UsuarioAdmin,
+  UsuarioAdminCreateUpdate,
+  ColaboradorPortalPatch,
+  ConfirmacionAsignacionPortalUpdate,
 } from "./sicol.types";
 
 @Injectable({ providedIn: "root" })
 export class SicolApiClient {
   private readonly http = inject(HttpClient);
   private readonly adminUrl = `${environment.apiBaseUrl}/admin`;
+  private readonly portalUrl = `${environment.apiBaseUrl}/portal`;
 
-  listProcesos(page = 0, size = 100): Observable<PaginaProcesosSelectivos> {
+  listUsuarios(): Observable<UsuarioAdmin[]> {
+    return this.http.get<UsuarioAdmin[]>(`${this.adminUrl}/usuarios`);
+  }
+
+  createUsuario(payload: UsuarioAdminCreateUpdate): Observable<UsuarioAdmin> {
+    return this.http.post<UsuarioAdmin>(`${this.adminUrl}/usuarios`, payload);
+  }
+
+  updateUsuario(id: string, payload: UsuarioAdminCreateUpdate): Observable<UsuarioAdmin> {
+    return this.http.put<UsuarioAdmin>(`${this.adminUrl}/usuarios/${id}`, payload);
+  }
+
+  deleteUsuario(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/usuarios/${id}`);
+  }
+
+  getMiPerfil(): Observable<Colaborador> {
+    return this.http.get<Colaborador>(`${this.portalUrl}/mi-perfil`);
+  }
+
+  updateMiPerfil(payload: ColaboradorPortalPatch): Observable<Colaborador> {
+    return this.http.patch<Colaborador>(`${this.portalUrl}/mi-perfil`, payload);
+  }
+
+  listMisAsignaciones(): Observable<AsignacionColaborador[]> {
+    return this.http.get<AsignacionColaborador[]>(`${this.portalUrl}/mis-asignaciones`);
+  }
+
+  updateMiConfirmacion(id: string, payload: ConfirmacionAsignacionPortalUpdate): Observable<AsignacionColaborador> {
+    return this.http.patch<AsignacionColaborador>(`${this.portalUrl}/mis-asignaciones/${id}/confirmacion`, payload);
+  }
+
+  listProcesos(page = 0, size = 100, search = ""): Observable<PaginaProcesosSelectivos> {
+    const params: Record<string, string | number> = { page, size };
+    if (search.trim()) params["search"] = search.trim();
     return this.http.get<PaginaProcesosSelectivos>(`${this.adminUrl}/procesos-selectivos`, {
-      params: { page, size },
+      params,
     });
+  }
+
+  getProceso(id: string): Observable<ProcesoSelectivo> {
+    return this.http.get<ProcesoSelectivo>(`${this.adminUrl}/procesos-selectivos/${id}`);
   }
 
   createProceso(payload: ProcesoSelectivoCreate): Observable<ProcesoSelectivo> {
@@ -50,6 +114,72 @@ export class SicolApiClient {
 
   listExamenes(procesoId: string): Observable<Examen[]> {
     return this.http.get<Examen[]>(`${this.adminUrl}/procesos-selectivos/${procesoId}/examenes`);
+  }
+
+  listContextosAsignacion(fecha: string): Observable<ContextoAsignacion[]> {
+    return this.http.get<ContextoAsignacion[]>(`${this.adminUrl}/asignaciones/contextos`, { params: { fecha } });
+  }
+
+  listExamenAulas(examenId: string): Observable<ExamenAula[]> {
+    return this.http.get<ExamenAula[]>(`${this.adminUrl}/examenes/${examenId}/aulas`);
+  }
+
+  listCentrosByExamen(examenId: string): Observable<CentroExamen[]> {
+    return this.http.get<CentroExamen[]>(`${this.adminUrl}/examenes/${examenId}/centros`);
+  }
+
+  listAsignaciones(examenId: string): Observable<AsignacionColaborador[]> {
+    return this.http.get<AsignacionColaborador[]>(`${this.adminUrl}/examenes/${examenId}/asignaciones`);
+  }
+
+  createAsignacion(examenId: string, payload: AsignacionColaboradorCreate): Observable<AsignacionColaborador> {
+    return this.http.post<AsignacionColaborador>(`${this.adminUrl}/examenes/${examenId}/asignaciones`, payload);
+  }
+
+  updateAsignacion(id: string, payload: AsignacionColaboradorPatch): Observable<AsignacionColaborador> {
+    return this.http.patch<AsignacionColaborador>(`${this.adminUrl}/asignaciones/${id}`, payload);
+  }
+
+  updateAssignmentHours(payload: CambioHorasAsignaciones): Observable<void> {
+    return this.http.patch<void>(`${this.adminUrl}/asignaciones/horas`, payload);
+  }
+
+  getResumenColaboraciones(examenId: string): Observable<ResumenColaboraciones> {
+    return this.http.get<ResumenColaboraciones>(`${this.adminUrl}/examenes/${examenId}/resumen-colaboraciones`);
+  }
+
+  getHojasFirma(examenId: string): Observable<HojasFirma> {
+    return this.http.get<HojasFirma>(`${this.adminUrl}/examenes/${examenId}/hojas-firma`);
+  }
+
+  getPagos(examenId: string): Observable<PagosColaboradores> {
+    return this.http.get<PagosColaboradores>(`${this.adminUrl}/examenes/${examenId}/pagos`);
+  }
+
+  exportHojasFirmaPdf(examenId: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.adminUrl}/examenes/${examenId}/hojas-firma.pdf`, {
+      observe: "response",
+      responseType: "blob",
+    });
+  }
+
+  exportPagosPdf(examenId: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.adminUrl}/examenes/${examenId}/pagos.pdf`, {
+      observe: "response",
+      responseType: "blob",
+    });
+  }
+
+  getConfiguracionInformes(): Observable<ConfiguracionInformes> {
+    return this.http.get<ConfiguracionInformes>(`${this.adminUrl}/configuracion-informes`);
+  }
+
+  updateConfiguracionInformes(payload: ConfiguracionInformesUpdate): Observable<ConfiguracionInformes> {
+    return this.http.put<ConfiguracionInformes>(`${this.adminUrl}/configuracion-informes`, payload);
+  }
+
+  deleteAsignacion(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/asignaciones/${id}`);
   }
 
   createExamen(procesoId: string, payload: ExamenCreate): Observable<Examen> {
@@ -169,6 +299,66 @@ export class SicolApiClient {
 
   listCuerpos(): Observable<Cuerpo[]> {
     return this.http.get<Cuerpo[]>(`${this.adminUrl}/cuerpos`);
+  }
+
+  listPerfilesColaboracion(): Observable<PerfilColaboracion[]> {
+    return this.http.get<PerfilColaboracion[]>(`${this.adminUrl}/perfiles-colaboracion`);
+  }
+
+  createPerfilColaboracion(payload: PerfilColaboracionCreateUpdate): Observable<PerfilColaboracion> {
+    return this.http.post<PerfilColaboracion>(`${this.adminUrl}/perfiles-colaboracion`, payload);
+  }
+
+  updatePerfilColaboracion(id: string, payload: PerfilColaboracionCreateUpdate): Observable<PerfilColaboracion> {
+    return this.http.put<PerfilColaboracion>(`${this.adminUrl}/perfiles-colaboracion/${id}`, payload);
+  }
+
+  deletePerfilColaboracion(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/perfiles-colaboracion/${id}`);
+  }
+
+  listColaboradores(filters: {
+    search?: string;
+    provincia?: string;
+    localidad?: string;
+    rol?: string;
+    estado?: EstadoColaborador | "";
+    page?: number;
+    size?: number;
+  } = {}): Observable<PaginaColaboradores> {
+    const params: Record<string, string | number> = { page: filters.page ?? 0, size: filters.size ?? 20 };
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== "" && key !== "page" && key !== "size") params[key] = value;
+    }
+    return this.http.get<PaginaColaboradores>(`${this.adminUrl}/colaboradores`, { params });
+  }
+
+  createColaborador(payload: ColaboradorCreate): Observable<Colaborador> {
+    return this.http.post<Colaborador>(`${this.adminUrl}/colaboradores`, payload);
+  }
+
+  updateColaborador(id: string, payload: ColaboradorPatch): Observable<Colaborador> {
+    return this.http.patch<Colaborador>(`${this.adminUrl}/colaboradores/${id}`, payload);
+  }
+
+  deleteColaborador(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/colaboradores/${id}`);
+  }
+
+  cambiarEstadoColaboradores(payload: CambioEstadoColaboradores): Observable<void> {
+    return this.http.patch<void>(`${this.adminUrl}/colaboradores/estado`, payload);
+  }
+
+  simularImportacionColaboradores(fichero: File): Observable<ImportacionColaboradoresResultado> {
+    return this.http.post<ImportacionColaboradoresResultado>(
+      `${this.adminUrl}/colaboradores/importacion-excel/simulacion`, this.toSingleFileFormData(fichero),
+    );
+  }
+
+  confirmarImportacionColaboradores(fichero: File): Observable<ImportacionColaboradoresResultado> {
+    return this.http.post<ImportacionColaboradoresResultado>(
+      `${this.adminUrl}/colaboradores/importacion-excel`, this.toSingleFileFormData(fichero),
+    );
   }
 
   createCuerpo(payload: CuerpoCreateUpdate): Observable<Cuerpo> {

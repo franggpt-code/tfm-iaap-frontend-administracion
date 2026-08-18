@@ -245,6 +245,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/colaboradores/importacion-excel/simulacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validar una importación de colaboradores desde Excel
+         * @description Valida el fichero y devuelve un resumen sin realizar escrituras.
+         */
+        post: operations["simularImportacionColaboradoresExcel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/colaboradores/estado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cambiar el estado de varios colaboradores
+         * @description Aplica el mismo estado a todos los colaboradores seleccionados en una sola operación.
+         */
+        patch: operations["cambiarEstadoColaboradores"];
+        trace?: never;
+    };
+    "/admin/colaboradores/importacion-excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Importar colaboradores desde Excel
+         * @description Crea los colaboradores válidos y omite duplicados o filas con errores.
+         */
+        post: operations["confirmarImportacionColaboradoresExcel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/colaboradores/{colaboradorId}": {
         parameters: {
             query?: never;
@@ -423,8 +483,8 @@ export interface paths {
         };
         /**
          * Listar procesos selectivos
-         * @description Introduce en el contrato principal la consulta del eje real del dominio ya estabilizado en backend.
-         *     Se mantiene read-only en esta iteración para hacer una transición pequeña y controlada.
+         * @description Devuelve los procesos ordenados por fecha de actualización descendente.
+         *     Permite buscar por nombre o código SIRHUS para alimentar selectores y autocompletados.
          */
         get: operations["listProcesosSelectivos"];
         put?: never;
@@ -586,11 +646,64 @@ export interface paths {
         /** Listar perfiles de colaboración */
         get: operations["listPerfilesColaboracion"];
         put?: never;
+        /** Crear perfil de colaboración */
+        post: operations["createPerfilColaboracion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/perfiles-colaboracion/{perfilId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Actualizar perfil de colaboración */
+        put: operations["updatePerfilColaboracion"];
+        post?: never;
+        /** Eliminar perfil de colaboración */
+        delete: operations["deletePerfilColaboracion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/asignaciones/contextos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar ejercicios asignables por día de realización */
+        get: operations["listContextosAsignacionByFecha"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/asignaciones/horas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Establecer las mismas horas en varias asignaciones */
+        patch: operations["cambiarHorasAsignaciones"];
         trace?: never;
     };
     "/admin/examenes/{examenId}/asignaciones": {
@@ -622,7 +735,11 @@ export interface paths {
         get: operations["getAsignacionById"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Eliminar una asignación
+         * @description Impide eliminar el último responsable de un aula.
+         */
+        delete: operations["deleteAsignacionById"];
         options?: never;
         head?: never;
         /** Actualizar asignación y registrar horas */
@@ -680,6 +797,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/examenes/{examenId}/hojas-firma.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar el control de firmas en PDF */
+        get: operations["exportarHojasFirmaPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/examenes/{examenId}/pagos": {
         parameters: {
             query?: never;
@@ -690,6 +824,41 @@ export interface paths {
         /** Obtener datos para pagos */
         get: operations["getPagosByExamen"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/examenes/{examenId}/pagos.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exportar el informe de pagos en PDF */
+        get: operations["exportarPagosPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/configuracion-informes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar los parámetros maestros de informes */
+        get: operations["getConfiguracionInformes"];
+        /** Actualizar los parámetros maestros de informes */
+        put: operations["updateConfiguracionInformes"];
         post?: never;
         delete?: never;
         options?: never;
@@ -963,6 +1132,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/portal/mi-perfil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar los datos propios del colaborador autenticado */
+        get: operations["getMiPerfilColaborador"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Actualizar los datos propios editables */
+        patch: operations["updateMiPerfilColaborador"];
+        trace?: never;
+    };
+    "/portal/mis-asignaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar las asignaciones propias */
+        get: operations["listMisAsignaciones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/portal/mis-asignaciones/{asignacionId}/confirmacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Confirmar o rechazar una asignación propia */
+        patch: operations["updateConfirmacionMiAsignacion"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1114,6 +1338,11 @@ export interface components {
              * @example temporal123
              */
             passwordLocal?: string;
+            /**
+             * Format: uuid
+             * @description Colaborador vinculado. Es obligatorio cuando se concede el rol COLABORADOR.
+             */
+            colaboradorId?: string | null;
         };
         /**
          * @description Estado funcional del colaborador dentro del proceso MVP.
@@ -1249,6 +1478,24 @@ export interface components {
             rolesPreferidos?: string[];
             disponibilidad?: components["schemas"]["VentanaDisponibilidad"][];
         };
+        /** @description Datos que la persona colaboradora puede mantener desde su área personal. */
+        ColaboradorPortalPatch: {
+            nombreCompleto?: string;
+            sexo?: components["schemas"]["SexoColaborador"];
+            iban?: string;
+            telefono?: string;
+            /** Format: email */
+            correoCorporativo?: string;
+            observaciones?: string;
+            provincia?: string;
+            localidad?: string;
+            disponibilidad?: components["schemas"]["VentanaDisponibilidad"][];
+        };
+        /** @description Selección de colaboradores y nuevo estado que se aplicará en bloque. */
+        CambioEstadoColaboradores: {
+            ids: string[];
+            estado: components["schemas"]["EstadoColaborador"];
+        };
         /** @description Ventana de disponibilidad expresada en días naturales. */
         VentanaDisponibilidad: {
             /**
@@ -1275,6 +1522,14 @@ export interface components {
             totalElements: number;
             /** @example 7 */
             totalPages: number;
+        };
+        /** @description Resumen de validación o importación de un fichero de colaboradores. */
+        ImportacionColaboradoresResultado: {
+            totalFilas: number;
+            filasValidas: number;
+            creados: number;
+            omitidos: number;
+            avisos: string[];
         };
         /**
          * @description Estado funcional del proceso selectivo.
@@ -1685,6 +1940,29 @@ export interface components {
              */
             importeHora: number;
         };
+        PerfilColaboracionCreateUpdate: {
+            /** @example RESPONSABLE_DE_CENTRO */
+            codigo: string;
+            /** @example RESPONSABLE DE CENTRO */
+            denominacion: string;
+            /**
+             * Format: double
+             * @example 36.06
+             */
+            importeHora: number;
+        };
+        ContextoAsignacion: {
+            /** Format: uuid */
+            examenId: string;
+            /** Format: uuid */
+            procesoSelectivoId: string;
+            procesoNombre: string;
+            codigoSirhus?: string;
+            examenNombre: string;
+            numeroEjercicio: number;
+            /** Format: date-time */
+            fechaHora: string;
+        };
         /** @description Centro participante en un examen, derivado de sus aulas. */
         CentroExamen: {
             /** @example IES_PADRE_MANJON */
@@ -1705,11 +1983,17 @@ export interface components {
              * @example 55555555-5555-5555-5555-555555555555
              */
             examenId: string;
+            readonly procesoCodigoSirhus?: string;
+            readonly procesoNombre?: string;
+            readonly examenNombre?: string;
+            readonly numeroEjercicio?: number;
+            /** Format: date-time */
+            readonly fechaHora?: string | null;
             /**
              * Format: uuid
              * @example 66666666-6666-6666-6666-666666666666
              */
-            examenAulaId: string;
+            examenAulaId?: string | null;
             /**
              * Format: uuid
              * @example 11111111-1111-1111-1111-111111111111
@@ -1733,6 +2017,12 @@ export interface components {
             /** @example AULA 003 */
             readonly aulaNombre?: string;
             /**
+             * @description Ubicación o agrupación operativa dentro del ámbito general.
+             * @example Pasillo Edificio 6
+             */
+            subcategoriaGeneral?: string | null;
+            estadoConfirmacion: components["schemas"]["EstadoConfirmacionAsignacion"];
+            /**
              * Format: double
              * @example 5.5
              */
@@ -1754,23 +2044,48 @@ export interface components {
         };
         /** @description Datos para crear una asignación de colaborador. */
         AsignacionColaboradorCreate: {
+            /** @description Indica que la asignación corresponde al conjunto del ejercicio y no a un aula. */
+            ambitoGeneral: boolean;
             /** Format: uuid */
-            examenAulaId: string;
+            examenAulaId?: string | null;
             /** Format: uuid */
             colaboradorId: string;
             /** Format: uuid */
             perfilId: string;
+            /** @description Texto libre para agrupar asignaciones de ámbito general. */
+            subcategoriaGeneral?: string | null;
             /** Format: double */
             horasRealizadas?: number | null;
+            estadoConfirmacion?: components["schemas"]["EstadoConfirmacionAsignacion"];
         };
         /** @description Campos mutables de una asignación, incluido el registro de horas. */
         AsignacionColaboradorPatch: {
+            /** @description Permite cambiar la asignación entre el ámbito general y un aula concreta. */
+            ambitoGeneral?: boolean;
             /** Format: uuid */
-            examenAulaId?: string;
+            examenAulaId?: string | null;
             /** Format: uuid */
             perfilId?: string;
+            /** @description Texto libre para agrupar asignaciones de ámbito general; vacío elimina el valor. */
+            subcategoriaGeneral?: string | null;
             /** Format: double */
             horasRealizadas?: number | null;
+            estadoConfirmacion?: components["schemas"]["EstadoConfirmacionAsignacion"];
+        };
+        /**
+         * @description Situación de la confirmación de asistencia comunicada por la persona asignada.
+         * @enum {string}
+         */
+        EstadoConfirmacionAsignacion: "PENDIENTE" | "CONFIRMADA" | "RECHAZADA";
+        /** @description Respuesta de la persona colaboradora a una asignación propia. */
+        ConfirmacionAsignacionPortalUpdate: {
+            estadoConfirmacion: components["schemas"]["EstadoConfirmacionAsignacion"];
+        };
+        /** @description Cambio masivo de horas realizadas para una selección de asignaciones. */
+        CambioHorasAsignaciones: {
+            ids: string[];
+            /** Format: double */
+            horasRealizadas: number;
         };
         /** @description Cálculo económico de una asignación. */
         ImporteAsignacion: {
@@ -1855,6 +2170,23 @@ export interface components {
             importeTotal: number;
             /** @description Código compuesto equivalente al COD_PERFIL de la ODS. */
             codigoPerfil?: string;
+        };
+        /** @description Parámetros institucionales reutilizados al generar los informes oficiales. */
+        ConfiguracionInformes: {
+            organismo: string;
+            localidadFirma: string;
+            nombreCertifica: string;
+            cargoCertifica: string;
+            nombreVistoBueno: string;
+            cargoVistoBueno: string;
+        };
+        ConfiguracionInformesUpdate: {
+            organismo: string;
+            localidadFirma: string;
+            nombreCertifica: string;
+            cargoCertifica: string;
+            nombreVistoBueno: string;
+            cargoVistoBueno: string;
         };
         /** @description Resultado agregado de una carga desde plantilla ODS/XLSX. */
         ImportacionDatosBaseResultado: {
@@ -2453,6 +2785,8 @@ export interface operations {
     listColaboradores: {
         parameters: {
             query?: {
+                /** @description Búsqueda libre por nombre, documento, correo o teléfono. */
+                search?: string;
                 /** @description Filtra por provincia de residencia o preferencia del colaborador. */
                 provincia?: components["parameters"]["provincia"];
                 /** @description Filtra por localidad del colaborador. */
@@ -2687,6 +3021,89 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    simularImportacionColaboradoresExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Simulación completada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionColaboradoresResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    cambiarEstadoColaboradores: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambioEstadoColaboradores"];
+            };
+        };
+        responses: {
+            /** @description Estados actualizados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    confirmarImportacionColaboradoresExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Importación completada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionColaboradoresResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -3201,6 +3618,8 @@ export interface operations {
                 page?: components["parameters"]["page"];
                 /** @description Número de elementos por página. */
                 size?: components["parameters"]["size"];
+                /** @description Texto parcial a buscar, sin distinguir mayúsculas, en el nombre o el código SIRHUS. */
+                search?: string;
             };
             header?: never;
             path?: never;
@@ -3631,6 +4050,135 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    createPerfilColaboracion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerfilColaboracionCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Perfil creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilColaboracion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updatePerfilColaboracion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                perfilId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PerfilColaboracionCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Perfil actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PerfilColaboracion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    deletePerfilColaboracion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                perfilId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Perfil eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listContextosAsignacionByFecha: {
+        parameters: {
+            query: {
+                fecha: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ejercicios previstos para el día indicado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContextoAsignacion"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    cambiarHorasAsignaciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambioHorasAsignaciones"];
+            };
+        };
+        responses: {
+            /** @description Horas actualizadas */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     listAsignacionesByExamen: {
         parameters: {
             query?: never;
@@ -3711,6 +4259,30 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    deleteAsignacionById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Asignación eliminada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -3823,6 +4395,33 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    exportarHojasFirmaPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único del examen. */
+                examenId: components["parameters"]["examenId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Documento PDF del control de firmas */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     getPagosByExamen: {
         parameters: {
             query?: never;
@@ -3846,6 +4445,81 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    exportarPagosPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único del examen. */
+                examenId: components["parameters"]["examenId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Documento PDF del informe de pagos */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getConfiguracionInformes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configuración de informes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionInformes"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateConfiguracionInformes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfiguracionInformesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Configuración actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionInformes"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -4352,6 +5026,109 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+        };
+    };
+    getMiPerfilColaborador: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Perfil propio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Colaborador"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateMiPerfilColaborador: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColaboradorPortalPatch"];
+            };
+        };
+        responses: {
+            /** @description Perfil propio actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Colaborador"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listMisAsignaciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Asignaciones de la persona autenticada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AsignacionColaborador"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateConfirmacionMiAsignacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador único de la asignación de colaborador. */
+                asignacionId: components["parameters"]["asignacionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmacionAsignacionPortalUpdate"];
+            };
+        };
+        responses: {
+            /** @description Confirmación actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AsignacionColaborador"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
 }

@@ -1,0 +1,38 @@
+.portal-page { display: grid; gap: 1.5rem; }
+.portal-section { background: #fff; border: 1px solid var(--jda-neutral-border); border-radius: 8px; padding: 1.5rem; }
+.section-heading { align-items: start; display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.section-heading h2, .assignment-card h3 { margin: 0; }
+.section-heading p { color: #59665f; margin: .35rem 0 0; }
+.assignment-list { display: grid; gap: 1rem; }
+.assignment-card { border: 1px solid #cbd4cf; border-left: 5px solid var(--jda-primary); border-radius: 6px; display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) 240px; padding: 1.25rem; }
+.assignment-card__title { align-items: baseline; display: flex; flex-wrap: wrap; gap: .5rem .75rem; }
+.assignment-card__title h3 { font-size: 1.1rem; }
+.process-code { background: #e4f0e9; border-radius: 4px; color: var(--jda-primary-dark); font-weight: 800; padding: .25rem .5rem; }
+.assignment-meta { display: grid; gap: .75rem 1.25rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 1rem 0 0; }
+.assignment-meta div { min-width: 0; }
+.assignment-meta dt, .identity-summary span { color: #5c6861; font-size: .8rem; font-weight: 700; text-transform: uppercase; }
+.assignment-meta dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.assignment-card__response { align-items: stretch; border-left: 1px solid #dfe5e1; display: flex; flex-direction: column; gap: 1rem; justify-content: center; padding-left: 1.25rem; }
+.response-actions { display: grid; gap: .5rem; grid-template-columns: 1fr 1fr; }
+.response-actions .button { justify-content: center; }
+.status-chip--danger { background: #fbe8e7; color: #992c27; }
+.identity-summary { background: #f5f7f6; display: flex; gap: 3rem; margin-bottom: 1rem; padding: 1rem; }
+.identity-summary div { display: grid; gap: .2rem; }
+.profile-form { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.field--wide { grid-column: 1 / -1; }
+.field small { color: #59665f; }
+.monospace { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .03em; }
+
+@media (max-width: 850px) {
+  .assignment-card { grid-template-columns: 1fr; }
+  .assignment-card__response { border-left: 0; border-top: 1px solid #dfe5e1; padding: 1rem 0 0; }
+  .assignment-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .portal-section { padding: 1rem; }
+  .assignment-meta, .profile-form { grid-template-columns: 1fr; }
+  .field--wide { grid-column: auto; }
+  .identity-summary { gap: 1.5rem; }
+  .response-actions { grid-template-columns: 1fr; }
+}

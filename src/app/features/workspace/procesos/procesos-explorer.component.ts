@@ -132,6 +132,16 @@ export class ProcesosExplorerComponent implements OnInit {
     this.processFormOpen.set(true);
   }
 
+  isOepSelected(oepId: number): boolean {
+    return this.processForm.oepIds.includes(oepId);
+  }
+
+  toggleOep(oepId: number, selected: boolean): void {
+    this.processForm.oepIds = selected
+      ? [...new Set([...this.processForm.oepIds, oepId])]
+      : this.processForm.oepIds.filter((id) => id !== oepId);
+  }
+
   saveProcess(form: NgForm): void {
     if (form.invalid || this.saving()) return;
     const payload: ProcesoSelectivoCreate = {

@@ -1,0 +1,59 @@
+<div class="page-shell portal-page">
+  <header class="page-heading">
+    <div><p class="eyebrow">Área personal</p><h1>Mi espacio de colaboración</h1><p>Revisa tus datos y responde a las asignaciones que te haya comunicado el IAAP.</p></div>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+  @if (loading()) { <p class="loading-message">Cargando tu información…</p> }
+  @else if (perfil(); as person) {
+    <section class="portal-section" aria-labelledby="assignments-title">
+      <div class="section-heading"><div><p class="eyebrow">Próximas colaboraciones</p><h2 id="assignments-title">Mis asignaciones</h2><p>{{ asignaciones().length }} {{ asignaciones().length === 1 ? "asignación disponible" : "asignaciones disponibles" }}.</p></div></div>
+      <div class="assignment-list">
+        @for (item of asignaciones(); track item.id) {
+          <article class="assignment-card">
+            <div class="assignment-card__main">
+              <div class="assignment-card__title"><span class="process-code">{{ item.procesoCodigoSirhus || "Proceso" }}</span><h3>{{ item.procesoNombre }}</h3></div>
+              <dl class="assignment-meta">
+                <div><dt>Ejercicio</dt><dd>{{ item.numeroEjercicio }} · {{ item.examenNombre }}</dd></div>
+                <div><dt>Fecha</dt><dd>{{ item.fechaHora ? (item.fechaHora | date:"d 'de' MMMM 'de' y, HH:mm":"":"es") : "Pendiente de fecha" }}</dd></div>
+                <div><dt>Función</dt><dd>{{ item.perfilDenominacion }}</dd></div>
+                <div><dt>Ubicación</dt><dd>{{ scopeLabel(item) }}</dd></div>
+                <div><dt>Horas previstas</dt><dd>{{ item.horasRealizadas ?? "Pendientes" }}</dd></div>
+                <div><dt>Importe estimado</dt><dd>{{ item.importeTotal == null ? "Pendiente" : (item.importeTotal | number:"1.2-2") + " €" }}</dd></div>
+              </dl>
+            </div>
+            <div class="assignment-card__response">
+              <span class="status-chip" [class.status-chip--success]="item.estadoConfirmacion === 'CONFIRMADA'" [class.status-chip--danger]="item.estadoConfirmacion === 'RECHAZADA'">{{ item.estadoConfirmacion === "CONFIRMADA" ? "Asistencia confirmada" : item.estadoConfirmacion === "RECHAZADA" ? "Asignación rechazada" : "Pendiente de respuesta" }}</span>
+              <div class="response-actions" aria-label="Responder a la asignación">
+                <button class="button button--secondary" type="button" [disabled]="pending().has(item.id) || item.estadoConfirmacion === 'RECHAZADA'" (click)="updateConfirmation(item, 'RECHAZADA')">Rechazar</button>
+                <button class="button button--primary" type="button" [disabled]="pending().has(item.id) || item.estadoConfirmacion === 'CONFIRMADA'" (click)="updateConfirmation(item, 'CONFIRMADA')">{{ pending().has(item.id) ? "Guardando…" : "Confirmar" }}</button>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-state"><strong>No tienes asignaciones.</strong><span>Cuando se te asigne una colaboración aparecerá en este apartado.</span></div>
+        }
+      </div>
+    </section>
+
+    <section class="portal-section profile-section" aria-labelledby="profile-title">
+      <div class="section-heading"><div><p class="eyebrow">Datos personales</p><h2 id="profile-title">Mis datos</h2><p>El documento identificativo y el estado son datos administrativos. Puedes mantener actualizados el resto de campos.</p></div></div>
+      <div class="identity-summary"><div><span>DNI</span><strong>{{ person.dni }}{{ person.letra }}</strong></div><div><span>Estado</span><strong>{{ person.estado === "ACTIVO" ? "Activo" : person.estado }}</strong></div></div>
+      <p class="required-note">* Campos obligatorios</p>
+      <form class="profile-form" [formGroup]="form" (ngSubmit)="saveProfile()" novalidate>
+        <div class="field field--wide"><label for="my-name">Nombre y apellidos *</label><input id="my-name" type="text" formControlName="nombreCompleto">@if (form.controls.nombreCompleto.invalid && form.controls.nombreCompleto.touched) { <span class="field-error">Introduce tu nombre y apellidos.</span> }</div>
+        <div class="field"><label for="my-sex">Sexo</label><select id="my-sex" formControlName="sexo"><option value="MUJER">Mujer</option><option value="HOMBRE">Hombre</option><option value="NO_BINARIO">No binario</option><option value="NO_INFORMA">Prefiero no indicarlo</option></select></div>
+        <div class="field"><label for="my-email">Correo corporativo *</label><input id="my-email" type="email" autocomplete="email" formControlName="correoCorporativo">@if (form.controls.correoCorporativo.invalid && form.controls.correoCorporativo.touched) { <span class="field-error">Introduce un correo válido.</span> }</div>
+        <div class="field"><label for="my-phone">Teléfono</label><input id="my-phone" type="tel" autocomplete="tel" formControlName="telefono"></div>
+        <div class="field field--wide"><label for="my-iban">IBAN</label><input id="my-iban" class="monospace" type="text" autocomplete="off" maxlength="34" formControlName="iban"><small>Se utilizará únicamente para la gestión de pagos.</small></div>
+        <div class="field"><label for="my-province">Provincia</label><input id="my-province" type="text" formControlName="provincia"></div>
+        <div class="field"><label for="my-town">Localidad</label><input id="my-town" type="text" formControlName="localidad"></div>
+        <div class="field"><label for="my-from">Disponible desde</label><input id="my-from" type="date" formControlName="disponibleDesde"></div>
+        <div class="field"><label for="my-until">Disponible hasta</label><input id="my-until" type="date" formControlName="disponibleHasta"></div>
+        <div class="field field--wide"><label for="my-notes">Observaciones</label><textarea id="my-notes" rows="3" formControlName="observaciones"></textarea></div>
+        <div class="form-actions field--wide"><button class="button button--primary" type="submit" [disabled]="saving()">{{ saving() ? "Guardando…" : "Guardar mis datos" }}</button></div>
+      </form>
+    </section>
+  }
+</div>

@@ -9,21 +9,98 @@
   @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
 
   @if (processFormOpen()) {
-    <section class="editor-panel" role="dialog" aria-labelledby="process-form-title">
-      <div class="editor-heading"><div><p class="eyebrow">{{ processFormMode() === "create" ? "Nuevo registro" : "Edición" }}</p><h2 id="process-form-title">{{ processFormMode() === "create" ? "Crear proceso selectivo" : "Editar proceso selectivo" }}</h2></div><button class="close-button" type="button" aria-label="Cerrar formulario" (click)="closeForms()">×</button></div>
-      <p class="required-note">* Campos obligatorios</p>
-      <form #processEditor="ngForm" (ngSubmit)="saveProcess(processEditor)">
-        <div class="form-grid">
-          <label class="field field--wide"><span>Nombre *</span><input name="processName" [(ngModel)]="processForm.nombre" required maxlength="250"></label>
-          <label class="field"><span>Código SIRHUS</span><input name="sirhusCode" [(ngModel)]="processForm.codigoSirhus" maxlength="50" placeholder="Ej. L2A11300"></label>
-          @if (processFormMode() === "edit") { <label class="field"><span>Estado del proceso *</span><select name="processState" [(ngModel)]="processForm.estado" required><option value="BORRADOR">Borrador · En preparación</option><option value="PUBLICADO">Publicado · En curso</option><option value="CERRADO">Cerrado · Finalizado</option></select><small>Determina si el proceso sigue activo y aparece en los filtros operativos.</small></label> }
-          <label class="field"><span>Cuerpo</span><select name="body" [(ngModel)]="processForm.idCuerpo"><option [ngValue]="null">Sin asignar</option>@for (item of cuerpos(); track item.idCuerpo) { <option [ngValue]="item.idCuerpo">{{ item.codigo }} · {{ item.descripcion }}</option> }</select></label>
-          <label class="field"><span>Tipo de acceso</span><select name="accessType" [(ngModel)]="processForm.idTipoAcceso"><option [ngValue]="null">Sin asignar</option>@for (item of accesos(); track item.idTipoAcceso) { <option [ngValue]="item.idTipoAcceso">{{ item.descripcion }}</option> }</select></label>
-          <label class="field"><span>Tipo de vinculación</span><select name="bindingType" [(ngModel)]="processForm.idTipoVinculacion"><option [ngValue]="null">Sin asignar</option>@for (item of vinculaciones(); track item.idTipoVinculacion) { <option [ngValue]="item.idTipoVinculacion">{{ item.descripcion }}</option> }</select></label>
-          <label class="field"><span>Oferta de empleo público</span><select name="oeps" [(ngModel)]="processForm.oepIds" multiple>@for (item of oeps(); track item.idOep) { <option [ngValue]="item.idOep">{{ item.anio }} · {{ item.descripcion || "OEP" }}</option> }</select><small>Mantén Ctrl o ⌘ para seleccionar varias.</small></label>
-          <label class="field field--wide"><span>URL del proceso</span><input name="processUrl" [(ngModel)]="processForm.urlWebProceso" type="url" placeholder="https://…"></label>
+    <section class="editor-panel process-editor" aria-labelledby="process-form-title">
+      <div class="editor-heading">
+        <div class="editor-heading__title">
+          <span class="editor-heading__icon" aria-hidden="true">{{ processFormMode() === "create" ? "+" : "✎" }}</span>
+          <div>
+            <p class="eyebrow">{{ processFormMode() === "create" ? "Nuevo proceso" : "Edición del proceso" }}</p>
+            <h2 id="process-form-title">{{ processFormMode() === "create" ? "Crear proceso selectivo" : "Editar proceso selectivo" }}</h2>
+            <p class="editor-description">{{ processFormMode() === "create" ? "Completa los datos básicos para incorporar un proceso al sistema." : "Revisa y actualiza la información administrativa del proceso seleccionado." }}</p>
+          </div>
         </div>
-        <div class="form-actions"><button class="button button--secondary" type="button" (click)="closeForms()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="processEditor.invalid || saving()">{{ saving() ? "Guardando…" : "Guardar proceso" }}</button></div>
+        <button class="close-button" type="button" aria-label="Cerrar formulario" (click)="closeForms()">×</button>
+      </div>
+      <form #processEditor="ngForm" (ngSubmit)="saveProcess(processEditor)">
+        <div class="form-meta">
+          <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+          @if (processFormMode() === "create") {
+            <p class="draft-note"><span class="status-dot" aria-hidden="true"></span>El proceso se guardará inicialmente como borrador.</p>
+          }
+        </div>
+
+        <section class="form-section" aria-labelledby="process-identification-title">
+          <div class="form-section__heading">
+            <span class="form-section__index" aria-hidden="true">01</span>
+            <div><h3 id="process-identification-title">Identificación</h3><p>Datos que permiten reconocer y localizar el proceso.</p></div>
+          </div>
+          <div class="form-grid form-grid--identity">
+            <label class="field field--name">
+              <span>Nombre del proceso <span class="required-mark" aria-hidden="true">*</span></span>
+              <input #processName="ngModel" name="processName" [(ngModel)]="processForm.nombre" required maxlength="250" autocomplete="off" aria-describedby="process-name-help process-name-error" [attr.aria-invalid]="processName.invalid && (processName.touched || processEditor.submitted)">
+              <small id="process-name-help">Utiliza la denominación oficial de la convocatoria.</small>
+              @if (processName.invalid && (processName.touched || processEditor.submitted)) { <small class="field-error" id="process-name-error">Introduce el nombre del proceso.</small> }
+            </label>
+            <label class="field field--code">
+              <span>Código SIRHUS <small class="optional-label">(opcional)</small></span>
+              <input name="sirhusCode" [(ngModel)]="processForm.codigoSirhus" maxlength="50" placeholder="Ej. L2A11300" autocomplete="off" aria-describedby="sirhus-code-help">
+              <small id="sirhus-code-help">Código de referencia utilizado en SIRHUS.</small>
+            </label>
+            <label class="field field--wide">
+              <span>URL pública del proceso <small class="optional-label">(opcional)</small></span>
+              <input name="processUrl" [(ngModel)]="processForm.urlWebProceso" type="url" inputmode="url" placeholder="https://www.juntadeandalucia.es/…" autocomplete="url" aria-describedby="process-url-help">
+              <small id="process-url-help">Enlace al seguimiento oficial de la convocatoria.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-section" aria-labelledby="process-classification-title">
+          <div class="form-section__heading">
+            <span class="form-section__index" aria-hidden="true">02</span>
+            <div><h3 id="process-classification-title">Clasificación administrativa</h3><p>Información para organizar el proceso y facilitar su consulta.</p></div>
+          </div>
+          <div class="form-grid form-grid--classification">
+            @if (processFormMode() === "edit") {
+              <label class="field">
+                <span>Estado del proceso <span class="required-mark" aria-hidden="true">*</span></span>
+                <select name="processState" [(ngModel)]="processForm.estado" required aria-describedby="process-state-help"><option value="BORRADOR">Borrador · En preparación</option><option value="PUBLICADO">Publicado · En curso</option><option value="CERRADO">Cerrado · Finalizado</option></select>
+                <small id="process-state-help">Determina si el proceso aparece en los filtros operativos.</small>
+              </label>
+            }
+            <label class="field">
+              <span>Cuerpo <small class="optional-label">(opcional)</small></span>
+              <select name="body" [(ngModel)]="processForm.idCuerpo"><option [ngValue]="null">Sin asignar</option>@for (item of cuerpos(); track item.idCuerpo) { <option [ngValue]="item.idCuerpo">{{ item.codigo }} · {{ item.descripcion }}</option> }</select>
+            </label>
+            <label class="field">
+              <span>Tipo de acceso <small class="optional-label">(opcional)</small></span>
+              <select name="accessType" [(ngModel)]="processForm.idTipoAcceso"><option [ngValue]="null">Sin asignar</option>@for (item of accesos(); track item.idTipoAcceso) { <option [ngValue]="item.idTipoAcceso">{{ item.descripcion }}</option> }</select>
+            </label>
+            <label class="field">
+              <span>Tipo de vinculación <small class="optional-label">(opcional)</small></span>
+              <select name="bindingType" [(ngModel)]="processForm.idTipoVinculacion"><option [ngValue]="null">Sin asignar</option>@for (item of vinculaciones(); track item.idTipoVinculacion) { <option [ngValue]="item.idTipoVinculacion">{{ item.descripcion }}</option> }</select>
+            </label>
+          </div>
+        </section>
+
+        <fieldset class="oep-fieldset">
+          <legend><span class="form-section__index" aria-hidden="true">03</span><span><strong>Ofertas de empleo público</strong><small>Selecciona una o varias ofertas asociadas <span class="optional-label">(opcional)</span>.</small></span></legend>
+          <div class="oep-summary"><span>{{ processForm.oepIds.length }} seleccionada{{ processForm.oepIds.length === 1 ? "" : "s" }}</span><small>Puedes cambiar la selección en cualquier momento.</small></div>
+          <div class="oep-options">
+            @for (item of oeps(); track item.idOep) {
+              <label class="oep-option" [class.is-selected]="isOepSelected(item.idOep)">
+                <input type="checkbox" [checked]="isOepSelected(item.idOep)" (change)="toggleOep(item.idOep, $any($event.target).checked)">
+                <span><strong>OEP {{ item.anio }}</strong><small>{{ item.descripcion || "Oferta de empleo público" }}</small></span>
+              </label>
+            } @empty {
+              <p class="oep-empty">No hay ofertas de empleo público disponibles.</p>
+            }
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <p>Revisa los datos antes de continuar.</p>
+          <div><button class="button button--secondary" type="button" (click)="closeForms()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="processEditor.invalid || saving()" [attr.aria-busy]="saving()">{{ saving() ? "Guardando…" : processFormMode() === "create" ? "Crear proceso" : "Guardar cambios" }}</button></div>
+        </div>
       </form>
     </section>
   }

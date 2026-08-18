@@ -1,0 +1,73 @@
+<div class="page-shell reports-page">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Informes</span></nav>
+  <header class="page-heading">
+    <div><p class="eyebrow">Documentación operativa</p><h1>Informes</h1><p>Genera el control de firmas y la relación de pagos a partir de las asignaciones del proceso y ejercicio.</p></div>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+
+  <section class="report-context" aria-labelledby="report-context-title">
+    <div><p class="eyebrow">Paso 1</p><h2 id="report-context-title">Selecciona el ejercicio</h2></div>
+    <div class="report-context__fields">
+      <label><span>Proceso selectivo</span><select [value]="selectedProcesoId()" [disabled]="loading()" (change)="selectProcess($any($event.target).value)"><option value="">Selecciona un proceso</option>@for (process of procesos(); track process.id) { <option [value]="process.id">{{ processLabel(process) }}</option> }</select></label>
+      <label><span>Ejercicio</span><select [value]="selectedExamenId()" [disabled]="!selectedProcesoId() || reportLoading()" (change)="selectExam($any($event.target).value)"><option value="">Selecciona un ejercicio</option>@for (exam of examenes(); track exam.id) { <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option> }</select></label>
+    </div>
+  </section>
+
+  @if (reportLoading()) { <p class="loading-message">Comprobando datos para los informes…</p> }
+  @if (selectedExamenId() && !reportLoading()) {
+    <section class="report-dashboard" aria-label="Calidad de los datos">
+      <div><span>Asignaciones</span><strong>{{ asignaciones().length }}</strong></div>
+      <div><span>Personas admitidas</span><strong>{{ activeConvokedCount() }}</strong></div>
+      <div [class.metric--warning]="missingHours()"><span>Sin horas</span><strong>{{ missingHours() }}</strong></div>
+      <div [class.metric--warning]="missingIban()"><span>Sin IBAN</span><strong>{{ missingIban() }}</strong></div>
+      <div [class.metric--warning]="resumen()?.duplicidades?.length"><span>Personas repetidas</span><strong>{{ resumen()?.duplicidades?.length || 0 }}</strong></div>
+    </section>
+
+    <div class="report-tabs" role="tablist" aria-label="Tipo de informe">
+      <button type="button" role="tab" [class.is-active]="reportType() === 'firmas'" [attr.aria-selected]="reportType() === 'firmas'" (click)="reportType.set('firmas')">Control de firmas</button>
+      <button type="button" role="tab" [class.is-active]="reportType() === 'pagos'" [attr.aria-selected]="reportType() === 'pagos'" (click)="reportType.set('pagos')">Informe de pagos</button>
+    </div>
+
+    @if (reportType() === "firmas") {
+      <section class="report-panel">
+        <header>
+          <div><p class="eyebrow">Control de asistencia</p><h2>Control de firmas</h2><p>La tabla permite revisar las personas incluidas. El PDF añade las columnas en blanco para hora de entrada, firma, hora de salida y firma.</p></div>
+          <button class="button button--primary" type="button" [disabled]="!signatureRows().length || commonGaps().length || !!exporting()" [attr.aria-busy]="exporting() === 'firmas'" (click)="exportPdf('firmas')">{{ exporting() === "firmas" ? "Generando…" : "Exportar a PDF" }}</button>
+        </header>
+        <div class="readiness"><h3>Comprobación previa</h3><ul><li class="is-ready">El DNI se muestra ofuscado tanto aquí como en el control de firmas.</li><li class="is-ready">El PDF reserva espacio para horas y firmas manuscritas.</li>@for (gap of commonGaps(); track gap) { <li class="is-missing">Falta completar: {{ gap }}</li> }</ul></div>
+        <div class="preview-table">
+          <table class="admin-table report-data-table">
+            <thead><tr><th>Centro</th><th>Aula o zona</th><th>DNI</th><th>Nombre</th><th>Perfil</th></tr></thead>
+            <tbody>
+              @for (person of signatureRows(); track $index) {
+                <tr><td data-label="Centro">{{ person.center }}</td><td data-label="Aula o zona">{{ person.location }}</td><td data-label="DNI"><span class="masked-id">{{ person.dni }}</span></td><td data-label="Nombre"><strong>{{ person.name }}</strong></td><td data-label="Perfil">{{ person.profile }}</td></tr>
+              } @empty { <tr><td colspan="5"><div class="empty-state"><strong>No hay asignaciones.</strong><span>Añade personas al ejercicio antes de generar el control.</span></div></td></tr> }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else {
+      <section class="report-panel">
+        <header>
+          <div><p class="eyebrow">Certificación económica</p><h2>Informe de pagos</h2><p>Incluye el DNI completo, el IBAN, las horas y el importe íntegro de cada colaboración.</p></div>
+          <button class="button button--primary" type="button" [disabled]="!pagos()?.pagos?.length || commonGaps().length || missingHours() || missingIban() || missingReportParameters() || !!exporting()" [attr.aria-busy]="exporting() === 'pagos'" (click)="exportPdf('pagos')">{{ exporting() === "pagos" ? "Generando…" : "Exportar a PDF" }}</button>
+        </header>
+        <div class="readiness"><h3>Comprobación previa</h3><ul><li [class.is-ready]="!missingHours()" [class.is-missing]="missingHours()">{{ missingHours() ? missingHours() + (missingHours() === 1 ? " asignación todavía no tiene horas" : " asignaciones todavía no tienen horas") : "Todas las asignaciones tienen horas" }}</li><li [class.is-ready]="!missingIban()" [class.is-missing]="missingIban()">{{ missingIban() ? missingIban() + (missingIban() === 1 ? " pago no tiene IBAN" : " pagos no tienen IBAN") : "Todos los pagos tienen IBAN" }}</li><li [class.is-ready]="!missingReportParameters()" [class.is-missing]="missingReportParameters()">{{ missingReportParameters() ? "Completa los responsables de certificación y visto bueno en Datos maestros" : "Parámetros de certificación configurados" }} @if (missingReportParameters()) { <a routerLink="/admin/datos-maestros" fragment="configuracion-informes">Ir a Datos maestros</a> }</li>@for (gap of commonGaps(); track gap) { <li class="is-missing">Falta completar: {{ gap }}</li> }</ul></div>
+        <div class="payment-summary"><span>{{ pagos()?.pagos?.length || 0 }} líneas calculadas</span><strong>{{ money(pagos()?.totalImporte) }}</strong></div>
+        <div class="preview-table">
+          <table class="admin-table report-data-table payment-table">
+            <thead><tr><th>DNI</th><th>Persona</th><th>Perfil</th><th>IBAN</th><th>Horas</th><th>Íntegro</th></tr></thead>
+            <tbody>
+              @for (payment of pagos()?.pagos || []; track $index) {
+                <tr><td data-label="DNI">{{ payment.dni }}</td><td data-label="Persona"><strong>{{ payment.nombreCompleto }}</strong></td><td data-label="Perfil">{{ payment.perfilDenominacion }}</td><td data-label="IBAN"><span class="iban">{{ payment.iban || "Pendiente" }}</span></td><td data-label="Horas" class="number-cell">{{ payment.horasRealizadas }}</td><td data-label="Íntegro" class="number-cell">{{ money(payment.importeTotal) }}</td></tr>
+              } @empty { <tr><td colspan="6"><div class="empty-state"><strong>No hay líneas de pago calculables.</strong><span>Registra las horas realizadas en las asignaciones.</span></div></td></tr> }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  } @else if (!loading()) {
+    <div class="initial-empty"><span class="initial-empty__icon" aria-hidden="true">1</span><strong>Selecciona un proceso y un ejercicio</strong><p>El sistema comprobará automáticamente si están todos los datos necesarios.</p></div>
+  }
+</div>

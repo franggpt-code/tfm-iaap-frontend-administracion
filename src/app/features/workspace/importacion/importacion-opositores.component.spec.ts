@@ -10,8 +10,8 @@ describe("ImportacionOpositoresComponent", () => {
   let api: jasmine.SpyObj<SicolApiClient>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj<SicolApiClient>("SicolApiClient", ["listProcesos", "listExamenes", "simularImportacion", "confirmarImportacion"]);
-    api.listProcesos.and.returnValue(of({ content: [{ id: "p1", nombre: "Proceso 1", estado: "PUBLICADO" }], page: 0, size: 100, totalElements: 1, totalPages: 1 }));
+    api = jasmine.createSpyObj<SicolApiClient>("SicolApiClient", ["listProcesos", "getProceso", "listExamenes", "simularImportacion", "confirmarImportacion"]);
+    api.listProcesos.and.returnValue(of({ content: [{ id: "p1", nombre: "Proceso 1", codigoSirhus: "L2A", estado: "PUBLICADO" }], page: 0, size: 20, totalElements: 1, totalPages: 1 }));
     api.listExamenes.and.returnValue(of([{ id: "e1", procesoSelectivoId: "p1", nombre: "Primer ejercicio", numeroEjercicio: 1 }]));
 
     await TestBed.configureTestingModule({
@@ -26,6 +26,12 @@ describe("ImportacionOpositoresComponent", () => {
     expect(fixture.componentInstance.canSimulate()).toBeFalse();
     prepareSelection();
     expect(fixture.componentInstance.canSimulate()).toBeTrue();
+  });
+
+  it("busca procesos por nombre o código SIRHUS", async () => {
+    fixture.componentInstance.onProcesoSearch("L2A");
+    await new Promise(resolve => setTimeout(resolve, 300));
+    expect(api.listProcesos).toHaveBeenCalledWith(0, 20, "L2A");
   });
 
   it("rechaza ficheros con una extensión no admitida", () => {
@@ -69,7 +75,7 @@ describe("ImportacionOpositoresComponent", () => {
   });
 
   function prepareSelection(): void {
-    fixture.componentInstance.onProcesoChange("p1");
+    fixture.componentInstance.selectProceso({ id: "p1", nombre: "Proceso 1", codigoSirhus: "L2A", estado: "PUBLICADO" });
     fixture.componentInstance.onExamenChange("e1");
     selectFile("input[type=file]", new File(["sirhus"], "sirhus.xlsx"));
   }

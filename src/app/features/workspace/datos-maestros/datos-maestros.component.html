@@ -3,7 +3,7 @@
 
   <header class="page-heading">
     <div><p class="eyebrow">Configuración funcional</p><h1>Datos maestros</h1><p>Gestiona los catálogos utilizados por los procesos selectivos. Los registros en uso pueden estar protegidos frente a su eliminación.</p></div>
-    <button class="button button--primary" type="button" (click)="startCreate()">Añadir {{ config().singular }}</button>
+    @if (activeSection() !== "informes") { <div class="heading-actions"><button class="button button--primary" type="button" (click)="startCreate()">Añadir {{ config().singular }}</button></div> }
   </header>
 
   @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
@@ -11,10 +11,27 @@
 
   <div class="catalog-tabs" role="tablist" aria-label="Catálogos disponibles">
     @for (key of catalogKeys; track key) {
-      <button type="button" role="tab" [attr.aria-selected]="activeCatalog() === key" [class.is-active]="activeCatalog() === key" (click)="selectCatalog(key)">{{ catalogs[key].label }}</button>
+      <button type="button" role="tab" [attr.aria-selected]="activeSection() === key" [class.is-active]="activeSection() === key" (click)="selectSection(key)">{{ catalogs[key].label }}</button>
     }
+    <button type="button" role="tab" [attr.aria-selected]="activeSection() === 'informes'" [class.is-active]="activeSection() === 'informes'" (click)="selectSection('informes')">Parámetros de informes</button>
   </div>
 
+  @if (activeSection() === "informes") {
+    <section id="configuracion-informes" class="report-config" aria-labelledby="report-config-title">
+      <header class="report-config__heading"><div><p class="eyebrow">Documentos oficiales</p><h2 id="report-config-title">Parámetros de informes</h2><p>Estos datos se reutilizan en la certificación y en las firmas del informe de pagos. El control de firmas no necesita parámetros adicionales.</p></div></header>
+      <p class="required-note">* Campos obligatorios</p>
+      <form class="report-config__form" [formGroup]="reportConfigForm" (ngSubmit)="saveReportConfiguration()" novalidate>
+        <div class="field field--wide"><label for="report-organismo">Organismo *</label><input id="report-organismo" type="text" maxlength="255" formControlName="organismo" [attr.aria-invalid]="!!reportConfigErrors()['organismo']">@if (reportConfigErrors()["organismo"]) { <span class="field-error">{{ reportConfigErrors()["organismo"] }}</span> }</div>
+        <div class="field"><label for="report-localidad">Localidad de firma *</label><input id="report-localidad" type="text" maxlength="120" formControlName="localidadFirma" [attr.aria-invalid]="!!reportConfigErrors()['localidadFirma']">@if (reportConfigErrors()["localidadFirma"]) { <span class="field-error">{{ reportConfigErrors()["localidadFirma"] }}</span> }</div>
+        <div class="report-config__separator" aria-hidden="true"></div>
+        <div class="field"><label for="report-certifica-nombre">Nombre de quien certifica *</label><input id="report-certifica-nombre" type="text" maxlength="255" formControlName="nombreCertifica" [attr.aria-invalid]="!!reportConfigErrors()['nombreCertifica']">@if (reportConfigErrors()["nombreCertifica"]) { <span class="field-error">{{ reportConfigErrors()["nombreCertifica"] }}</span> }</div>
+        <div class="field"><label for="report-certifica-cargo">Cargo de quien certifica *</label><input id="report-certifica-cargo" type="text" maxlength="255" formControlName="cargoCertifica" [attr.aria-invalid]="!!reportConfigErrors()['cargoCertifica']">@if (reportConfigErrors()["cargoCertifica"]) { <span class="field-error">{{ reportConfigErrors()["cargoCertifica"] }}</span> }</div>
+        <div class="field"><label for="report-visto-nombre">Nombre para el visto bueno *</label><input id="report-visto-nombre" type="text" maxlength="255" formControlName="nombreVistoBueno" [attr.aria-invalid]="!!reportConfigErrors()['nombreVistoBueno']">@if (reportConfigErrors()["nombreVistoBueno"]) { <span class="field-error">{{ reportConfigErrors()["nombreVistoBueno"] }}</span> }</div>
+        <div class="field"><label for="report-visto-cargo">Cargo para el visto bueno *</label><input id="report-visto-cargo" type="text" maxlength="255" formControlName="cargoVistoBueno" [attr.aria-invalid]="!!reportConfigErrors()['cargoVistoBueno']">@if (reportConfigErrors()["cargoVistoBueno"]) { <span class="field-error">{{ reportConfigErrors()["cargoVistoBueno"] }}</span> }</div>
+        <div class="form-actions field--wide"><button class="button button--primary" type="submit" [disabled]="reportConfigSaving()" [attr.aria-busy]="reportConfigSaving()">{{ reportConfigSaving() ? "Guardando…" : "Guardar parámetros" }}</button></div>
+      </form>
+    </section>
+  } @else {
   <section class="catalog-toolbar" aria-labelledby="catalog-title">
     <div><h2 id="catalog-title">{{ config().label }}</h2><p>{{ config().description }}</p></div>
     <label class="search-field"><span>Buscar</span><input type="search" placeholder="Código o descripción" [value]="search()" (input)="search.set($any($event.target).value)"></label>
@@ -26,7 +43,7 @@
       @else {
         <div class="master-table-wrap">
           <table class="admin-table master-table">
-            <thead><tr><th>{{ activeCatalog() === "oep" ? "Año" : "Código" }}</th><th>Descripción</th><th>{{ activeCatalog() === "oep" ? "Referencia BOJA" : activeCatalog() === "cuerpos" ? "Grupo" : "Tipo" }}</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>{{ activeCatalog() === "oep" ? "Año" : "Código" }}</th><th>{{ activeCatalog() === "perfiles" ? "Denominación" : "Descripción" }}</th><th>{{ activeCatalog() === "oep" ? "Referencia BOJA" : activeCatalog() === "cuerpos" ? "Grupo" : activeCatalog() === "perfiles" ? "Importe" : "Tipo" }}</th><th>Acciones</th></tr></thead>
             <tbody>
               @for (item of filteredItems(); track itemCode(item)) {
                 <tr>
@@ -57,12 +74,15 @@
             <div class="field"><label for="master-codigo">Código *</label><input id="master-codigo" type="text" maxlength="64" formControlName="codigo" [attr.aria-invalid]="!!fieldErrors()['codigo']">@if (fieldErrors()["codigo"]) { <span class="field-error">{{ fieldErrors()["codigo"] }}</span> }</div>
             <div class="field"><label for="master-descripcion">Descripción *</label><textarea id="master-descripcion" rows="3" maxlength="500" formControlName="descripcion" [attr.aria-invalid]="!!fieldErrors()['descripcion']"></textarea>@if (fieldErrors()["descripcion"]) { <span class="field-error">{{ fieldErrors()["descripcion"] }}</span> }</div>
             @if (activeCatalog() === "cuerpos") { <div class="field"><label for="master-grupo">Grupo *</label><input id="master-grupo" type="text" maxlength="16" formControlName="grupo" placeholder="Ej. C1" [attr.aria-invalid]="!!fieldErrors()['grupo']">@if (fieldErrors()["grupo"]) { <span class="field-error">{{ fieldErrors()["grupo"] }}</span> }</div> }
+            @if (activeCatalog() === "perfiles") { <div class="field"><label for="master-importe">Importe por hora (€) *</label><input id="master-importe" type="number" min="0" step="0.01" formControlName="importeHora" [attr.aria-invalid]="!!fieldErrors()['importeHora']">@if (fieldErrors()["importeHora"]) { <span class="field-error">{{ fieldErrors()["importeHora"] }}</span> }</div> }
           }
           <div class="form-actions"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="cancelForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()" [attr.aria-busy]="saving()">{{ saving() ? "Guardando…" : "Guardar" }}</button></div>
         </form>
       </aside>
     }
   </div>
+  }
+
 </div>
 
 <dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-title">
