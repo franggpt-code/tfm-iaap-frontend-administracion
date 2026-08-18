@@ -52,6 +52,7 @@ import {
   UsuarioAdminCreateUpdate,
   ColaboradorPortalPatch,
   ConfirmacionAsignacionPortalUpdate,
+  CuadroMandoAdministracion,
 } from "./sicol.types";
 
 @Injectable({ providedIn: "root" })
@@ -74,6 +75,10 @@ export class SicolApiClient {
 
   deleteUsuario(id: string): Observable<void> {
     return this.http.delete<void>(`${this.adminUrl}/usuarios/${id}`);
+  }
+
+  getCuadroMandoAdministracion(): Observable<CuadroMandoAdministracion> {
+    return this.http.get<CuadroMandoAdministracion>(`${this.adminUrl}/cuadro-mando`);
   }
 
   getMiPerfil(): Observable<Colaborador> {

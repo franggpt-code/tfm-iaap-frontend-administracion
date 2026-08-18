@@ -7,11 +7,11 @@
       <button class="menu-toggle" type="button" aria-controls="main-navigation" [attr.aria-expanded]="menuOpen()" (click)="toggleMenu()">{{ menuOpen() ? "Cerrar" : "Menú" }}</button>
       <div class="navigation-shell" [class.is-open]="menuOpen()">
         <nav id="main-navigation" class="app-nav" aria-label="Navegación principal">
-          @if (isAdmin()) {
+          @if (isAdmin() || isManager()) {
             <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page" (click)="closeMenu()">Inicio</a>
-            <a routerLink="/admin/importaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Importaciones</a>
             <a routerLink="/admin/procesos" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Procesos y ejercicios</a>
           }
+          @if (isAdmin()) { <a routerLink="/admin/importaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Importaciones</a> }
           @if (isAdmin() || isManager()) {
             <a routerLink="/admin/colaboradores" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Colaboradores</a>
             <a routerLink="/admin/asignaciones" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()">Asignaciones</a>

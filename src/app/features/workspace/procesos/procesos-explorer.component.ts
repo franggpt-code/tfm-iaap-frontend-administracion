@@ -5,6 +5,7 @@ import { finalize, forkJoin } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { Cuerpo, Examen, ExamenCreate, Oep, ProcesoSelectivo, ProcesoSelectivoCreate, TipoAcceso, TipoVinculacion } from "../../../api/sicol.types";
+import { AuthService } from "../../../core/auth.service";
 
 type FormMode = "create" | "edit";
 type ProcessStatusFilter = "ACTIVOS" | "CERRADO" | "TODOS";
@@ -35,6 +36,9 @@ interface ExamFormValue {
 })
 export class ProcesosExplorerComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
+  private readonly auth = inject(AuthService);
+
+  readonly canManageProcesos = this.auth.isAdmin;
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly selected = signal<ProcesoSelectivo | null>(null);
@@ -60,6 +64,14 @@ export class ProcesosExplorerComponent implements OnInit {
   examForm: ExamFormValue = this.emptyExamForm();
 
   ngOnInit(): void {
+    if (!this.canManageProcesos()) {
+      this.api.listProcesos().pipe(finalize(() => this.loading.set(false))).subscribe({
+        next: (procesos) => this.procesos.set(procesos.content),
+        error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      });
+      return;
+    }
+
     forkJoin({
       procesos: this.api.listProcesos(),
       oeps: this.api.listOep(),
@@ -106,6 +118,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openCreateProcess(): void {
+    if (!this.canManageProcesos()) return;
     this.clearMessages();
     this.processFormMode.set("create");
     this.processForm = this.emptyProcessForm();
@@ -114,6 +127,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openEditProcess(): void {
+    if (!this.canManageProcesos()) return;
     const proceso = this.selected();
     if (!proceso) return;
     this.clearMessages();
@@ -143,7 +157,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   saveProcess(form: NgForm): void {
-    if (form.invalid || this.saving()) return;
+    if (!this.canManageProcesos() || form.invalid || this.saving()) return;
     const payload: ProcesoSelectivoCreate = {
       nombre: this.processForm.nombre.trim(),
       codigoSirhus: this.optional(this.processForm.codigoSirhus),
@@ -172,7 +186,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openCreateExam(): void {
-    if (!this.selected()) return;
+    if (!this.canManageProcesos() || !this.selected()) return;
     this.clearMessages();
     this.examFormMode.set("create");
     this.editingExamId.set(null);
@@ -182,6 +196,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openEditExam(examen: Examen): void {
+    if (!this.canManageProcesos()) return;
     this.clearMessages();
     this.examFormMode.set("edit");
     this.editingExamId.set(examen.id);
@@ -197,7 +212,7 @@ export class ProcesosExplorerComponent implements OnInit {
 
   saveExam(form: NgForm): void {
     const proceso = this.selected();
-    if (!proceso || form.invalid || this.saving()) return;
+    if (!this.canManageProcesos() || !proceso || form.invalid || this.saving()) return;
     const payload: ExamenCreate = {
       nombre: this.examForm.nombre.trim(),
       numeroEjercicio: Number(this.examForm.numeroEjercicio),

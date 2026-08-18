@@ -76,6 +76,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/cuadro-mando": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar indicadores operativos de la administración */
+        get: operations["getCuadroMandoAdministracion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/usuarios": {
         parameters: {
             query?: never;
@@ -1577,6 +1594,36 @@ export interface components {
          * @enum {string}
          */
         EstadoProcesoSelectivo: "BORRADOR" | "PUBLICADO" | "CERRADO";
+        /** @description Vista consolidada para el inicio de la administración. */
+        CuadroMandoAdministracion: {
+            totalProcesos: number;
+            totalEjercicios: number;
+            totalConvocados: number;
+            totalAulas: number;
+            totalAsignaciones: number;
+            asignacionesPendientes: number;
+            asignacionesConfirmadas: number;
+            asignacionesRechazadas: number;
+            aulasSinResponsable: number;
+            proximosEjercicios: components["schemas"]["CuadroMandoEjercicio"][];
+        };
+        CuadroMandoEjercicio: {
+            /** Format: uuid */
+            examenId: string;
+            /** Format: uuid */
+            procesoSelectivoId: string;
+            codigoSirhus?: string;
+            procesoNombre: string;
+            examenNombre: string;
+            numeroEjercicio: number;
+            /** Format: date-time */
+            fechaHora?: string | null;
+            convocados: number;
+            aulas: number;
+            asignaciones: number;
+            asignacionesPendientes: number;
+            aulasSinResponsable: number;
+        };
         /** @description Proceso selectivo marco del dominio reorientado. */
         ProcesoSelectivo: {
             /**
@@ -2686,6 +2733,28 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             500: components["responses"]["InternalError"];
+        };
+    };
+    getCuadroMandoAdministracion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Indicadores consolidados y próximos ejercicios */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuadroMandoAdministracion"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     listUsuariosAdmin: {

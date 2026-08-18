@@ -2,7 +2,7 @@
   <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><a routerLink="/admin/procesos">Procesos</a><span aria-hidden="true">/</span><span>Convocados</span></nav>
   <header class="page-heading">
     <div><p class="eyebrow">Ejercicio seleccionado</p><h1>Personas convocadas</h1><p>Consulta la distribución por centro y aula. Estar convocado no implica haber asistido.</p></div>
-    <a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas" [queryParams]="{ procesoId, examenId }">Actualizar importación</a>
+    @if (canManageConvocados()) { <a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas" [queryParams]="{ procesoId, examenId }">Actualizar importación</a> }
   </header>
 
   @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
@@ -29,7 +29,7 @@
               <td data-label="Documento"><span class="masked-value" [attr.aria-label]="'Documento enmascarado ' + maskedDocument(item.persona.documentoIdentidad)">{{ maskedDocument(item.persona.documentoIdentidad) }}</span></td>
               <td data-label="Centro y aula"><strong>{{ item.centroNombre || "Centro sin informar" }}</strong><br><span>{{ item.aulaNombre || "Aula sin informar" }}</span></td>
               <td data-label="Asistencia"><span class="attendance attendance--{{ item.estadoAsistencia.toLowerCase() }}">{{ stateLabel(item.estadoAsistencia) }}</span></td>
-              <td data-label="Acciones"><a class="text-link" [routerLink]="['/admin/examenes-aula', item.examenAulaId, 'asistencia']">Controlar aula</a></td>
+              <td data-label="Acciones">@if (canManageConvocados()) { <a class="text-link" [routerLink]="['/admin/examenes-aula', item.examenAulaId, 'asistencia']">Controlar aula</a> } @else { <span class="muted-value">Solo consulta</span> }</td>
             </tr>
           } @empty { <tr><td colspan="6"><div class="empty-state"><strong>No hay resultados.</strong><span>Prueba a limpiar los filtros o realiza una importación para este ejercicio.</span></div></td></tr> }
         </tbody>

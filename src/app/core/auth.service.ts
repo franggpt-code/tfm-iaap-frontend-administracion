@@ -33,7 +33,7 @@ export class AuthService {
 
   landingUrl(): string {
     if (this.hasRole("ADMIN")) return "/admin";
-    if (this.hasRole("GESTOR")) return "/admin/colaboradores";
+    if (this.hasRole("GESTOR")) return "/admin";
     if (this.hasRole("COLABORADOR")) return "/mi-espacio";
     return "/login";
   }

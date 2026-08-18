@@ -59,6 +59,8 @@ export type ConfirmacionAsignacionPortalUpdate = components["schemas"]["Confirma
 export type ImportacionProcesosResultado = components["schemas"]["ImportacionProcesosSelectivosResultado"];
 export type ImportacionDatamartResultado = components["schemas"]["ImportacionDatamartConvocatoriasResultado"];
 export type ImportacionDatamartAviso = components["schemas"]["ImportacionDatamartConvocatoriasAviso"];
+export type CuadroMandoAdministracion = components["schemas"]["CuadroMandoAdministracion"];
+export type CuadroMandoEjercicio = components["schemas"]["CuadroMandoEjercicio"];
 
 export interface ImportacionArchivos {
   procesoSelectivoId: string;

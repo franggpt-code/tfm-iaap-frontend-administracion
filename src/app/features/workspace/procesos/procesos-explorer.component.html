@@ -1,9 +1,11 @@
 <div class="page-shell">
   <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Procesos y ejercicios</span></nav>
   <header class="page-heading">
-    <div><p class="eyebrow">Gestión de convocatorias</p><h1>Procesos y ejercicios</h1><p>Consulta, crea y actualiza procesos selectivos y sus ejercicios.</p></div>
-    <div class="heading-actions"><a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas">Importar convocados</a><button class="button button--primary" type="button" (click)="openCreateProcess()">Crear proceso</button></div>
+    <div><p class="eyebrow">Gestión de convocatorias</p><h1>Procesos y ejercicios</h1><p>{{ canManageProcesos() ? "Consulta, crea y actualiza procesos selectivos y sus ejercicios." : "Consulta los procesos, ejercicios y llamamientos disponibles para organizar las colaboraciones." }}</p></div>
+    @if (canManageProcesos()) { <div class="heading-actions"><a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas">Importar convocados</a><button class="button button--primary" type="button" (click)="openCreateProcess()">Crear proceso</button></div> }
   </header>
+
+  @if (!canManageProcesos()) { <div class="alert alert--info" role="status"><strong>Modo consulta.</strong> Puedes consultar procesos, ejercicios y convocados; la creación, edición e importación están reservadas a Administración.</div> }
 
   @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
   @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
@@ -140,7 +142,7 @@
       @if (selected(); as proceso) {
         <div class="panel-heading panel-heading--actions">
           <div><span class="panel-count">{{ examenes().length }}</span><h2 id="examenes-title">Ejercicios</h2><p>{{ proceso.codigoSirhus || "Sin código" }} · {{ proceso.nombre }}</p></div>
-          <div class="panel-actions"><button class="button button--secondary button--compact" type="button" (click)="openEditProcess()">Editar proceso</button><button class="button button--primary button--compact" type="button" (click)="openCreateExam()">Crear ejercicio</button></div>
+          @if (canManageProcesos()) { <div class="panel-actions"><button class="button button--secondary button--compact" type="button" (click)="openEditProcess()">Editar proceso</button><button class="button button--primary button--compact" type="button" (click)="openCreateExam()">Crear ejercicio</button></div> }
         </div>
         @if (loadingExamenes()) { <p class="loading-message">Cargando ejercicios…</p> }
         <div class="exam-list">
@@ -149,12 +151,11 @@
               <div class="exam-number">{{ examen.numeroEjercicio }}</div>
               <div class="exam-copy"><h3>{{ examen.nombre }}</h3><p [class.date-pending]="!examen.fechaHora">{{ formatDate(examen.fechaHora) }}</p>@if (examen.observaciones) { <small>{{ examen.observaciones }}</small> }</div>
               <div class="exam-actions">
-                <button class="button button--secondary" type="button" (click)="openEditExam(examen)">Editar</button>
-                <a class="button button--secondary" [routerLink]="['/admin/importaciones/opositores-aulas']" [queryParams]="{ procesoId: proceso.id, examenId: examen.id }">Importar</a>
+                @if (canManageProcesos()) { <button class="button button--secondary" type="button" (click)="openEditExam(examen)">Editar</button><a class="button button--secondary" [routerLink]="['/admin/importaciones/opositores-aulas']" [queryParams]="{ procesoId: proceso.id, examenId: examen.id }">Importar</a> }
                 <a class="button button--primary" [routerLink]="['/admin/procesos-selectivos', proceso.id, 'examenes', examen.id, 'convocados']">Ver convocados</a>
               </div>
             </article>
-          } @empty { @if (!loadingExamenes()) { <div class="empty-state"><strong>Este proceso aún no tiene ejercicios.</strong><span>Puedes crearlo manualmente o importarlo desde el Datamart.</span><button class="button button--primary" type="button" (click)="openCreateExam()">Crear ejercicio</button></div> } }
+          } @empty { @if (!loadingExamenes()) { <div class="empty-state"><strong>Este proceso aún no tiene ejercicios.</strong><span>{{ canManageProcesos() ? "Puedes crearlo manualmente o importarlo desde el Datamart." : "Cuando se publiquen, estarán disponibles aquí para su consulta." }}</span>@if (canManageProcesos()) { <button class="button button--primary" type="button" (click)="openCreateExam()">Crear ejercicio</button> }</div> } }
         </div>
       } @else {
         <div class="empty-state empty-state--large"><span class="empty-state__index">01</span><strong>Selecciona un proceso</strong><span>Sus ejercicios aparecerán aquí sin cambiar de pantalla.</span></div>
