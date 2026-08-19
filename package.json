@@ -1,11 +1,12 @@
 {
   "name": "tfm-iaap-frontend-administracion",
-  "version": "0.1.1",
+  "version": "1.0.1-SNAPSHOT",
   "license": "EUPL-1.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0 --port 4200",
-    "build": "ng build",
+    "check:version": "node scripts/check-version.mjs",
+    "build": "node scripts/check-version.mjs && ng build",
     "generate:api": "openapi-typescript ../tfm-iaap-backend/contracts/openapi/sicol-v1.yaml -o src/app/api/generated/sicol-api.ts",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false"

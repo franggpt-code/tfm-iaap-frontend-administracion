@@ -29,7 +29,7 @@ spec:
                 path: config.json
       containers:
         - name: tfm-iaap-frontend-administracion-pro
-          image: quay.apps.paas-ges-cica.junta-andalucia.es/ada/sicol/tfm-iaap-frontend-administracion:0.1.0-pro
+          image: quay.apps.paas-ges-cica.junta-andalucia.es/ada/sicol/tfm-iaap-frontend-administracion:1.0.1-pro
           imagePullPolicy: Always
           ports:
             - containerPort: 8043
