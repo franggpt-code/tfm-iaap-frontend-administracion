@@ -19,3 +19,9 @@ genera el frontend para la ruta /sicol/ y publica un .tar.gz junto a su
 SHA-256 como artefactos de GitLab.
 
 En ramas de merge request o lanzadas desde la interfaz de GitLab, el job es
+manual y opcional: permite revisar la configuracion sin bloquear el MR. En un
+tag X.Y.Z-test se ejecuta automaticamente y necesita un runner activo.
+
+Sin runner activo GitLab valida la sintaxis, pero no puede generar artefactos.
+Los artefactos se conservan 90 dias; una entrega debe guardar tambien sus
+tags y hashes en el registro de despliegue.
