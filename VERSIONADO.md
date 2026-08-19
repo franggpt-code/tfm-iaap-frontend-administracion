@@ -10,3 +10,12 @@ Este repositorio se versiona de forma independiente del backend.
 Antes de crear un tag, ejecutar `npm run check:version`; `npm run build` ya
 ejecuta esa comprobación. Un despliegue debe registrar por separado el tag y
 el SHA del frontend y los del backend.
+
+## Compilacion GitLab
+
+La pipeline nativa .gitlab-ci.yml solo compila; no despliega ni contiene
+secretos. En una entrega X.Y.Z-test valida que el tag coincide con VERSION,
+genera el frontend para la ruta /sicol/ y publica un .tar.gz junto a su
+SHA-256 como artefactos de GitLab.
+
+En ramas de merge request o lanzadas desde la interfaz de GitLab, el job es
