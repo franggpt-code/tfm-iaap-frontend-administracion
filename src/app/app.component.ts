@@ -15,6 +15,10 @@ export class AppComponent {
 
   readonly user = this.auth.user;
   readonly isAuthenticated = computed(() => this.auth.isAuthenticated());
+  readonly isAdmin = this.auth.isAdmin;
+  readonly isManager = this.auth.isManager;
+  readonly isCollaborator = this.auth.isCollaborator;
+  readonly homeLink = computed(() => this.auth.landingUrl());
   readonly menuOpen = signal(false);
   readonly appVersion = packageInfo.version;
 

@@ -23,6 +23,20 @@ export class AuthService {
     const current = this.session();
     return !!current && new Date(current.expiresAt).getTime() > Date.now();
   });
+  readonly isAdmin = computed(() => this.hasRole("ADMIN"));
+  readonly isManager = computed(() => this.hasRole("GESTOR"));
+  readonly isCollaborator = computed(() => this.hasRole("COLABORADOR"));
+
+  hasRole(role: "ADMIN" | "GESTOR" | "COLABORADOR"): boolean {
+    return this.user()?.roles?.includes(role) ?? false;
+  }
+
+  landingUrl(): string {
+    if (this.hasRole("ADMIN")) return "/admin";
+    if (this.hasRole("GESTOR")) return "/admin";
+    if (this.hasRole("COLABORADOR")) return "/mi-espacio";
+    return "/login";
+  }
 
   login(payload: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${environment.apiBaseUrl}/auth/login`, payload).pipe(

@@ -6,7 +6,7 @@ export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (auth.isAuthenticated()) {
+  if (auth.isAuthenticated() && (auth.hasRole("ADMIN") || auth.hasRole("GESTOR"))) {
     return true;
   }
 
@@ -25,5 +25,13 @@ export const adminRoleGuard: CanActivateFn = () => {
     return true;
   }
 
-  return router.createUrlTree(["/admin"]);
+  return router.createUrlTree([auth.landingUrl()]);
+};
+
+export const collaboratorGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isAuthenticated()) return router.createUrlTree(["/login"]);
+  if (auth.hasRole("COLABORADOR") || auth.hasRole("ADMIN")) return true;
+  return router.createUrlTree([auth.landingUrl()]);
 };

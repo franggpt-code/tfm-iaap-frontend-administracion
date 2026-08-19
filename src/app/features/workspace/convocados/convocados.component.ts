@@ -4,6 +4,7 @@ import { finalize } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { ConvocadoExamen, EstadoAsistencia } from "../../../api/sicol.types";
+import { AuthService } from "../../../core/auth.service";
 
 @Component({
   selector: "app-convocados",
@@ -14,6 +15,9 @@ import { ConvocadoExamen, EstadoAsistencia } from "../../../api/sicol.types";
 export class ConvocadosComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
+
+  readonly canManageConvocados = this.auth.isAdmin;
 
   readonly procesoId = this.route.snapshot.paramMap.get("procesoId") ?? "";
   readonly examenId = this.route.snapshot.paramMap.get("examenId") ?? "";

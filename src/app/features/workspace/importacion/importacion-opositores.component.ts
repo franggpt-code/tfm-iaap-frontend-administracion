@@ -1,6 +1,7 @@
-import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, RouterLink } from "@angular/router";
-import { finalize } from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, finalize, of, startWith, Subject, switchMap } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { Examen, ImportacionArchivos, ImportacionResultado, ProcesoSelectivo } from "../../../api/sicol.types";
@@ -16,11 +17,18 @@ export class ImportacionOpositoresComponent implements OnInit {
 
   private readonly api = inject(SicolApiClient);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly processSearchTerms = new Subject<string>();
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly examenes = signal<Examen[]>([]);
   readonly procesoId = signal("");
   readonly examenId = signal("");
+  readonly processQuery = signal("");
+  readonly processResultsOpen = signal(false);
+  readonly activeProcessIndex = signal(0);
+  readonly processTotal = signal(0);
+  readonly processSearchError = signal<string | null>(null);
   readonly ficheroSirhus = signal<File | null>(null);
   readonly ficheroCaronte = signal<File | null>(null);
   readonly loadingProcesos = signal(true);
@@ -36,37 +44,123 @@ export class ImportacionOpositoresComponent implements OnInit {
     !!this.procesoId() && !!this.examenId() && !!this.ficheroSirhus() && !this.simulating() && !this.confirming(),
   );
 
-  readonly selectedProceso = computed(() => this.procesos().find((item) => item.id === this.procesoId()));
+  readonly selectedProceso = signal<ProcesoSelectivo | null>(null);
   readonly selectedExamen = computed(() => this.examenes().find((item) => item.id === this.examenId()));
 
   ngOnInit(): void {
     const requestedProceso = this.route.snapshot.queryParamMap.get("procesoId") ?? "";
     const requestedExamen = this.route.snapshot.queryParamMap.get("examenId") ?? "";
 
-    this.api.listProcesos().subscribe({
-      next: (page) => {
-        this.procesos.set(page.content);
-        this.loadingProcesos.set(false);
-        if (requestedProceso && page.content.some((item) => item.id === requestedProceso)) {
-          this.procesoId.set(requestedProceso);
-          this.loadExamenes(requestedProceso, requestedExamen);
-        }
-      },
-      error: (error: unknown) => {
-        this.error.set(apiErrorMessage(error));
-        this.loadingProcesos.set(false);
-      },
+    this.processSearchTerms.pipe(
+      startWith(""),
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap((search) => {
+        this.loadingProcesos.set(true);
+        this.processSearchError.set(null);
+        return this.api.listProcesos(0, 20, search).pipe(
+          catchError((error: unknown) => {
+            this.processSearchError.set(apiErrorMessage(error));
+            return of(null);
+          }),
+          finalize(() => this.loadingProcesos.set(false)),
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((page) => {
+      if (!page) return;
+      this.procesos.set(page.content);
+      this.processTotal.set(page.totalElements);
+      this.activeProcessIndex.set(page.content.length ? 0 : -1);
     });
+
+    if (requestedProceso) {
+      this.api.getProceso(requestedProceso).subscribe({
+        next: (proceso) => this.selectProceso(proceso, requestedExamen),
+        error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      });
+    }
   }
 
-  onProcesoChange(value: string): void {
-    this.procesoId.set(value);
+  onProcesoSearch(value: string): void {
+    this.processQuery.set(value);
+    this.processResultsOpen.set(true);
+    this.activeProcessIndex.set(0);
+    const selected = this.selectedProceso();
+    if (!selected || value !== this.processLabel(selected)) {
+      this.procesoId.set("");
+      this.selectedProceso.set(null);
+      this.examenId.set("");
+      this.examenes.set([]);
+      this.invalidateSimulation();
+    }
+    this.processSearchTerms.next(value);
+  }
+
+  openProcessResults(): void {
+    if (!this.simulating() && !this.confirming()) this.processResultsOpen.set(true);
+  }
+
+  closeProcessResults(event: FocusEvent): void {
+    const container = event.currentTarget as HTMLElement;
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !container.contains(nextTarget)) this.processResultsOpen.set(false);
+  }
+
+  onProcessKeydown(event: KeyboardEvent): void {
+    const results = this.procesos();
+    if (event.key === "Escape") {
+      this.processResultsOpen.set(false);
+      return;
+    }
+    if (!results.length || !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
+
+    if (event.key === "Enter") {
+      if (this.processResultsOpen() && this.activeProcessIndex() >= 0) {
+        event.preventDefault();
+        this.selectProceso(results[this.activeProcessIndex()]);
+      }
+      return;
+    }
+
+    event.preventDefault();
+    this.processResultsOpen.set(true);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const nextIndex = this.activeProcessIndex() + direction;
+    this.activeProcessIndex.set(Math.max(0, Math.min(results.length - 1, nextIndex)));
+  }
+
+  selectProceso(proceso: ProcesoSelectivo, requestedExamen = ""): void {
+    this.procesoId.set(proceso.id);
+    this.selectedProceso.set(proceso);
+    this.processQuery.set(this.processLabel(proceso));
+    this.processResultsOpen.set(false);
     this.examenId.set("");
     this.examenes.set([]);
     this.invalidateSimulation();
-    if (value) {
-      this.loadExamenes(value);
-    }
+    this.loadExamenes(proceso.id, requestedExamen);
+  }
+
+  clearProceso(): void {
+    this.procesoId.set("");
+    this.selectedProceso.set(null);
+    this.processQuery.set("");
+    this.examenId.set("");
+    this.examenes.set([]);
+    this.invalidateSimulation();
+    this.processResultsOpen.set(true);
+    this.processSearchTerms.next("");
+  }
+
+  processLabel(proceso: ProcesoSelectivo): string {
+    return `${proceso.codigoSirhus || "Sin código SIRHUS"} · ${proceso.nombre}`;
+  }
+
+  formatProcessUpdatedAt(proceso: ProcesoSelectivo): string {
+    const value = proceso.updatedAt ?? proceso.createdAt;
+    return value
+      ? `Actualizado ${new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value))}`
+      : "Sin fecha de actualización";
   }
 
   onExamenChange(value: string): void {

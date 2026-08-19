@@ -39,7 +39,7 @@ export class LoginComponent {
       .login(this.form.getRawValue())
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
-        next: () => void this.router.navigateByUrl("/admin"),
+        next: () => void this.router.navigateByUrl(this.auth.landingUrl()),
         error: () => this.error.set("No ha sido posible iniciar sesión. Revisa las credenciales e inténtalo de nuevo."),
       });
   }

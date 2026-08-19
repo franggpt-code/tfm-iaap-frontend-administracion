@@ -15,6 +15,20 @@ describe("SicolApiClient", () => {
 
   afterEach(() => http.verify());
 
+  it("busca procesos de forma paginada y permite recuperar la selección por id", () => {
+    service.listProcesos(0, 20, "L2A").subscribe();
+    const listRequest = http.expectOne((request) => request.url === "/api/sicol/admin/procesos-selectivos");
+    expect(listRequest.request.params.get("page")).toBe("0");
+    expect(listRequest.request.params.get("size")).toBe("20");
+    expect(listRequest.request.params.get("search")).toBe("L2A");
+    listRequest.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+
+    service.getProceso("p1").subscribe();
+    const detailRequest = http.expectOne("/api/sicol/admin/procesos-selectivos/p1");
+    expect(detailRequest.request.method).toBe("GET");
+    detailRequest.flush({ id: "p1", nombre: "Proceso 1", estado: "PUBLICADO" });
+  });
+
   it("envía la simulación como multipart sin fijar Content-Type", () => {
     const sirhus = new File(["sirhus"], "sirhus.xlsx");
     const caronte = new File(["caronte"], "caronte.xls");
@@ -79,6 +93,38 @@ describe("SicolApiClient", () => {
     expect(updateExam.request.method).toBe("PATCH");
     expect(updateExam.request.body).toEqual({ fechaHora: "2026-09-20T08:00:00.000Z" });
     updateExam.flush({ id: "e2", procesoSelectivoId: "p1", nombre: "Ejercicio 2", numeroEjercicio: 2, fechaHora: "2026-09-20T08:00:00.000Z" });
+  });
+
+  it("envía cambios masivos de estado y asignaciones de ámbito general", () => {
+    service.cambiarEstadoColaboradores({ ids: ["c1", "c2"], estado: "ACTIVO" }).subscribe();
+    const bulkState = http.expectOne("/api/sicol/admin/colaboradores/estado");
+    expect(bulkState.request.method).toBe("PATCH");
+    expect(bulkState.request.body).toEqual({ ids: ["c1", "c2"], estado: "ACTIVO" });
+    bulkState.flush(null);
+
+    service.createAsignacion("e1", { ambitoGeneral: true, examenAulaId: null, colaboradorId: "c1", perfilId: "p1", estadoConfirmacion: "PENDIENTE" }).subscribe();
+    const createAssignment = http.expectOne("/api/sicol/admin/examenes/e1/asignaciones");
+    expect(createAssignment.request.method).toBe("POST");
+    expect(createAssignment.request.body).toEqual({ ambitoGeneral: true, examenAulaId: null, colaboradorId: "c1", perfilId: "p1", estadoConfirmacion: "PENDIENTE" });
+    createAssignment.flush({ id: "a1", examenId: "e1", colaboradorId: "c1", perfilId: "p1", perfilDenominacion: "Responsable de datos", importeHora: 0, estadoConfirmacion: "PENDIENTE" });
+  });
+
+  it("descarga los informes como PDF y guarda sus parámetros maestros", () => {
+    service.exportHojasFirmaPdf("e1").subscribe(response => expect(response.body?.type).toBe("application/pdf"));
+    const signatures = http.expectOne("/api/sicol/admin/examenes/e1/hojas-firma.pdf");
+    expect(signatures.request.method).toBe("GET");
+    expect(signatures.request.responseType).toBe("blob");
+    signatures.flush(new Blob(["%PDF"], { type: "application/pdf" }), { headers: { "Content-Type": "application/pdf" } });
+
+    const configuration = {
+      organismo: "IAAP", localidadFirma: "Sevilla", nombreCertifica: "Persona A", cargoCertifica: "Jefatura",
+      nombreVistoBueno: "Persona B", cargoVistoBueno: "Dirección",
+    };
+    service.updateConfiguracionInformes(configuration).subscribe();
+    const update = http.expectOne("/api/sicol/admin/configuracion-informes");
+    expect(update.request.method).toBe("PUT");
+    expect(update.request.body).toEqual(configuration);
+    update.flush(configuration);
   });
 });
 

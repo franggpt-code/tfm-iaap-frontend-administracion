@@ -33,15 +33,71 @@
     </div>
 
     <div class="form-grid">
-      <div class="field">
-        <label for="proceso">Proceso selectivo *</label>
-        <select id="proceso" [value]="procesoId()" [disabled]="loadingProcesos() || simulating() || confirming()" (change)="onProcesoChange($any($event.target).value)">
-          <option value="">Selecciona un proceso</option>
-          @for (proceso of procesos(); track proceso.id) {
-            <option [value]="proceso.id">{{ proceso.codigoSirhus || "Sin código SIRHUS" }} · {{ proceso.nombre }}</option>
+      <div class="field process-picker">
+        <label for="process-search">Proceso selectivo *</label>
+        <div class="process-combobox" (focusout)="closeProcessResults($event)">
+          <div class="process-combobox__input">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input
+              id="process-search"
+              type="search"
+              role="combobox"
+              autocomplete="off"
+              maxlength="250"
+              placeholder="Escribe un nombre o código SIRHUS"
+              aria-autocomplete="list"
+              aria-controls="process-results"
+              [attr.aria-expanded]="processResultsOpen()"
+              [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'process-option-' + activeProcessIndex() : null"
+              [value]="processQuery()"
+              [disabled]="simulating() || confirming()"
+              (focus)="openProcessResults()"
+              (input)="onProcesoSearch($any($event.target).value)"
+              (keydown)="onProcessKeydown($event)"
+            >
+            @if (procesoId()) {
+              <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" [disabled]="simulating() || confirming()" (click)="clearProceso()">×</button>
+            }
+            @if (loadingProcesos()) { <span class="process-spinner" aria-label="Buscando procesos"></span> }
+          </div>
+
+          @if (processResultsOpen()) {
+            <div class="process-results" id="process-results" role="listbox" aria-label="Procesos selectivos">
+              <div class="process-results__heading">
+                <strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong>
+                <span>Ordenados por última actualización</span>
+              </div>
+              @if (processSearchError()) {
+                <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p>
+              } @else if (!loadingProcesos() && procesos().length === 0) {
+                <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p>
+              } @else {
+                <div class="process-results__list">
+                  @for (proceso of procesos(); track proceso.id; let index = $index) {
+                    <button
+                      type="button"
+                      role="option"
+                      [id]="'process-option-' + index"
+                      [class.is-active]="activeProcessIndex() === index"
+                      [class.is-selected]="procesoId() === proceso.id"
+                      [attr.aria-selected]="procesoId() === proceso.id"
+                      (mouseenter)="activeProcessIndex.set(index)"
+                      (click)="selectProceso(proceso)"
+                    >
+                      <span class="process-result__code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</span>
+                      <span class="process-result__name">{{ proceso.nombre }}</span>
+                      <small>{{ formatProcessUpdatedAt(proceso) }}</small>
+                    </button>
+                  }
+                </div>
+                @if (processTotal() > procesos().length) {
+                  <p class="process-results__footer">Mostrando los {{ procesos().length }} resultados más recientes. Escribe más texto para precisar la búsqueda.</p>
+                }
+              }
+            </div>
           }
-        </select>
-        @if (loadingProcesos()) { <small class="field-help">Cargando procesos…</small> }
+        </div>
+        <small class="field-help">Busca por la denominación del proceso o por su código SIRHUS.</small>
       </div>
 
       <div class="field">
