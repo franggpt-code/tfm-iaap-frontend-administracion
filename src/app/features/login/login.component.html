@@ -1,59 +1,173 @@
-<section class="login-page" aria-labelledby="login-title">
-  <form class="login-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <div class="login-heading">
-      <span class="login-kicker">Backoffice</span>
-      <h1 id="login-title">SICOL Administración</h1>
-    </div>
-    <p class="required-note">* Campos obligatorios</p>
-
-    @if (error()) {
-      <div class="alert alert--error" role="alert">{{ error() }}</div>
-    }
-
-    <div class="field">
-      <label for="usuario">Usuario *</label>
-      <input
-        id="usuario"
-        type="text"
-        autocomplete="username"
-        formControlName="usuario"
-        [attr.aria-invalid]="form.controls.usuario.invalid && form.controls.usuario.touched"
-      >
-      @if (form.controls.usuario.invalid && form.controls.usuario.touched) {
-        <span class="field-error">Introduce el usuario.</span>
-      }
-    </div>
-
-    <div class="field">
-      <label for="password">Contraseña *</label>
-      <div class="password-field">
-        <input
-          id="password"
-          [type]="passwordType()"
-          autocomplete="current-password"
-          formControlName="password"
-          [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
-        >
-        <button
-          class="password-toggle"
-          type="button"
-          [attr.aria-pressed]="showPassword()"
-          [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          [attr.title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          (click)="showPassword.set(!showPassword())"
-        >
-          <i [class]="showPassword() ? 'fa fa-eye-slash' : 'fa fa-eye'" aria-hidden="true"></i>
-        </button>
+<section class="split-login" aria-labelledby="login-title">
+  <!-- Panel Izquierdo: Institucional y Marca -->
+  <div class="login-brand-panel">
+    <!-- Logotipo Superior Junta de Andalucía e IAAP -->
+    <div class="brand-panel__header">
+      <div class="jda-logo-box">
+        <svg class="jda-mark-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M16 2.5L2.5 28.5h6.2l3.4-6.8h7.8l3.4 6.8h6.2L16 2.5zm0 9l2.7 5.5h-5.4L16 11.5z" fill="currentColor"/>
+        </svg>
       </div>
-      @if (form.controls.password.invalid && form.controls.password.touched) {
-        <span class="field-error">Introduce la contraseña.</span>
-      }
+      <div class="jda-text">
+        <span class="jda-name">Junta de Andalucía</span>
+        <span class="jda-inst">IAAP · Instituto Andaluz de Administración Pública</span>
+      </div>
     </div>
 
-    <div class="form-actions">
-      <button class="button button--primary" type="submit" [disabled]="submitting()">
-        {{ submitting() ? "Accediendo..." : "Acceder" }}
-      </button>
+    <!-- Contenido Central: Título y Píldoras -->
+    <div class="brand-panel__body">
+      <h1 class="brand-title">SICOL</h1>
+      <p class="brand-subtitle">Gestión de Oposiciones y Colaboraciones</p>
+
+      <div class="feature-chips" role="list">
+        <div class="feature-chip" role="listitem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="M6 6h10M6 10h10M6 14h6"></path>
+          </svg>
+          <span>Procesos Selectivos</span>
+        </div>
+        <div class="feature-chip" role="listitem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>Asignación de Aulas</span>
+        </div>
+        <div class="feature-chip" role="listitem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+          <span>Llamamientos en Directo</span>
+        </div>
+      </div>
     </div>
-  </form>
+
+    <!-- Pie del Panel Izquierdo -->
+    <div class="brand-panel__footer">
+      <div class="security-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <path d="m9 12 2 2 4-4"></path>
+        </svg>
+        <span>Acceso Seguro a Empleados Públicos</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Derecho: Formulario de Autenticación -->
+  <div class="login-form-panel">
+    <!-- Indicador de Versión en Esquina Superior Derecha -->
+    <div class="login-top-meta">
+      <span class="version-badge" title="Versión del frontend desplegado">Frontend {{ appVersion }}</span>
+    </div>
+
+    <div class="login-card">
+      <div class="login-header">
+        <h2 id="login-title">Iniciar Sesión</h2>
+        <p class="login-subtitle">Acceso con usuario corporativo</p>
+      </div>
+
+      @if (error()) {
+        <div class="alert alert--error" role="alert">
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-field">
+          <label for="usuario">Usuario *</label>
+          <div class="input-container" [class.has-error]="form.controls.usuario.invalid && form.controls.usuario.touched">
+            <span class="input-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <input
+              id="usuario"
+              type="text"
+              autocomplete="username"
+              placeholder="Introduce tu usuario"
+              formControlName="usuario"
+              [attr.aria-invalid]="form.controls.usuario.invalid && form.controls.usuario.touched"
+            >
+          </div>
+          @if (form.controls.usuario.invalid && form.controls.usuario.touched) {
+            <span class="field-error">Introduce el usuario.</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="password">Contraseña *</label>
+          <div class="input-container" [class.has-error]="form.controls.password.invalid && form.controls.password.touched">
+            <span class="input-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </span>
+            <input
+              id="password"
+              [type]="passwordType()"
+              autocomplete="current-password"
+              placeholder="Introduce tu contraseña"
+              formControlName="password"
+              [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
+            >
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-pressed]="showPassword()"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.title]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="showPassword.set(!showPassword())"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                @if (showPassword()) {
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                } @else {
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                }
+              </svg>
+            </button>
+          </div>
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <span class="field-error">Introduce la contraseña.</span>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button class="login-submit-btn" type="submit" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span>Accediendo...</span>
+            } @else {
+              <span>Acceder</span>
+            }
+          </button>
+        </div>
+      </form>
+
+      <div class="login-card-footer">
+        <div class="role-hint">
+          <span>Perfiles: <strong>Administrador (TIC)</strong> · <strong>Gestor</strong> · <strong>Colaborador</strong></span>
+        </div>
+        <div class="login-meta-row">
+          <span class="login-meta">© Junta de Andalucía · Instituto Andaluz de Administración Pública</span>
+          <span class="version-badge" title="Versión del frontend">Frontend {{ appVersion }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>

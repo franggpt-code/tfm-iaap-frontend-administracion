@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { finalize } from "rxjs";
 import { AuthService } from "../../core/auth.service";
+import { APP_VERSION } from "../../version";
 
 @Component({
   selector: "app-login",
@@ -15,6 +16,7 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  readonly appVersion = APP_VERSION;
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly showPassword = signal(false);
@@ -39,7 +41,7 @@ export class LoginComponent {
       .login(this.form.getRawValue())
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
-        next: () => void this.router.navigateByUrl("/admin"),
+        next: () => void this.router.navigateByUrl(this.auth.landingUrl()),
         error: () => this.error.set("No ha sido posible iniciar sesión. Revisa las credenciales e inténtalo de nuevo."),
       });
   }

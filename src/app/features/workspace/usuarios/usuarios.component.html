@@ -1,0 +1,55 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Usuarios y permisos</span></nav>
+  <header class="page-heading">
+    <div><p class="eyebrow">Administración de acceso</p><h1>Usuarios y permisos</h1><p>Asigna a cada usuario un perfil de aplicación y, cuando corresponda, vincúlalo con su ficha de colaborador.</p></div>
+    <button class="button button--primary" type="button" (click)="startCreate()">Nuevo usuario</button>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+
+  <section class="permission-guide" aria-labelledby="profiles-title">
+    <h2 id="profiles-title">Perfiles de aplicación</h2>
+    <div class="permission-guide__grid">
+      <article><span class="role-badge role-badge--admin">Administrador</span><p>Acceso completo, incluida la configuración y la gestión de usuarios.</p></article>
+      <article><span class="role-badge role-badge--manager">Gestor de colaboradores</span><p>Colaboradores, asignaciones e informes.</p></article>
+      <article><span class="role-badge role-badge--collaborator">Usuario colaborador</span><p>Datos propios, asignaciones y confirmación o rechazo.</p></article>
+    </div>
+  </section>
+
+  <section class="user-toolbar" aria-label="Filtrar usuarios"><label><span>Buscar usuarios</span><input type="search" placeholder="Nombre, usuario, correo o perfil" [value]="search()" (input)="search.set($any($event.target).value)"></label><span>{{ filteredUsers().length }} usuarios</span></section>
+
+  <div class="users-layout" [class.users-layout--editing]="formOpen()">
+    <section class="users-table-wrap" aria-label="Usuarios registrados">
+      @if (loading()) { <p class="loading-message">Cargando usuarios…</p> }
+      @else {
+        <table class="admin-table users-table">
+          <thead><tr><th>Usuario</th><th>Persona</th><th>Perfil</th><th>Acceso</th><th>Acciones</th></tr></thead>
+          <tbody>
+            @for (user of filteredUsers(); track user.idUsuario) {
+              <tr><td data-label="Usuario"><strong>{{ user.login }}</strong><small>{{ user.email }}</small></td><td data-label="Persona">{{ user.nombreCompleto }}@if (user.colaboradorId) { <small>Ficha: {{ collaboratorName(user.colaboradorId) }}</small> }</td><td data-label="Perfil"><span class="role-badge">{{ roleLabel(user.roles[0]) }}</span></td><td data-label="Acceso"><span class="status-chip" [class.status-chip--success]="user.activo">{{ user.activo ? "Activo" : "Inactivo" }}</span><small>{{ user.ldapBypass ? "Contraseña local" : "LDAP" }}</small></td><td data-label="Acciones"><div class="row-actions"><button class="button button--link" type="button" (click)="startEdit(user)">Editar</button><button class="button button--link danger-link" type="button" [disabled]="user.idUsuario === currentUserId() || deleting() === user.idUsuario" (click)="deleteUser(user)">{{ user.idUsuario === currentUserId() ? "Sesión actual" : deleting() === user.idUsuario ? "Eliminando…" : "Eliminar" }}</button></div></td></tr>
+            } @empty { <tr><td colspan="5"><div class="empty-state"><strong>No hay resultados.</strong><span>Prueba con otro criterio de búsqueda.</span></div></td></tr> }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    @if (formOpen()) {
+      <aside class="user-form-panel" aria-labelledby="user-form-title">
+        <div><p class="eyebrow">{{ editing() ? "Edición" : "Alta" }}</p><h2 id="user-form-title">{{ editing() ? "Editar usuario" : "Nuevo usuario" }}</h2></div>
+        <p class="required-note">* Campos obligatorios</p>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <div class="field"><label for="user-login">Usuario *</label><input id="user-login" type="text" autocomplete="off" formControlName="login"></div>
+          <div class="field"><label for="user-name">Nombre completo *</label><input id="user-name" type="text" formControlName="nombreCompleto"></div>
+          <div class="field"><label for="user-email">Correo *</label><input id="user-email" type="email" formControlName="email"></div>
+          <fieldset class="role-choice"><legend>Perfil de aplicación *</legend><label><input type="radio" value="ADMIN" formControlName="role"><span><strong>Administrador</strong><small>Acceso completo</small></span></label><label><input type="radio" value="GESTOR" formControlName="role"><span><strong>Gestor de colaboradores</strong><small>Colaboradores, asignaciones e informes</small></span></label><label><input type="radio" value="COLABORADOR" formControlName="role"><span><strong>Usuario colaborador</strong><small>Área personal</small></span></label></fieldset>
+          @if (form.controls.role.value === "COLABORADOR") { <div class="field"><label for="linked-collaborator">Colaborador vinculado *</label><select id="linked-collaborator" formControlName="colaboradorId"><option value="">Seleccionar colaborador</option>@for (item of collaborators(); track item.id) { <option [value]="item.id">{{ item.nombreCompleto }} · {{ item.dni }}{{ item.letra }}</option> }</select><small>El usuario sólo podrá consultar esta ficha y sus asignaciones.</small></div> }
+          <label class="check-field"><input type="checkbox" formControlName="activo"><span><strong>Usuario activo</strong><small>Permite iniciar sesión.</small></span></label>
+          <label class="check-field"><input type="checkbox" formControlName="ldapBypass"><span><strong>Usar contraseña local</strong><small>Desactivar para autenticar mediante LDAP.</small></span></label>
+          @if (form.controls.ldapBypass.value) { <div class="field"><label for="local-password">Contraseña local {{ editing() ? "(opcional)" : "*" }}</label><input id="local-password" type="password" autocomplete="new-password" formControlName="passwordLocal"><small>{{ editing() ? "Déjala vacía para conservar la contraseña actual." : "Necesaria para el primer acceso." }}</small></div> }
+          <div class="form-actions"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()">{{ saving() ? "Guardando…" : "Guardar usuario" }}</button></div>
+        </form>
+      </aside>
+    }
+  </div>
+</div>

@@ -1,0 +1,30 @@
+<div class="page-shell">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    @if (portalResponsable) { <a routerLink="/mi-espacio">Mi espacio</a><span aria-hidden="true">/</span><span>Llamamiento de mi aula</span> }
+    @else { <a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><a routerLink="/admin/procesos">Procesos</a><span aria-hidden="true">/</span><span>Control de asistencia</span> }
+  </nav>
+  <header class="page-heading"><div><p class="eyebrow">{{ portalResponsable ? "Responsable de aula" : "Listado ordenado por aula" }}</p><h1>{{ portalResponsable ? "Llamamiento de mi aula" : "Control de asistencia" }}</h1><p>{{ portalResponsable ? "Registra la asistencia de cada persona convocada. Los cambios se guardan al momento." : "Marca cada persona como presente, ausente o sin registrar. “Sin registrar” nunca se interpreta como ausencia." }}</p></div></header>
+  @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
+  @if (loading()) { <p class="loading-message">Cargando aula…</p> }
+  @else {
+    <div class="attendance-list">
+      @for (item of items(); track item.id) {
+        <article [class.is-pending]="pending().has(item.id)">
+          <div class="attendance-order">{{ item.ordenAula }}</div>
+          <div class="attendance-person"><strong class="attendance-dni">{{ item.persona.documentoIdentidad }}</strong><h2>{{ item.persona.nombreCompleto }}</h2><p>{{ item.centroNombre }} · {{ item.aulaNombre }}</p><small>Último registro: {{ formatAudit(item.asistenciaRegistradaAt) }}</small></div>
+          <fieldset [disabled]="pending().has(item.id)">
+            <legend>Estado de asistencia</legend>
+            <div class="state-actions">
+              <button type="button" class="state-actions__present" [class.is-active]="item.estadoAsistencia === 'PRESENTE'" (click)="update(item, 'PRESENTE')">{{ portalResponsable ? "Asiste" : "Presente" }}</button>
+              <button type="button" class="state-actions__absent" [class.is-active]="item.estadoAsistencia === 'AUSENTE'" (click)="update(item, 'AUSENTE')">{{ portalResponsable ? "No asiste" : "Ausente" }}</button>
+              <button type="button" [class.is-active]="item.estadoAsistencia === 'SIN_REGISTRAR'" (click)="update(item, 'SIN_REGISTRAR')">Sin registrar</button>
+            </div>
+          </fieldset>
+          @if (!portalResponsable) { <label class="observation"><span>Observaciones (opcional)</span><input type="text" maxlength="1000" [disabled]="pending().has(item.id)" [value]="observations()[item.id] || ''" (input)="setObservation(item.id, $any($event.target).value)"></label> }
+          @if (pending().has(item.id)) { <span class="saving-label" role="status">Guardando…</span> }
+          @if (rowErrors()[item.id]) { <p class="field-error" role="alert">{{ rowErrors()[item.id] }}</p> }
+        </article>
+      } @empty { <div class="empty-state"><strong>No hay convocados en esta aula.</strong></div> }
+    </div>
+  }
+</div>

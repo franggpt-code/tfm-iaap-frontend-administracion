@@ -1,0 +1,201 @@
+<div class="page-shell page-shell--narrow">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Importar convocados</span>
+  </nav>
+
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Importación por ejercicio</p>
+      <h1>Importar convocados y aulas</h1>
+      <p>Primero revisaremos una simulación. No se guardará ningún cambio hasta que confirmes el resultado.</p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div>
+  }
+
+  @if (confirmed(); as result) {
+    <div class="alert alert--success" role="status">
+      <strong>Importación completada.</strong>
+      Identificador: <code>{{ result.importacionId }}</code>.
+      <a [routerLink]="['/admin/procesos-selectivos', procesoId(), 'examenes', examenId(), 'convocados']">Ver convocados del ejercicio</a>
+    </div>
+  }
+
+  <section class="form-card" aria-labelledby="datos-importacion-title">
+    <div class="section-heading section-heading--compact">
+      <div>
+        <span class="step-badge">1</span>
+        <h2 id="datos-importacion-title">Selecciona el destino</h2>
+      </div>
+      <span class="required-note">* Campos obligatorios</span>
+    </div>
+
+    <div class="form-grid">
+      <div class="field process-picker">
+        <label for="process-search">Proceso selectivo *</label>
+        <div class="process-combobox" (focusout)="closeProcessResults($event)">
+          <div class="process-combobox__input">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input
+              id="process-search"
+              type="search"
+              role="combobox"
+              autocomplete="off"
+              maxlength="250"
+              placeholder="Escribe un nombre o código SIRHUS"
+              aria-autocomplete="list"
+              aria-controls="process-results"
+              [attr.aria-expanded]="processResultsOpen()"
+              [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'process-option-' + activeProcessIndex() : null"
+              [value]="processQuery()"
+              [disabled]="simulating() || confirming()"
+              (focus)="openProcessResults()"
+              (input)="onProcesoSearch($any($event.target).value)"
+              (keydown)="onProcessKeydown($event)"
+            >
+            @if (procesoId()) {
+              <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" [disabled]="simulating() || confirming()" (click)="clearProceso()">×</button>
+            }
+            @if (loadingProcesos()) { <span class="process-spinner" aria-label="Buscando procesos"></span> }
+          </div>
+
+          @if (processResultsOpen()) {
+            <div class="process-results" id="process-results" role="listbox" aria-label="Procesos selectivos">
+              <div class="process-results__heading">
+                <strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong>
+                <span>Ordenados por última actualización</span>
+              </div>
+              @if (processSearchError()) {
+                <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p>
+              } @else if (!loadingProcesos() && procesos().length === 0) {
+                <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p>
+              } @else {
+                <div class="process-results__list">
+                  @for (proceso of procesos(); track proceso.id; let index = $index) {
+                    <button
+                      type="button"
+                      role="option"
+                      [id]="'process-option-' + index"
+                      [class.is-active]="activeProcessIndex() === index"
+                      [class.is-selected]="procesoId() === proceso.id"
+                      [attr.aria-selected]="procesoId() === proceso.id"
+                      (mouseenter)="activeProcessIndex.set(index)"
+                      (click)="selectProceso(proceso)"
+                    >
+                      <span class="process-result__code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</span>
+                      <span class="process-result__name">{{ proceso.nombre }}</span>
+                      <small>{{ formatProcessUpdatedAt(proceso) }}</small>
+                    </button>
+                  }
+                </div>
+                @if (processTotal() > procesos().length) {
+                  <p class="process-results__footer">Mostrando los {{ procesos().length }} resultados más recientes. Escribe más texto para precisar la búsqueda.</p>
+                }
+              }
+            </div>
+          }
+        </div>
+        <small class="field-help">Busca por la denominación del proceso o por su código SIRHUS.</small>
+      </div>
+
+      <div class="field">
+        <label for="examen">Ejercicio o examen *</label>
+        <select id="examen" [value]="examenId()" [disabled]="!procesoId() || loadingExamenes() || simulating() || confirming()" (change)="onExamenChange($any($event.target).value)">
+          <option value="">{{ loadingExamenes() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>
+          @for (examen of examenes(); track examen.id) {
+            <option [value]="examen.id">{{ examen.numeroEjercicio }}. {{ examen.nombre }}</option>
+          }
+        </select>
+        @if (!procesoId()) { <small class="field-help">Selecciona primero un proceso.</small> }
+        @else if (!loadingExamenes() && examenes().length === 0) { <small class="field-help">Este proceso no tiene ejercicios disponibles.</small> }
+      </div>
+    </div>
+  </section>
+
+  <section class="form-card" aria-labelledby="ficheros-title">
+    <div class="section-heading section-heading--compact">
+      <div><span class="step-badge">2</span><h2 id="ficheros-title">Añade los ficheros</h2></div>
+    </div>
+
+    <div class="upload-grid">
+      <label class="upload-box" [class.upload-box--selected]="ficheroSirhus()">
+        <span class="upload-box__tag">Obligatorio</span>
+        <strong>Listado SIRHUS</strong>
+        <span>Define quién está convocado y su centro/aula.</span>
+        <input type="file" accept=".xls,.xlsx" [disabled]="simulating() || confirming()" (change)="onFile($event, 'sirhus')">
+        <span class="file-name">{{ ficheroSirhus()?.name || "Ningún fichero seleccionado" }}</span>
+      </label>
+
+      <label class="upload-box" [class.upload-box--selected]="ficheroCaronte()">
+        <span class="upload-box__tag upload-box__tag--optional">Opcional</span>
+        <strong>Complemento Caronte</strong>
+        <span>Enriquece identidad y contacto; no añade convocados.</span>
+        <input type="file" accept=".xls,.xlsx" [disabled]="simulating() || confirming()" (change)="onFile($event, 'caronte')">
+        <span class="file-name">{{ ficheroCaronte()?.name || "Ningún fichero seleccionado" }}</span>
+      </label>
+    </div>
+
+    @if (fileError()) { <p class="field-error" role="alert">{{ fileError() }}</p> }
+    <p class="privacy-note">Los ficheros permanecen sólo en memoria durante esta operación y no se guardan en el navegador.</p>
+  </section>
+
+  <div class="sticky-actions">
+    <span>{{ simulation() ? "Simulación vigente y lista para confirmar." : "La simulación no modifica la base de datos." }}</span>
+    <div>
+      <button class="button button--secondary" type="button" [disabled]="!canSimulate()" [attr.aria-busy]="simulating()" (click)="simulate()">
+        {{ simulating() ? "Simulando…" : simulation() ? "Repetir simulación" : "Simular importación" }}
+      </button>
+      <button class="button button--primary" type="button" [disabled]="!simulation() || confirming()" (click)="openConfirmation()">Confirmar importación</button>
+    </div>
+  </div>
+
+  @if (simulation(); as result) {
+    <section class="simulation" aria-labelledby="simulation-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">Resultado provisional</p><h2 id="simulation-title">Revisa antes de confirmar</h2></div>
+        <span class="status-chip status-chip--info">Sin cambios guardados</span>
+      </div>
+
+      <div class="metric-groups">
+        <div class="metric-group">
+          <h3>Ficheros procesados</h3>
+          <dl><div><dt>Filas SIRHUS</dt><dd>{{ result.filasSirhus }}</dd></div><div><dt>Filas Caronte</dt><dd>{{ result.filasCaronte || 0 }}</dd></div><div><dt>Caronte no utilizadas</dt><dd>{{ result.filasCaronteNoUtilizadas }}</dd></div></dl>
+        </div>
+        <div class="metric-group">
+          <h3>Personas y convocatorias</h3>
+          <dl><div><dt>Personas nuevas</dt><dd>{{ result.personasNuevas }}</dd></div><div><dt>Personas actualizadas</dt><dd>{{ result.personasActualizadas }}</dd></div><div><dt>Convocados nuevos</dt><dd>{{ result.convocadosNuevos }}</dd></div><div><dt>Convocados actualizados</dt><dd>{{ result.convocadosActualizados }}</dd></div></dl>
+        </div>
+        <div class="metric-group">
+          <h3>Ubicaciones</h3>
+          <dl><div><dt>Provincias nuevas</dt><dd>{{ result.provinciasNuevas }}</dd></div><div><dt>Centros nuevos</dt><dd>{{ result.centrosNuevos }}</dd></div><div><dt>Aulas nuevas</dt><dd>{{ result.aulasNuevas }}</dd></div><div><dt>Previos no incluidos</dt><dd>{{ result.convocadosPreviosNoIncluidos }}</dd></div></dl>
+        </div>
+      </div>
+
+      <div class="warnings-panel">
+        <h3>Avisos de revisión <span>{{ result.avisos.length }}</span></h3>
+        @if (result.avisos.length === 0) {
+          <p>No se han detectado avisos.</p>
+        } @else {
+          <div class="table-wrap"><table class="admin-table"><thead><tr><th>Origen</th><th>Fila</th><th>Aviso</th></tr></thead><tbody>
+            @for (aviso of result.avisos; track $index) { <tr><td data-label="Origen"><span class="status-chip">{{ aviso.origen }}</span></td><td data-label="Fila">{{ aviso.fila }}</td><td data-label="Aviso">{{ aviso.mensaje }}</td></tr> }
+          </tbody></table></div>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+<dialog #confirmationDialog class="confirmation-dialog" aria-labelledby="confirmation-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación necesaria</p>
+    <h2 id="confirmation-title">¿Guardar esta importación?</h2>
+    <p>Se escribirán cambios en la base de datos para <strong>{{ selectedProceso()?.nombre }}</strong>, ejercicio <strong>{{ selectedExamen()?.nombre }}</strong>.</p>
+    <p>Se reutilizarán los mismos ficheros de la simulación. Esta acción puede crear o actualizar personas, convocatorias y ubicaciones.</p>
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="confirming()" (click)="closeConfirmation()">Cancelar</button>
+      <button class="button button--primary" type="button" [disabled]="confirming()" [attr.aria-busy]="confirming()" (click)="confirm()">{{ confirming() ? "Guardando…" : "Confirmar y guardar" }}</button>
+    </div>
+  </form>
+</dialog>
