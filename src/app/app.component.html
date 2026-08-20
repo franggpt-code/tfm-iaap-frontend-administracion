@@ -1,24 +1,10 @@
 <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 
 @if (!isAuthenticated()) {
-  <!-- Vista pública / Login -->
-  <header class="public-header" role="banner">
-    <div class="public-header__utility">
-      <div class="public-header__inner">
-        <span>Junta de Andalucía · Instituto Andaluz de Administración Pública</span>
-        <span class="version-badge" title="Versión del frontend">Frontend {{ appVersion }}</span>
-      </div>
-    </div>
-  </header>
+  <!-- Vista pública / Login a pantalla completa -->
   <main id="main-content" class="public-main" tabindex="-1">
     <router-outlet />
   </main>
-  <footer class="app-footer">
-    <div class="app-footer__inner">
-      <span>SICOL · Sistema de gestión de procesos selectivos</span>
-      <span>Entorno de administración</span>
-    </div>
-  </footer>
 } @else {
   <!-- Vista autenticada con Menú Lateral -->
   <div class="app-shell" [class.is-collapsed]="isCollapsed()">
