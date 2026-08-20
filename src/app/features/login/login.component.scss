@@ -1,80 +1,488 @@
-.login-page {
-  align-items: center;
-  background: #f4f6f8;
+.split-login {
   display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: #f6faf7;
+}
+
+/* --------------------------------------------------------------------------
+   PANEL IZQUIERDO: MARCA E IDENTIDAD INSTITUCIONAL
+   -------------------------------------------------------------------------- */
+
+.login-brand-panel {
+  background: linear-gradient(150deg, #00733e 0%, #087021 65%, #04521f 100%);
+  color: #fff;
+  display: flex;
+  flex: 0 0 42%;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 320px;
+  overflow: hidden;
+  padding: 3rem 2.75rem;
+  position: relative;
+
+  /* Formas suaves de fondo */
+  &::before {
+    background: radial-gradient(circle, rgba(207, 230, 216, 0.2) 0%, rgba(207, 230, 216, 0) 70%);
+    border-radius: 50%;
+    bottom: -100px;
+    content: '';
+    height: 480px;
+    pointer-events: none;
+    position: absolute;
+    right: -120px;
+    width: 480px;
+  }
+
+  &::after {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    content: '';
+    height: 320px;
+    left: -80px;
+    pointer-events: none;
+    position: absolute;
+    top: -60px;
+    width: 320px;
+  }
+}
+
+.brand-panel__header {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  position: relative;
+  z-index: 2;
+}
+
+.jda-logo-box {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  color: #fff;
+  display: flex;
+  flex-shrink: 0;
+  height: 2.75rem;
   justify-content: center;
-  min-height: min(68vh, 42rem);
-  padding: 2rem 1rem;
+  width: 2.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  .jda-mark-svg {
+    height: 1.85rem;
+    width: 1.85rem;
+  }
 }
 
-.login-panel {
-  background: #fff;
-  border: 1px solid #d8dee4;
-  border-left: 4px solid var(--jda-reference-green);
-  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 8%);
-  display: grid;
-  gap: 1rem;
-  padding: 2rem;
-  width: min(100%, 28rem);
-}
-
-.login-heading {
-  margin-bottom: 0.25rem;
-}
-
-.login-kicker {
-  color: #49635a;
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-}
-
-h1 {
-  color: #1f2a24;
-  font-size: 1.6rem;
+.jda-text {
+  display: flex;
+  flex-direction: column;
   line-height: 1.2;
-  margin: 0;
 }
 
-.required-note {
-  color: var(--jda-neutral-mid);
-  margin: -0.4rem 0 0;
+.jda-name {
+  font-family: Montserrat, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
-.password-field {
+.jda-inst {
+  color: #cfe6d8;
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
+.brand-panel__body {
+  margin: auto 0;
+  padding: 2.5rem 0;
+  position: relative;
+  z-index: 2;
+}
+
+.brand-title {
+  color: #fff;
+  font-family: Montserrat, sans-serif;
+  font-size: 3.25rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin: 0 0 0.5rem;
+}
+
+.brand-subtitle {
+  color: #d8eee1;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0 0 2.25rem;
+}
+
+.feature-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.feature-chip {
+  align-items: center;
+  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 600;
+  gap: 0.65rem;
+  padding: 0.55rem 1.15rem;
+  width: fit-content;
+
+  svg {
+    color: #a8e2be;
+    flex-shrink: 0;
+    height: 17px;
+    width: 17px;
+  }
+}
+
+.brand-panel__footer {
+  position: relative;
+  z-index: 2;
+}
+
+.security-badge {
+  align-items: center;
+  color: #cfe6d8;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.45rem;
+
+  svg {
+    height: 16px;
+    width: 16px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   PANEL DERECHO: FORMULARIO DE ACCESO
+   -------------------------------------------------------------------------- */
+
+.login-form-panel {
+  align-items: center;
+  background: #f6faf7;
+  display: flex;
+  flex: 1 1 58%;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
   position: relative;
 }
 
-.password-field input {
-  padding-right: 3rem;
-}
-
-.password-toggle {
+.login-top-meta {
   align-items: center;
-  background: transparent;
-  border: 0;
-  color: #49635a;
-  cursor: pointer;
-  display: inline-flex;
-  height: calc(100% - 2px);
-  justify-content: center;
+  display: flex;
   position: absolute;
-  right: 1px;
-  top: 1px;
-  width: 2.75rem;
+  right: 1.5rem;
+  top: 1.25rem;
 }
 
-.password-toggle:hover,
-.password-toggle:focus {
-  color: #1f2a24;
+.login-card {
+  background: #fff;
+  border: 1px solid #dce8df;
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(3, 55, 19, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 440px;
+  padding: 2.5rem;
+  width: 100%;
+}
+
+.login-header {
+  h2 {
+    color: #1a2b20;
+    font-family: Montserrat, sans-serif;
+    font-size: 1.65rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0 0 0.25rem;
+  }
+
+  .login-subtitle {
+    color: #556b5e;
+    font-size: 0.88rem;
+    margin: 0;
+  }
+}
+
+.alert--error {
+  align-items: center;
+  background: #fdf2f2;
+  border: 1px solid #f8d7da;
+  border-left: 4px solid var(--jda-error, #d4403a);
+  border-radius: 6px;
+  color: #842029;
+  display: flex;
+  font-size: 0.85rem;
+  font-weight: 600;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+
+  .alert-icon {
+    flex-shrink: 0;
+    height: 18px;
+    width: 18px;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.15rem;
+
+  label {
+    color: #26382e;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+}
+
+.input-container {
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid #c8d8ce;
+  border-radius: 8px;
+  display: flex;
+  position: relative;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-within {
+    border-color: #00733e;
+    box-shadow: 0 0 0 3px rgba(0, 115, 62, 0.15);
+  }
+
+  &.has-error {
+    border-color: var(--jda-error, #d4403a);
+    box-shadow: 0 0 0 3px rgba(212, 64, 58, 0.15);
+  }
+
+  .input-icon-wrap {
+    align-items: center;
+    color: #62776c;
+    display: flex;
+    left: 0.85rem;
+    pointer-events: none;
+    position: absolute;
+
+    svg {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  input {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: #1a2b20;
+    font-size: 0.92rem;
+    outline: none;
+    padding: 0.75rem 2.8rem 0.75rem 2.65rem;
+    width: 100%;
+
+    &::placeholder {
+      color: #92a49b;
+    }
+  }
+
+  .password-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #62776c;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    padding: 0.4rem;
+    position: absolute;
+    right: 0.5rem;
+    transition: color 0.14s ease;
+
+    &:hover,
+    &:focus {
+      color: #00733e;
+    }
+
+    svg {
+      height: 18px;
+      width: 18px;
+    }
+  }
+}
+
+.field-error {
+  color: var(--jda-error, #d4403a);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .form-actions {
-  display: flex;
+  margin-top: 0.5rem;
 }
 
-.form-actions .button {
+.login-submit-btn {
+  align-items: center;
+  background: #00733e;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 115, 62, 0.25);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: Montserrat, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.75rem 1.5rem;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
+
+  &:hover:not(:disabled) {
+    background: #005a30;
+    box-shadow: 0 6px 18px rgba(0, 115, 62, 0.32);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+}
+
+.btn-spinner {
+  animation: btnSpin 0.7s linear infinite;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+}
+
+@keyframes btnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-card-footer {
+  border-top: 1px solid #e3ebe6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 1.25rem;
+}
+
+.role-hint {
+  background: #edf6f1;
+  border: 1px solid #cbe0d3;
+  border-radius: 6px;
+  color: #243e2e;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+
+  strong {
+    color: #033713;
+  }
+}
+
+.login-meta-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.login-meta {
+  color: #718579;
+  font-size: 0.72rem;
+  margin: 0;
+}
+
+.version-badge {
+  background: #edf6f1;
+  border: 1px solid rgb(0 115 62 / 30%);
+  border-radius: 4px;
+  color: var(--jda-primary-dark, #033713);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE (PANTALLAS MÓVILES Y TABLETS)
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .split-login {
+    flex-direction: column;
+  }
+
+  .login-brand-panel {
+    flex: 0 0 auto;
+    min-width: 100%;
+    padding: 2rem 1.5rem;
+  }
+
+  .brand-panel__body {
+    margin: 1.5rem 0;
+    padding: 0;
+  }
+
+  .brand-title {
+    font-size: 2.25rem;
+  }
+
+  .brand-subtitle {
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .feature-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .feature-chip {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .brand-panel__footer {
+    display: none;
+  }
+
+  .login-form-panel {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .login-card {
+    padding: 1.75rem;
+  }
 }

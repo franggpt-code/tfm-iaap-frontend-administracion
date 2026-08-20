@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { finalize } from "rxjs";
 import { AuthService } from "../../core/auth.service";
+import { APP_VERSION } from "../../version";
 
 @Component({
   selector: "app-login",
@@ -15,6 +16,7 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  readonly appVersion = APP_VERSION;
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly showPassword = signal(false);
