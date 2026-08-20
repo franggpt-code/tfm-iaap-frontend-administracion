@@ -60,6 +60,11 @@
 
   <!-- Panel Derecho: Formulario de Autenticación -->
   <div class="login-form-panel">
+    <!-- Indicador de Versión en Esquina Superior Derecha -->
+    <div class="login-top-meta">
+      <span class="version-badge" title="Versión del frontend desplegado">Frontend {{ appVersion }}</span>
+    </div>
+
     <div class="login-card">
       <div class="login-header">
         <h2 id="login-title">Iniciar Sesión</h2>
@@ -158,9 +163,10 @@
         <div class="role-hint">
           <span>Perfiles: <strong>Administrador (TIC)</strong> · <strong>Gestor</strong> · <strong>Colaborador</strong></span>
         </div>
-        <p class="login-meta">
-          © Junta de Andalucía · Instituto Andaluz de Administración Pública
-        </p>
+        <div class="login-meta-row">
+          <span class="login-meta">© Junta de Andalucía · Instituto Andaluz de Administración Pública</span>
+          <span class="version-badge" title="Versión del frontend">Frontend {{ appVersion }}</span>
+        </div>
       </div>
     </div>
   </div>
