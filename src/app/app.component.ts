@@ -40,9 +40,17 @@ export class AppComponent {
   /** Etiqueta descriptiva del rol del usuario para la tarjeta de sesión */
   readonly userRoleLabel = computed(() => {
     if (this.isAdmin()) return "Administrador (TIC)";
-    if (this.isManager()) return "Gestor de Selección";
-    if (this.isCollaborator()) return "Colaborador";
+    if (this.isManager()) return "Gestor de Administración";
+    if (this.isCollaborator()) return "Colaborador (Aula)";
     return "Usuario";
+  });
+
+  /** Clase de tema cromático para el sidebar según el rol logueado */
+  readonly themeClass = computed(() => {
+    if (this.isAdmin()) return "theme--admin";
+    if (this.isManager()) return "theme--manager";
+    if (this.isCollaborator()) return "theme--collaborator";
+    return "theme--admin";
   });
 
   toggleCollapse(): void {

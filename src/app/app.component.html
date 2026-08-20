@@ -22,15 +22,19 @@
 } @else {
   <!-- Vista autenticada con Menú Lateral -->
   <div class="app-shell" [class.is-collapsed]="isCollapsed()">
-    <!-- Menú Lateral (Sidebar) -->
-    <aside class="app-sidebar" [class.is-collapsed]="isCollapsed()" [class.is-mobile-open]="menuOpen()" aria-label="Navegación principal">
-      <!-- Cabecera del Sidebar con Marca y Botón Colapsar -->
+    <!-- Menú Lateral (Sidebar) con tema cromático según el rol -->
+    <aside [class]="'app-sidebar ' + themeClass()" [class.is-collapsed]="isCollapsed()" [class.is-mobile-open]="menuOpen()" aria-label="Navegación principal">
+      <!-- Cabecera del Sidebar con Logotipo Institucional IAAP y Botón Colapsar -->
       <div class="sidebar-header">
-        <a class="sidebar-brand" [routerLink]="homeLink()" (click)="closeMenu()" title="SICOL - Gestión de colaboraciones">
-          <span class="sidebar-brand__mark" aria-hidden="true">S</span>
+        <a class="sidebar-brand" [routerLink]="homeLink()" (click)="closeMenu()" title="IAAP - SICOL">
+          <span class="sidebar-brand__mark" aria-hidden="true">
+            <svg class="jda-mark-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 2.5L2.5 28.5h6.2l3.4-6.8h7.8l3.4 6.8h6.2L16 2.5zm0 9l2.7 5.5h-5.4L16 11.5z" fill="currentColor"/>
+            </svg>
+          </span>
           <span class="sidebar-brand__text">
-            <strong>SICOL</strong>
-            <small>Gestión de colaboraciones</small>
+            <strong>IAAP</strong>
+            <small>SICOL · Colaboraciones</small>
           </span>
         </a>
         <button class="sidebar-collapse-btn" type="button" (click)="toggleCollapse()" [attr.aria-label]="isCollapsed() ? 'Expandir menú' : 'Colapsar menú'" [title]="isCollapsed() ? 'Expandir menú lateral' : 'Colapsar menú lateral'">
