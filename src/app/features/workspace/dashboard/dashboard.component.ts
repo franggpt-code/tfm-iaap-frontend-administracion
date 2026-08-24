@@ -17,19 +17,20 @@ export class DashboardComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly auth = inject(AuthService);
 
-  readonly isManager = this.auth.isManager;
+  readonly isManager = computed(() => this.auth.isManager() && !this.auth.isAdmin());
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly resumen = signal<CuadroMandoAdministracion | null>(null);
-  readonly aulasCubiertas = computed(() => Math.max(0, (this.resumen()?.totalAulas ?? 0) - (this.resumen()?.aulasSinResponsable ?? 0)));
+  readonly planificacion = computed(() => this.resumen()?.proximaPlanificacion ?? null);
+  readonly aulasCubiertas = computed(() => Math.max(0, (this.planificacion()?.totalAulas ?? 0) - (this.planificacion()?.aulasSinResponsable ?? 0)));
   readonly coberturaPorcentaje = computed(() => {
-    const total = this.resumen()?.totalAulas ?? 0;
-    return total ? Math.round((this.aulasCubiertas() / total) * 100) : 100;
+    const total = this.planificacion()?.totalAulas ?? 0;
+    return total ? Math.round((this.aulasCubiertas() / total) * 100) : 0;
   });
   readonly confirmacionPorcentaje = computed(() => {
-    const total = this.resumen()?.totalAsignaciones ?? 0;
-    return total ? Math.round(((this.resumen()?.asignacionesConfirmadas ?? 0) / total) * 100) : 0;
+    const total = this.planificacion()?.totalAsignaciones ?? 0;
+    return total ? Math.round(((this.planificacion()?.asignacionesConfirmadas ?? 0) / total) * 100) : 0;
   });
 
   ngOnInit(): void {

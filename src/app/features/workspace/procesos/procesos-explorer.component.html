@@ -5,6 +5,14 @@
     @if (canManageProcesos()) { <div class="heading-actions"><a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas">Importar convocados</a><button class="button button--primary" type="button" (click)="openCreateProcess()">Crear proceso</button></div> }
   </header>
 
+  @if (canManageProcesos()) {
+    <aside class="test-cleanup" aria-labelledby="test-cleanup-title">
+      <div><p class="eyebrow">Zona de pruebas</p><h2 id="test-cleanup-title">Limpiar procesos cargados</h2><p>Elimina todos los procesos y su operativa para volver a cargar datos de prueba.</p></div>
+      <button class="button button--danger" type="button" [disabled]="!procesos().length" (click)="askClearAllProcesses()">Eliminar todos los procesos</button>
+    </aside>
+  }
+
+
   @if (!canManageProcesos()) { <div class="alert alert--info" role="status"><strong>Modo consulta.</strong> Puedes consultar procesos, ejercicios y convocados; la creación, edición e importación están reservadas a Administración.</div> }
 
   @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
@@ -107,22 +115,6 @@
     </section>
   }
 
-  @if (examFormOpen()) {
-    <section class="editor-panel" role="dialog" aria-labelledby="exam-form-title">
-      <div class="editor-heading"><div><p class="eyebrow">{{ examFormMode() === "create" ? "Nuevo registro" : "Edición" }}</p><h2 id="exam-form-title">{{ examFormMode() === "create" ? "Crear ejercicio" : "Editar ejercicio" }}</h2></div><button class="close-button" type="button" aria-label="Cerrar formulario" (click)="closeForms()">×</button></div>
-      <p class="editor-context">{{ selected()?.codigoSirhus }} · {{ selected()?.nombre }}</p><p class="required-note">* Campos obligatorios</p>
-      <form #examEditor="ngForm" (ngSubmit)="saveExam(examEditor)">
-        <div class="form-grid form-grid--exam">
-          <label class="field field--wide"><span>Nombre *</span><input name="examName" [(ngModel)]="examForm.nombre" required maxlength="250"></label>
-          <label class="field"><span>Número de ejercicio *</span><input name="examNumber" [(ngModel)]="examForm.numeroEjercicio" type="number" min="1" required></label>
-          <label class="field"><span>Fecha y hora</span><input name="examDate" [(ngModel)]="examForm.fechaHora" type="datetime-local"><small>Puede dejarse pendiente y completarse más adelante.</small></label>
-          <label class="field field--wide"><span>Observaciones</span><textarea name="examNotes" [(ngModel)]="examForm.observaciones" rows="3" maxlength="1000"></textarea></label>
-        </div>
-        <div class="form-actions"><button class="button button--secondary" type="button" (click)="closeForms()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="examEditor.invalid || saving()">{{ saving() ? "Guardando…" : "Guardar ejercicio" }}</button></div>
-      </form>
-    </section>
-  }
-
   <div class="explorer-layout">
     <section class="explorer-panel" aria-labelledby="procesos-title">
       <div class="panel-heading"><div><span class="panel-count">{{ filteredProcesos().length }}</span><h2 id="procesos-title">Procesos</h2><p>{{ filteredProcesos().length }} de {{ procesos().length }} visibles</p></div></div>
@@ -151,15 +143,53 @@
               <div class="exam-number">{{ examen.numeroEjercicio }}</div>
               <div class="exam-copy"><h3>{{ examen.nombre }}</h3><p [class.date-pending]="!examen.fechaHora">{{ formatDate(examen.fechaHora) }}</p>@if (examen.observaciones) { <small>{{ examen.observaciones }}</small> }</div>
               <div class="exam-actions">
-                @if (canManageProcesos()) { <button class="button button--secondary" type="button" (click)="openEditExam(examen)">Editar</button><a class="button button--secondary" [routerLink]="['/admin/importaciones/opositores-aulas']" [queryParams]="{ procesoId: proceso.id, examenId: examen.id }">Importar</a> }
+                @if (canManageProcesos()) { <button class="button button--secondary" type="button" (click)="openEditExam(examen)">Editar</button><a class="button button--secondary" [routerLink]="['/admin/importaciones/opositores-aulas']" [queryParams]="{ procesoId: proceso.id, examenId: examen.id }">Importar</a><button class="button button--danger" type="button" (click)="askDeleteExam(examen)">Eliminar ejercicio</button> }
                 <a class="button button--primary" [routerLink]="['/admin/procesos-selectivos', proceso.id, 'examenes', examen.id, 'convocados']">Ver convocados</a>
               </div>
             </article>
           } @empty { @if (!loadingExamenes()) { <div class="empty-state"><strong>Este proceso aún no tiene ejercicios.</strong><span>{{ canManageProcesos() ? "Puedes crearlo manualmente o importarlo desde el Datamart." : "Cuando se publiquen, estarán disponibles aquí para su consulta." }}</span>@if (canManageProcesos()) { <button class="button button--primary" type="button" (click)="openCreateExam()">Crear ejercicio</button> }</div> } }
         </div>
+        @if (examFormOpen()) {
+          <section class="editor-panel exam-editor" aria-labelledby="exam-form-title">
+            <div class="editor-heading"><div><p class="eyebrow">{{ examFormMode() === "create" ? "Nuevo registro" : "Edición" }}</p><h2 #examEditorHeading id="exam-form-title" tabindex="-1">{{ examFormMode() === "create" ? "Crear ejercicio" : "Editar ejercicio" }}</h2></div><button class="close-button" type="button" aria-label="Cerrar formulario" (click)="closeForms()">×</button></div>
+            <p class="editor-context">{{ selected()?.codigoSirhus }} · {{ selected()?.nombre }}</p><p class="required-note">* Campos obligatorios</p>
+            <form #examEditor="ngForm" (ngSubmit)="saveExam(examEditor)">
+              <div class="form-grid form-grid--exam">
+                <label class="field field--wide"><span>Nombre *</span><input name="examName" [(ngModel)]="examForm.nombre" required maxlength="250"></label>
+                <label class="field"><span>Número de ejercicio *</span><input name="examNumber" [(ngModel)]="examForm.numeroEjercicio" type="number" min="1" required></label>
+                <label class="field"><span>Fecha y hora</span><input name="examDate" [(ngModel)]="examForm.fechaHora" type="datetime-local"><small>Puede dejarse pendiente y completarse más adelante.</small></label>
+                <label class="field field--wide"><span>Observaciones</span><textarea name="examNotes" [(ngModel)]="examForm.observaciones" rows="3" maxlength="1000"></textarea></label>
+              </div>
+              <div class="form-actions"><button class="button button--secondary" type="button" (click)="closeForms()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="examEditor.invalid || saving()">{{ saving() ? "Guardando…" : "Guardar ejercicio" }}</button></div>
+            </form>
+          </section>
+        }
       } @else {
         <div class="empty-state empty-state--large"><span class="empty-state__index">01</span><strong>Selecciona un proceso</strong><span>Sus ejercicios aparecerán aquí sin cambiar de pantalla.</span></div>
       }
     </section>
   </div>
+
+  <dialog #deleteExamDialog class="confirmation-dialog" aria-labelledby="delete-exam-title">
+    <form method="dialog">
+      <p class="eyebrow">Confirmación necesaria</p>
+      <h2 id="delete-exam-title">¿Eliminar este ejercicio?</h2>
+      @if (deleteExamTarget(); as examen) {
+        <p>Se eliminará de forma definitiva <strong>{{ examen.numeroEjercicio }}.º · {{ examen.nombre }}</strong>.</p>
+      }
+      <p class="dialog-warning">También se eliminarán sus asignaciones, convocados, llamamientos, asistencias, importaciones e informes asociados. Esta acción no se puede deshacer.</p>
+      <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="deletingExam()" (click)="closeDeleteExam()">Cancelar</button><button class="button button--danger" type="button" [disabled]="deletingExam()" [attr.aria-busy]="deletingExam()" (click)="confirmDeleteExam()">{{ deletingExam() ? "Eliminando…" : "Eliminar ejercicio" }}</button></div>
+    </form>
+  </dialog>
+
+  <dialog #clearProcessesDialog class="confirmation-dialog" aria-labelledby="clear-processes-title">
+    <form method="dialog">
+      <p class="eyebrow">Zona de pruebas</p>
+      <h2 id="clear-processes-title">¿Eliminar todos los procesos?</h2>
+      <p>Se eliminarán todos los procesos, ejercicios y sus datos operativos: asignaciones, convocados, llamamientos, asistencias, importaciones e informes.</p>
+      <p>Se conservarán colaboradores, personas opositoras, centros, aulas y catálogos maestros.</p>
+      <label class="confirmation-check"><input type="checkbox" [checked]="cleanupAcknowledged()" (change)="cleanupAcknowledged.set($any($event.target).checked)"><span>Entiendo que esta acción no se puede deshacer.</span></label>
+      <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="clearingProcesses()" (click)="closeClearAllProcesses()">Cancelar</button><button class="button button--danger" type="button" [disabled]="!cleanupAcknowledged() || clearingProcesses()" [attr.aria-busy]="clearingProcesses()" (click)="confirmClearAllProcesses()">{{ clearingProcesses() ? "Eliminando…" : "Eliminar todos los procesos" }}</button></div>
+    </form>
+  </dialog>
 </div>

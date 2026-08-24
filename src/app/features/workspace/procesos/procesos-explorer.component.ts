@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from "@angular/core";
+import { Component, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
 import { FormsModule, NgForm } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { finalize, forkJoin } from "rxjs";
@@ -38,6 +38,10 @@ export class ProcesosExplorerComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly auth = inject(AuthService);
 
+  @ViewChild("examEditorHeading") private examEditorHeading?: ElementRef<HTMLHeadingElement>;
+  @ViewChild("deleteExamDialog") private deleteExamDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild("clearProcessesDialog") private clearProcessesDialog?: ElementRef<HTMLDialogElement>;
+
   readonly canManageProcesos = this.auth.isAdmin;
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
@@ -50,6 +54,8 @@ export class ProcesosExplorerComponent implements OnInit {
   readonly loading = signal(true);
   readonly loadingExamenes = signal(false);
   readonly saving = signal(false);
+  readonly deletingExam = signal(false);
+  readonly clearingProcesses = signal(false);
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly search = signal("");
@@ -59,6 +65,8 @@ export class ProcesosExplorerComponent implements OnInit {
   readonly examFormOpen = signal(false);
   readonly examFormMode = signal<FormMode>("create");
   readonly editingExamId = signal<string | null>(null);
+  readonly deleteExamTarget = signal<Examen | null>(null);
+  readonly cleanupAcknowledged = signal(false);
 
   processForm: ProcessFormValue = this.emptyProcessForm();
   examForm: ExamFormValue = this.emptyExamForm();
@@ -193,6 +201,7 @@ export class ProcesosExplorerComponent implements OnInit {
     this.examForm = { ...this.emptyExamForm(), numeroEjercicio: this.nextExamNumber() };
     this.processFormOpen.set(false);
     this.examFormOpen.set(true);
+    this.revealExamEditor();
   }
 
   openEditExam(examen: Examen): void {
@@ -208,6 +217,7 @@ export class ProcesosExplorerComponent implements OnInit {
     };
     this.processFormOpen.set(false);
     this.examFormOpen.set(true);
+    this.revealExamEditor();
   }
 
   saveExam(form: NgForm): void {
@@ -235,6 +245,68 @@ export class ProcesosExplorerComponent implements OnInit {
     });
   }
 
+  askDeleteExam(examen: Examen): void {
+    if (!this.canManageProcesos()) return;
+    this.clearMessages();
+    this.deleteExamTarget.set(examen);
+    this.deleteExamDialog?.nativeElement.showModal();
+  }
+
+  closeDeleteExam(): void {
+    this.deleteExamDialog?.nativeElement.close();
+    this.deleteExamTarget.set(null);
+  }
+
+  confirmDeleteExam(): void {
+    const examen = this.deleteExamTarget();
+    if (!examen || this.deletingExam()) return;
+    this.deletingExam.set(true);
+    this.clearMessages();
+    this.api.deleteExamen(examen.id).pipe(finalize(() => this.deletingExam.set(false))).subscribe({
+      next: () => {
+        this.examenes.update((items) => items.filter((item) => item.id !== examen.id));
+        if (this.editingExamId() === examen.id) this.closeForms();
+        this.closeDeleteExam();
+        this.success.set("El ejercicio y sus datos operativos se han eliminado.");
+      },
+      error: (error: unknown) => {
+        this.closeDeleteExam();
+        this.error.set(apiErrorMessage(error));
+      },
+    });
+  }
+
+  askClearAllProcesses(): void {
+    if (!this.canManageProcesos() || !this.procesos().length) return;
+    this.clearMessages();
+    this.cleanupAcknowledged.set(false);
+    this.clearProcessesDialog?.nativeElement.showModal();
+  }
+
+  closeClearAllProcesses(): void {
+    this.clearProcessesDialog?.nativeElement.close();
+    this.cleanupAcknowledged.set(false);
+  }
+
+  confirmClearAllProcesses(): void {
+    if (!this.cleanupAcknowledged() || this.clearingProcesses()) return;
+    this.clearingProcesses.set(true);
+    this.clearMessages();
+    this.api.deleteAllProcesosForTesting().pipe(finalize(() => this.clearingProcesses.set(false))).subscribe({
+      next: () => {
+        this.closeClearAllProcesses();
+        this.closeForms();
+        this.procesos.set([]);
+        this.selected.set(null);
+        this.examenes.set([]);
+        this.success.set("Se han eliminado todos los procesos y sus datos operativos.");
+      },
+      error: (error: unknown) => {
+        this.closeClearAllProcesses();
+        this.error.set(apiErrorMessage(error));
+      },
+    });
+  }
   closeForms(): void {
     this.processFormOpen.set(false);
     this.examFormOpen.set(false);
@@ -253,6 +325,15 @@ export class ProcesosExplorerComponent implements OnInit {
     });
   }
 
+  private revealExamEditor(): void {
+    window.setTimeout(() => {
+      if (!this.examFormOpen()) return;
+      const heading = this.examEditorHeading?.nativeElement;
+      if (!heading) return;
+      heading.focus({ preventScroll: true });
+      heading.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
   private emptyProcessForm(): ProcessFormValue {
     return { nombre: "", codigoSirhus: "", urlWebProceso: "", estado: "BORRADOR", oepIds: [], idTipoAcceso: null, idCuerpo: null, idTipoVinculacion: null };
   }

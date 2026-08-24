@@ -701,17 +701,20 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
 }
 
 .app-topbar {
   background: #fff;
   border-bottom: 1px solid #cfd7d2;
   box-shadow: 0 1px 4px rgb(3 55 19 / 5%);
-  position: sticky;
-  top: 0;
-  z-index: 90;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .app-topbar__inner {
@@ -753,7 +756,10 @@
 }
 
 .app-main {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
   width: 100%;
 
   &:focus {
@@ -763,6 +769,7 @@
 
 .app-footer {
   background: #12251a;
+  flex: 0 0 auto;
   color: #dce8e0;
   font-size: 0.86rem;
 }
