@@ -2,13 +2,14 @@ import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, Vi
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, RouterLink } from "@angular/router";
 import { catchError, debounceTime, distinctUntilChanged, finalize, of, startWith, Subject, switchMap } from "rxjs";
-import { apiErrorMessage } from "../../../api/api-error";
+import { apiErrorMessage, ImportErrorDiagnostic, importErrorDiagnostic } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { Examen, ImportacionArchivos, ImportacionResultado, ProcesoSelectivo } from "../../../api/sicol.types";
+import { ImportErrorPanelComponent } from "../../../shared/import-error-panel.component";
 
 @Component({
   selector: "app-importacion-opositores",
-  imports: [RouterLink],
+  imports: [RouterLink, ImportErrorPanelComponent],
   templateUrl: "./importacion-opositores.component.html",
   styleUrl: "./importacion-opositores.component.scss",
 })
@@ -36,6 +37,7 @@ export class ImportacionOpositoresComponent implements OnInit {
   readonly simulating = signal(false);
   readonly confirming = signal(false);
   readonly error = signal<string | null>(null);
+  readonly importDiagnostic = signal<ImportErrorDiagnostic | null>(null);
   readonly fileError = signal<string | null>(null);
   readonly simulation = signal<ImportacionResultado | null>(null);
   readonly confirmed = signal<ImportacionResultado | null>(null);
@@ -192,11 +194,12 @@ export class ImportacionOpositoresComponent implements OnInit {
     if (!payload || !this.canSimulate()) return;
 
     this.error.set(null);
+    this.importDiagnostic.set(null);
     this.confirmed.set(null);
     this.simulating.set(true);
     this.api.simularImportacion(payload).pipe(finalize(() => this.simulating.set(false))).subscribe({
       next: (result) => this.simulation.set(result),
-      error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      error: (error: unknown) => this.setImportError(error, "Simulación de convocados y aulas"),
     });
   }
 
@@ -213,6 +216,7 @@ export class ImportacionOpositoresComponent implements OnInit {
     if (!payload || !this.simulation() || this.confirming()) return;
 
     this.error.set(null);
+    this.importDiagnostic.set(null);
     this.confirming.set(true);
     this.api.confirmarImportacion(payload).pipe(finalize(() => this.confirming.set(false))).subscribe({
       next: (result) => {
@@ -221,12 +225,22 @@ export class ImportacionOpositoresComponent implements OnInit {
         this.closeConfirmation();
       },
       error: (error: unknown) => {
-        this.error.set(apiErrorMessage(error));
+        this.setImportError(error, "Confirmación de convocados y aulas");
         this.closeConfirmation();
       },
     });
   }
 
+  private setImportError(error: unknown, operation: string): void {
+    const diagnostic = importErrorDiagnostic(error, operation, [
+      { label: "Fichero SIRHUS", value: this.ficheroSirhus()?.name },
+      { label: "Fichero Caronte", value: this.ficheroCaronte()?.name },
+      { label: "Proceso", value: this.selectedProceso()?.nombre },
+      { label: "Ejercicio", value: this.selectedExamen()?.nombre },
+    ]);
+    this.importDiagnostic.set(diagnostic);
+    this.error.set(diagnostic.summary);
+  }
   private loadExamenes(procesoId: string, requestedExamen = ""): void {
     this.loadingExamenes.set(true);
     this.api.listExamenes(procesoId).pipe(finalize(() => this.loadingExamenes.set(false))).subscribe({
@@ -236,11 +250,12 @@ export class ImportacionOpositoresComponent implements OnInit {
           this.examenId.set(requestedExamen);
         }
       },
-      error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      error: (error: unknown) => this.setImportError(error, "Simulación de convocados y aulas"),
     });
   }
 
   private invalidateSimulation(): void {
+    this.importDiagnostic.set(null);
     this.simulation.set(null);
     this.confirmed.set(null);
   }

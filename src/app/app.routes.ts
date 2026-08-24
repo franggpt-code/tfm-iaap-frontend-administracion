@@ -1,5 +1,5 @@
 import { Routes } from "@angular/router";
-import { adminGuard, adminRoleGuard, collaboratorGuard } from "./core/admin.guard";
+import { adminGuard, adminRoleGuard, collaboratorGuard, loginGuard } from "./core/admin.guard";
 import { LoginComponent } from "./features/login/login.component";
 import { AsistenciaComponent } from "./features/workspace/asistencia/asistencia.component";
 import { ConvocadosComponent } from "./features/workspace/convocados/convocados.component";
@@ -18,7 +18,7 @@ import { MiEspacioComponent } from "./features/portal/mi-espacio.component";
 
 export const routes: Routes = [
   { path: "", redirectTo: "login", pathMatch: "full" },
-  { path: "login", component: LoginComponent },
+  { path: "login", component: LoginComponent, canActivate: [loginGuard] },
   { path: "admin", component: DashboardComponent, canActivate: [adminGuard] },
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/convocatorias", component: ImportacionConvocatoriasComponent, canActivate: [adminRoleGuard] },

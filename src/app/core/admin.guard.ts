@@ -35,3 +35,12 @@ export const collaboratorGuard: CanActivateFn = () => {
   if (auth.hasRole("COLABORADOR") || auth.hasRole("ADMIN")) return true;
   return router.createUrlTree([auth.landingUrl()]);
 };
+
+export const loginGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  return auth.isAuthenticated()
+    ? router.createUrlTree([auth.landingUrl()])
+    : true;
+};

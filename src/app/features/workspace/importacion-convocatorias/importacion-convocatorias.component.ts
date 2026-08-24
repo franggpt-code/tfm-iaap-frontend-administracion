@@ -1,13 +1,14 @@
 import { Component, computed, ElementRef, inject, signal, ViewChild } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { finalize } from "rxjs";
-import { apiErrorMessage } from "../../../api/api-error";
+import { ImportErrorDiagnostic, importErrorDiagnostic } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { ImportacionDatamartResultado } from "../../../api/sicol.types";
+import { ImportErrorPanelComponent } from "../../../shared/import-error-panel.component";
 
 @Component({
   selector: "app-importacion-convocatorias",
-  imports: [RouterLink],
+  imports: [RouterLink, ImportErrorPanelComponent],
   templateUrl: "./importacion-convocatorias.component.html",
   styleUrl: "./importacion-convocatorias.component.scss",
 })
@@ -20,6 +21,7 @@ export class ImportacionConvocatoriasComponent {
   readonly simulating = signal(false);
   readonly confirming = signal(false);
   readonly error = signal<string | null>(null);
+  readonly importDiagnostic = signal<ImportErrorDiagnostic | null>(null);
   readonly fileError = signal<string | null>(null);
   readonly simulation = signal<ImportacionDatamartResultado | null>(null);
   readonly confirmed = signal<ImportacionDatamartResultado | null>(null);
@@ -44,11 +46,12 @@ export class ImportacionConvocatoriasComponent {
     const file = this.fichero();
     if (!file || !this.canSimulate()) return;
     this.error.set(null);
+    this.importDiagnostic.set(null);
     this.confirmed.set(null);
     this.simulating.set(true);
     this.api.simularImportacionDatamart(file).pipe(finalize(() => this.simulating.set(false))).subscribe({
       next: (result) => this.simulation.set(result),
-      error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      error: (error: unknown) => this.setImportError(error, "Simulación del Datamart de convocatorias"),
     });
   }
 
@@ -64,6 +67,7 @@ export class ImportacionConvocatoriasComponent {
     const file = this.fichero();
     if (!file || !this.simulation() || this.confirming()) return;
     this.error.set(null);
+    this.importDiagnostic.set(null);
     this.confirming.set(true);
     this.api.confirmarImportacionDatamart(file).pipe(finalize(() => this.confirming.set(false))).subscribe({
       next: (result) => {
@@ -72,13 +76,22 @@ export class ImportacionConvocatoriasComponent {
         this.closeConfirmation();
       },
       error: (error: unknown) => {
-        this.error.set(apiErrorMessage(error));
+        this.setImportError(error, "Confirmación del Datamart de convocatorias");
         this.closeConfirmation();
       },
     });
   }
 
+  private setImportError(error: unknown, operation: string): void {
+    const diagnostic = importErrorDiagnostic(error, operation, [
+      { label: "Fichero Datamart", value: this.fichero()?.name },
+    ]);
+    this.importDiagnostic.set(diagnostic);
+    this.error.set(diagnostic.summary);
+  }
+
   private invalidateResult(): void {
+    this.importDiagnostic.set(null);
     this.simulation.set(null);
     this.confirmed.set(null);
   }

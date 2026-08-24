@@ -17,7 +17,29 @@
     </div>
   </section>
 
-  <section class="user-toolbar" aria-label="Filtrar usuarios"><label><span>Buscar usuarios</span><input type="search" placeholder="Nombre, usuario, correo o perfil" [value]="search()" (input)="search.set($any($event.target).value)"></label><span>{{ filteredUsers().length }} usuarios</span></section>
+  <section class="filter-panel" aria-labelledby="users-search-title">
+    <div class="filter-panel__header">
+      <div>
+        <p class="eyebrow">Búsqueda</p>
+        <h2 id="users-search-title">Localizar usuarios</h2>
+        <p class="filter-panel__summary">{{ activeFiltersCount() ? activeFiltersCount() + " filtros aplicados" : "Sin filtros avanzados aplicados" }}</p>
+      </div>
+      <button class="button button--secondary filter-panel__toggle" type="button" (click)="toggleFilters()" [attr.aria-expanded]="filtersExpanded()" aria-controls="user-filters">
+        {{ filtersExpanded() ? "Ocultar filtros" : "Mostrar filtros" }}
+      </button>
+    </div>
+    <label class="filter-panel__search" for="users-search"><span>Buscar por nombre, usuario, correo o perfil</span><input id="users-search" type="search" placeholder="Escribe un criterio de búsqueda" [value]="search()" (input)="search.set($any($event.target).value)"></label>
+    @if (filtersExpanded()) {
+      <div id="user-filters" class="filter-panel__options">
+        <label><span>Perfil</span><select [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)"><option value="">Todos</option><option value="ADMIN">Administrador</option><option value="GESTOR">Gestor de colaboradores</option><option value="COLABORADOR">Usuario colaborador</option></select></label>
+        <label><span>Estado</span><select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)"><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
+        <label><span>Autenticación</span><select [value]="authenticationFilter()" (change)="authenticationFilter.set($any($event.target).value)"><option value="">Todas</option><option value="ldap">LDAP</option><option value="local">Contraseña local</option></select></label>
+        <label><span>Ficha de colaborador</span><select [value]="collaboratorFilter()" (change)="collaboratorFilter.set($any($event.target).value)"><option value="">Todas</option><option value="linked">Vinculada</option><option value="unlinked">Sin vincular</option></select></label>
+        <div class="filter-panel__actions"><button class="button button--link" type="button" (click)="resetFilters()">Restablecer filtros</button></div>
+      </div>
+    }
+    <p class="filter-panel__result" aria-live="polite">{{ filteredUsers().length }} usuarios encontrados</p>
+  </section>
 
   <div class="users-layout" [class.users-layout--editing]="formOpen()">
     <section class="users-table-wrap" aria-label="Usuarios registrados">
