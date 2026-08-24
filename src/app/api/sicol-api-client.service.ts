@@ -132,6 +132,10 @@ export class SicolApiClient {
     return this.http.get<Examen[]>(`${this.adminUrl}/procesos-selectivos/${procesoId}/examenes`);
   }
 
+  listFechasAsignacion(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.adminUrl}/asignaciones/fechas`);
+  }
+
   listContextosAsignacion(fecha: string): Observable<ContextoAsignacion[]> {
     return this.http.get<ContextoAsignacion[]>(`${this.adminUrl}/asignaciones/contextos`, { params: { fecha } });
   }
@@ -204,6 +208,16 @@ export class SicolApiClient {
 
   updateExamen(id: string, payload: ExamenPatch): Observable<Examen> {
     return this.http.patch<Examen>(`${this.adminUrl}/examenes/${id}`, payload);
+  }
+
+  deleteExamen(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/examenes/${id}`);
+  }
+
+  deleteAllProcesosForTesting(): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/procesos-selectivos/limpieza-pruebas`, {
+      headers: { "X-Sicol-Confirmacion": "ELIMINAR-PROCESOS" },
+    });
   }
 
   simularImportacion(payload: ImportacionArchivos): Observable<ImportacionResultado> {

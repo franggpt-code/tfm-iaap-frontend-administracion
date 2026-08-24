@@ -1,12 +1,14 @@
-import { Component, computed, inject, OnInit, signal } from "@angular/core";
+import { Component, computed, DestroyRef, inject, OnInit, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { RouterLink } from "@angular/router";
-import { finalize, forkJoin } from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of, startWith, Subject, switchMap } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import {
   AsignacionColaborador,
   ConfiguracionInformes,
   ConvocadoExamen,
+  CuadroMandoEjercicio,
   Examen,
   HojasFirma,
   PagosColaboradores,
@@ -15,6 +17,7 @@ import {
 } from "../../../api/sicol.types";
 
 type ReportType = "firmas" | "pagos";
+type QuickExercisePeriod = "proximos" | "anteriores";
 
 interface SignaturePreviewRow {
   center: string;
@@ -32,9 +35,13 @@ interface SignaturePreviewRow {
 })
 export class InformesComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly processSearchTerms = new Subject<string>();
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly examenes = signal<Examen[]>([]);
+  readonly upcomingExercises = signal<CuadroMandoEjercicio[]>([]);
+  readonly previousExercises = signal<CuadroMandoEjercicio[]>([]);
   readonly asignaciones = signal<AsignacionColaborador[]>([]);
   readonly convocados = signal<ConvocadoExamen[]>([]);
   readonly resumen = signal<ResumenColaboraciones | null>(null);
@@ -43,14 +50,23 @@ export class InformesComponent implements OnInit {
   readonly reportConfiguration = signal<ConfiguracionInformes | null>(null);
   readonly selectedProcesoId = signal("");
   readonly selectedExamenId = signal("");
+  readonly selectedProcess = signal<ProcesoSelectivo | null>(null);
+  readonly processQuery = signal("");
+  readonly processResultsOpen = signal(false);
+  readonly activeProcessIndex = signal(0);
+  readonly processTotal = signal(0);
+  readonly processSearchLoading = signal(true);
+  readonly processSearchError = signal<string | null>(null);
   readonly reportType = signal<ReportType>("firmas");
+  readonly quickExercisePeriod = signal<QuickExercisePeriod>("anteriores");
   readonly loading = signal(true);
   readonly reportLoading = signal(false);
   readonly exporting = signal<ReportType | null>(null);
   readonly error = signal<string | null>(null);
 
-  readonly selectedProcess = computed(() => this.procesos().find(item => item.id === this.selectedProcesoId()));
+
   readonly selectedExam = computed(() => this.examenes().find(item => item.id === this.selectedExamenId()));
+  readonly quickExercises = computed(() => this.quickExercisePeriod() === "proximos" ? this.upcomingExercises() : this.previousExercises());
   readonly activeConvokedCount = computed(() => this.convocados().filter(item => item.activo).length);
   readonly missingHours = computed(() => this.asignaciones().filter(item => item.horasRealizadas == null).length);
   readonly missingIban = computed(() => this.pagos()?.pagos.filter(item => !item.iban?.trim()).length || 0);
@@ -89,30 +105,145 @@ export class InformesComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.processSearchTerms.pipe(
+      startWith(""),
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap(search => {
+        this.processSearchLoading.set(true);
+        this.processSearchError.set(null);
+        this.procesos.set([]);
+        this.processTotal.set(0);
+        return this.api.listProcesos(0, 20, search).pipe(
+          catchError((error: unknown) => {
+            this.processSearchError.set(apiErrorMessage(error));
+            return of(null);
+          }),
+          finalize(() => this.processSearchLoading.set(false)),
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(page => {
+      if (!page) return;
+      this.procesos.set(page.content);
+      this.processTotal.set(page.totalElements);
+      this.activeProcessIndex.set(page.content.length ? 0 : -1);
+    });
+
     forkJoin({
-      procesos: this.api.listProcesos(0, 200),
       configuration: this.api.getConfiguracionInformes(),
+      dashboard: this.api.getCuadroMandoAdministracion(),
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: result => {
-        this.procesos.set(result.procesos.content);
         this.reportConfiguration.set(result.configuration);
+        this.upcomingExercises.set(result.dashboard.proximosEjercicios.slice(0, 3));
+        this.previousExercises.set(result.dashboard.anterioresEjercicios.slice(0, 3));
       },
       error: error => this.error.set(apiErrorMessage(error)),
     });
   }
 
-  selectProcess(id: string): void {
-    this.selectedProcesoId.set(id);
+  onProcessSearch(value: string): void {
+    this.processQuery.set(value);
+    this.processResultsOpen.set(true);
+    this.activeProcessIndex.set(0);
+    const selected = this.selectedProcess();
+    if (!selected || value !== this.processLabel(selected)) {
+      this.selectedProcesoId.set("");
+      this.selectedProcess.set(null);
+      this.selectedExamenId.set("");
+      this.examenes.set([]);
+      this.clearReport();
+    }
+    this.processSearchTerms.next(value);
+  }
+
+  openProcessResults(): void {
+    if (!this.loading() && !this.reportLoading()) this.processResultsOpen.set(true);
+  }
+
+  closeProcessResults(event: FocusEvent): void {
+    const container = event.currentTarget as HTMLElement;
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !container.contains(nextTarget)) this.processResultsOpen.set(false);
+  }
+
+  onProcessKeydown(event: KeyboardEvent): void {
+    const results = this.procesos();
+    if (event.key === "Escape") {
+      this.processResultsOpen.set(false);
+      return;
+    }
+    if (!results.length || !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
+
+    if (event.key === "Enter") {
+      if (this.processResultsOpen() && this.activeProcessIndex() >= 0) {
+        event.preventDefault();
+        this.selectProcess(results[this.activeProcessIndex()]);
+      }
+      return;
+    }
+
+    event.preventDefault();
+    this.processResultsOpen.set(true);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const nextIndex = this.activeProcessIndex() + direction;
+    this.activeProcessIndex.set(Math.max(0, Math.min(results.length - 1, nextIndex)));
+  }
+
+  selectProcess(process: ProcesoSelectivo, requestedExam = ""): void {
+    this.selectedProcesoId.set(process.id);
+    this.selectedProcess.set(process);
+    this.processQuery.set(this.processLabel(process));
+    this.processResultsOpen.set(false);
     this.selectedExamenId.set("");
     this.clearReport();
-    if (!id) {
-      this.examenes.set([]);
+    this.reportLoading.set(true);
+    this.api.listExamenes(process.id).subscribe({
+      next: exams => {
+        this.examenes.set(exams);
+        if (requestedExam && exams.some(exam => exam.id === requestedExam)) {
+          this.selectExam(requestedExam);
+          return;
+        }
+        this.reportLoading.set(false);
+      },
+      error: error => {
+        this.reportLoading.set(false);
+        this.error.set(apiErrorMessage(error));
+      },
+    });
+  }
+
+  clearProcess(): void {
+    this.selectedProcesoId.set("");
+    this.selectedProcess.set(null);
+    this.processQuery.set("");
+    this.selectedExamenId.set("");
+    this.examenes.set([]);
+    this.clearReport();
+    this.processResultsOpen.set(true);
+    this.processSearchTerms.next("");
+  }
+
+  setQuickExercisePeriod(period: QuickExercisePeriod): void {
+    this.quickExercisePeriod.set(period);
+  }
+
+  selectQuickExercise(item: CuadroMandoEjercicio): void {
+    if (this.loading() || this.reportLoading()) return;
+    const selected = this.procesos().find(process => process.id === item.procesoSelectivoId);
+    if (selected) {
+      this.selectProcess(selected, item.examenId);
       return;
     }
     this.reportLoading.set(true);
-    this.api.listExamenes(id).pipe(finalize(() => this.reportLoading.set(false))).subscribe({
-      next: exams => this.examenes.set(exams),
-      error: error => this.error.set(apiErrorMessage(error)),
+    this.api.getProceso(item.procesoSelectivoId).subscribe({
+      next: process => this.selectProcess(process, item.examenId),
+      error: error => {
+        this.reportLoading.set(false);
+        this.error.set(apiErrorMessage(error));
+      },
     });
   }
 
@@ -165,8 +296,12 @@ export class InformesComponent implements OnInit {
     });
   }
 
-  formatDate(value?: string): string {
+  formatDate(value?: string | null): string {
     return value ? new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(new Date(value)) : "Pendiente";
+  }
+
+  formatDateTime(value?: string | null): string {
+    return value ? new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Fecha pendiente";
   }
 
   money(value?: number | null): string {

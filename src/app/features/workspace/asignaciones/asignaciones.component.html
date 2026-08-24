@@ -6,11 +6,74 @@
   @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
 
   <section class="context-card" aria-labelledby="context-title">
-    <div class="context-heading"><div><p class="eyebrow">Paso 1</p><h2 id="context-title">Selecciona el ejercicio</h2></div><div class="segmented" role="group" aria-label="Forma de localizar el ejercicio"><button type="button" [class.is-active]="selectionMode() === 'proceso'" [attr.aria-pressed]="selectionMode() === 'proceso'" (click)="setSelectionMode('proceso')">Por proceso y ejercicio</button><button type="button" [class.is-active]="selectionMode() === 'fecha'" [attr.aria-pressed]="selectionMode() === 'fecha'" (click)="setSelectionMode('fecha')">Por día de realización</button></div></div>
+    <div class="context-heading"><div><p class="eyebrow">Paso 1</p><h2 id="context-title">Selecciona el ejercicio</h2><p>Busca por nombre o código SIRHUS y elige después el ejercicio que quieres organizar.</p></div><div class="segmented" role="group" aria-label="Forma de localizar el ejercicio"><button type="button" [class.is-active]="selectionMode() === 'proceso'" [attr.aria-pressed]="selectionMode() === 'proceso'" (click)="setSelectionMode('proceso')">Por proceso y ejercicio</button><button type="button" [class.is-active]="selectionMode() === 'fecha'" [attr.aria-pressed]="selectionMode() === 'fecha'" (click)="setSelectionMode('fecha')">Por día de realización</button></div></div>
     @if (selectionMode() === "proceso") {
-      <div class="context-fields context-fields--process"><div class="field"><label for="assignment-process-search">Buscar proceso</label><input id="assignment-process-search" type="search" placeholder="Nombre o código SIRHUS" (input)="searchProcesses($any($event.target).value)"></div><div class="field"><label for="assignment-process">Proceso selectivo</label><select id="assignment-process" [value]="selectedProcesoId()" (change)="selectProcess($any($event.target).value)"><option value="">Selecciona un proceso</option>@for (process of procesos(); track process.id) { <option [value]="process.id">{{ process.codigoSirhus ? process.codigoSirhus + " · " : "" }}{{ process.nombre }}</option> }</select></div><div class="field"><label for="assignment-exam">Ejercicio</label><select id="assignment-exam" [disabled]="!selectedProcesoId() || contextLoading()" [value]="selectedExamenId()" (change)="selectExam($any($event.target).value)"><option value="">{{ contextLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>@for (exam of examenes(); track exam.id) { <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option> }</select></div></div>
-    } @else {
-      <div class="context-fields context-fields--date"><div class="field"><label for="assignment-date">Día de realización</label><input id="assignment-date" type="date" [value]="selectedDate()" (change)="selectedDate.set($any($event.target).value); loadByDate()"></div><div class="field"><label for="assignment-date-exam">Procesos y ejercicios de ese día</label><select id="assignment-date-exam" [disabled]="contextLoading()" [value]="selectedExamenId()" (change)="selectDateContext($any($event.target).value)"><option value="">{{ contextLoading() ? "Buscando…" : contextosFecha().length ? "Selecciona una opción" : "No hay ejercicios para esta fecha" }}</option>@for (context of contextosFecha(); track context.examenId) { <option [value]="context.examenId">{{ formatDate(context.fechaHora) }} · {{ context.codigoSirhus ? context.codigoSirhus + " · " : "" }}{{ context.procesoNombre }} · {{ context.numeroEjercicio }}.º ejercicio</option> }</select></div></div>
+      <div class="context-selection-grid">
+        <div class="context-fields context-fields--process">
+          <div class="field process-picker">
+            <label for="assignment-process-search">Proceso selectivo</label>
+            <div class="process-combobox" (focusout)="closeProcessResults($event)">
+              <div class="process-combobox__input">
+                <span class="search-icon" aria-hidden="true"></span>
+                <input id="assignment-process-search" type="search" role="combobox" autocomplete="off" maxlength="250" placeholder="Escribe un nombre o código SIRHUS" aria-autocomplete="list" aria-controls="assignment-process-results" [attr.aria-expanded]="processResultsOpen()" [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'assignment-process-option-' + activeProcessIndex() : null" [value]="processQuery()" (focus)="openProcessResults()" (input)="onProcessSearch($any($event.target).value)" (keydown)="onProcessKeydown($event)">
+                @if (selectedProcesoId()) { <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" (click)="clearProcess()">×</button> }
+                @if (processSearchLoading()) { <span class="process-spinner" aria-label="Buscando procesos"></span> }
+              </div>
+              @if (processResultsOpen()) {
+                <div id="assignment-process-results" class="process-results" role="listbox" aria-label="Procesos selectivos">
+                  <div class="process-results__heading"><strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong><span>Selecciona un resultado</span></div>
+                  @if (processSearchError()) { <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p> } @else if (processSearchLoading()) { <p class="process-results__message" role="status">Buscando procesos…</p> } @else if (procesos().length === 0) { <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p> } @else {
+                    <div class="process-results__list">
+                      @for (proceso of procesos(); track proceso.id; let index = $index) { <button type="button" role="option" [id]="'assignment-process-option-' + index" [class.is-active]="activeProcessIndex() === index" [class.is-selected]="selectedProcesoId() === proceso.id" [attr.aria-selected]="selectedProcesoId() === proceso.id" (mouseenter)="activeProcessIndex.set(index)" (click)="selectProcess(proceso)"><span class="process-result__code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</span><span class="process-result__name">{{ proceso.nombre }}</span></button> }
+                    </div>
+                    @if (processTotal() > procesos().length) { <p class="process-results__footer">Mostrando los {{ procesos().length }} primeros resultados. Escribe más texto para precisar la búsqueda.</p> }
+                  }
+                </div>
+              }
+            </div>
+            <small class="field-help">Busca por la denominación oficial o por su código SIRHUS.</small>
+          </div>
+
+          <div class="field">
+            <label for="assignment-exam">Ejercicio</label>
+            <select id="assignment-exam" [disabled]="!selectedProcesoId() || examLoading() || contextLoading()" [value]="selectedExamenId()" (change)="selectExam($any($event.target).value)">
+              <option value="">{{ examLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>
+              @for (exam of examenes(); track exam.id) {
+                <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option>
+              }
+            </select>
+            @if (!selectedProcesoId()) { <small class="field-help">Selecciona primero un proceso.</small> }
+            @else if (!examLoading() && examenes().length === 0) { <small class="field-help">Este proceso no tiene ejercicios disponibles.</small> }
+          </div>
+        </div>
+
+        <aside class="upcoming-exercises" aria-labelledby="upcoming-exercises-title">
+          <div class="upcoming-exercises__heading"><div><p class="eyebrow">Acceso rápido</p><h2 id="upcoming-exercises-title">{{ quickExercisePeriod() === "proximos" ? "Próximos ejercicios" : "Ejercicios anteriores" }}</h2></div><span>{{ quickExercises().length }} {{ quickExercisePeriod() === "proximos" ? "más cercanos" : "más recientes" }}</span></div>
+          <div class="quick-exercises-toggle" role="group" aria-label="Periodo de ejercicios"><button type="button" [class.is-active]="quickExercisePeriod() === 'proximos'" [attr.aria-pressed]="quickExercisePeriod() === 'proximos'" (click)="setQuickExercisePeriod('proximos')">Próximos ejercicios</button><button type="button" [class.is-active]="quickExercisePeriod() === 'anteriores'" [attr.aria-pressed]="quickExercisePeriod() === 'anteriores'" (click)="setQuickExercisePeriod('anteriores')">Anteriores ejercicios</button></div>
+          @if (upcomingExercisesLoading()) { <p class="upcoming-exercises__empty" role="status">Cargando ejercicios…</p> } @else if (!quickExercises().length) { <p class="upcoming-exercises__empty">{{ quickExercisePeriod() === "proximos" ? "No hay ejercicios futuros programados." : "No hay ejercicios anteriores disponibles." }}</p> } @else {
+            <div class="upcoming-exercises__list">
+              @for (item of quickExercises(); track item.examenId) { <button class="upcoming-exercise" type="button" [class.is-selected]="selectedExamenId() === item.examenId" [disabled]="!!selectingUpcomingExerciseId() || examLoading() || contextLoading()" [attr.aria-pressed]="selectedExamenId() === item.examenId" [attr.aria-busy]="selectingUpcomingExerciseId() === item.examenId" (click)="selectQuickExercise(item)"><span class="upcoming-exercise__process">{{ item.codigoSirhus || "Proceso sin código" }} · {{ item.procesoNombre }}</span><strong>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</strong><small>{{ formatDate(item.fechaHora) }} · {{ item.convocados }} {{ item.convocados === 1 ? "persona convocada" : "personas convocadas" }} · {{ item.aulas }} {{ item.aulas === 1 ? "aula" : "aulas" }}</small></button> }
+            </div>
+          }
+        </aside>
+      </div>    } @else {
+      <div class="context-fields context-fields--date">
+        <div class="field">
+          <label for="assignment-date">Día de realización</label>
+          <select id="assignment-date" [disabled]="availableDatesLoading()" [value]="selectedDate()" (change)="onAvailableDateSelected($any($event.target).value)">
+            <option value="">{{ availableDatesLoading() ? "Cargando fechas…" : fechasDisponibles().length ? "Selecciona un día" : "No hay días programados" }}</option>
+            @for (date of fechasDisponibles(); track date) { <option [value]="date">{{ formatAvailableDate(date) }}</option> }
+          </select>
+          <small class="field-help">Solo se muestran días con ejercicios de procesos selectivos programados.</small>
+        </div>
+        <div class="field">
+          <label for="assignment-date-exam">Procesos y ejercicios de ese día</label>
+          <select id="assignment-date-exam" [disabled]="!selectedDate() || contextLoading()" [value]="selectedExamenId()" (change)="selectDateContext($any($event.target).value)">
+            <option value="">{{ !selectedDate() ? "Selecciona primero un día" : contextLoading() ? "Buscando…" : contextosFecha().length ? "Selecciona una opción" : "No hay ejercicios para esta fecha" }}</option>
+            @for (context of contextosFecha(); track context.examenId) { <option [value]="context.examenId">{{ formatDate(context.fechaHora) }} · {{ context.codigoSirhus ? context.codigoSirhus + " · " : "" }}{{ context.procesoNombre }} · {{ context.numeroEjercicio }}.º ejercicio</option> }
+          </select>
+        </div>
+      </div>
     }
   </section>
 
