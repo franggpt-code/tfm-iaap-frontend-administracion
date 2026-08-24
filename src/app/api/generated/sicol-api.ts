@@ -513,6 +513,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/procesos-selectivos/limpieza-pruebas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Eliminar todos los procesos selectivos para pruebas
+         * @description Operacion exclusiva de ADMIN para vaciar el grafo operativo de procesos selectivos.
+         *     Elimina procesos, ejercicios y sus datos dependientes, pero conserva colaboradores, personas opositoras,
+         *     catalogos, provincias, centros y aulas reutilizables. Solo se habilita en el entorno de pruebas.
+         */
+        delete: operations["deleteAllProcesosSelectivosForTesting"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/procesos-selectivos/importacion": {
         parameters: {
             query?: never;
@@ -606,7 +628,7 @@ export interface paths {
         post?: never;
         /**
          * Eliminar un examen
-         * @description Elimina un examen si no tiene aulas, asignaciones u otras relaciones que lo bloqueen.
+         * @description Elimina el examen y todos sus datos operativos dependientes, conservando los datos maestros y colaboradores.
          */
         delete: operations["deleteExamenById"];
         options?: never;
@@ -684,6 +706,23 @@ export interface paths {
         post?: never;
         /** Eliminar perfil de colaboración */
         delete: operations["deletePerfilColaboracion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/asignaciones/fechas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar fechas con ejercicios asignables */
+        get: operations["listFechasAsignacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1596,16 +1635,53 @@ export interface components {
         EstadoProcesoSelectivo: "BORRADOR" | "PUBLICADO" | "CERRADO";
         /** @description Vista consolidada para el inicio de la administración. */
         CuadroMandoAdministracion: {
+            proximaPlanificacion: components["schemas"]["CuadroMandoProximaPlanificacion"];
+            historico: components["schemas"]["CuadroMandoHistorico"];
+            /** @deprecated */
+            totalProcesos?: number;
+            /** @deprecated */
+            totalEjercicios?: number;
+            /** @deprecated */
+            totalConvocados?: number;
+            /** @deprecated */
+            totalAulas?: number;
+            /** @deprecated */
+            totalAsignaciones?: number;
+            /** @deprecated */
+            asignacionesPendientes?: number;
+            /** @deprecated */
+            asignacionesConfirmadas?: number;
+            /** @deprecated */
+            asignacionesRechazadas?: number;
+            /** @deprecated */
+            aulasSinResponsable?: number;
+            proximosEjercicios: components["schemas"]["CuadroMandoEjercicio"][];
+            anterioresEjercicios: components["schemas"]["CuadroMandoEjercicio"][];
+        };
+        /** @description Indicadores de ejercicios de procesos activos con una fecha de realizacion programada. */
+        CuadroMandoProximaPlanificacion: {
             totalProcesos: number;
             totalEjercicios: number;
-            totalConvocados: number;
+            /** @description Ejercicios con convocados activos, llamamientos registrados o una importacion de convocados y aulas. */
+            ejerciciosConLlamamientoImportado: number;
+            ejerciciosConAsignacionesEnCurso: number;
             totalAulas: number;
+            aulasSinResponsable: number;
             totalAsignaciones: number;
             asignacionesPendientes: number;
             asignacionesConfirmadas: number;
             asignacionesRechazadas: number;
-            aulasSinResponsable: number;
-            proximosEjercicios: components["schemas"]["CuadroMandoEjercicio"][];
+            ejerciciosConHorasPendientes: number;
+            ejerciciosSinInformesGenerados: number;
+        };
+        /** @description Datos acumulados para contextualizar la actividad historica de la aplicacion. */
+        CuadroMandoHistorico: {
+            totalProcesos: number;
+            totalEjercicios: number;
+            totalColaboradoresInvolucrados: number;
+            totalAulas: number;
+            totalConvocados: number;
+            totalAsignaciones: number;
         };
         CuadroMandoEjercicio: {
             /** Format: uuid */
@@ -3779,6 +3855,31 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    deleteAllProcesosSelectivosForTesting: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Debe contener exactamente ELIMINAR-PROCESOS para confirmar la operacion destructiva. */
+                "X-Sicol-Confirmacion": "ELIMINAR-PROCESOS";
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Procesos selectivos y datos operativos eliminados */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     importProcesosSelectivos: {
         parameters: {
             query?: never;
@@ -4239,6 +4340,27 @@ export interface operations {
             };
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listFechasAsignacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fechas en las que hay ejercicios con una realizacion programada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
             500: components["responses"]["InternalError"];
         };
     };

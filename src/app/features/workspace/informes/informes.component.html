@@ -7,10 +7,74 @@
   @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
 
   <section class="report-context" aria-labelledby="report-context-title">
-    <div><p class="eyebrow">Paso 1</p><h2 id="report-context-title">Selecciona el ejercicio</h2></div>
-    <div class="report-context__fields">
-      <label><span>Proceso selectivo</span><select [value]="selectedProcesoId()" [disabled]="loading()" (change)="selectProcess($any($event.target).value)"><option value="">Selecciona un proceso</option>@for (process of procesos(); track process.id) { <option [value]="process.id">{{ processLabel(process) }}</option> }</select></label>
-      <label><span>Ejercicio</span><select [value]="selectedExamenId()" [disabled]="!selectedProcesoId() || reportLoading()" (change)="selectExam($any($event.target).value)"><option value="">Selecciona un ejercicio</option>@for (exam of examenes(); track exam.id) { <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option> }</select></label>
+    <div class="report-context__layout">
+      <div class="report-context__selection">
+        <div class="report-context__heading"><div><p class="eyebrow">Paso 1</p><h2 id="report-context-title">Selecciona el ejercicio</h2><p>Busca por nombre o código SIRHUS y elige después el ejercicio que quieres revisar.</p></div></div>
+        <div class="report-context__fields">
+          <div class="field report-process-picker">
+            <label for="report-process-search">Proceso selectivo</label>
+            <div class="report-process-combobox" (focusout)="closeProcessResults($event)">
+              <div class="report-process-combobox__input">
+                <span class="search-icon" aria-hidden="true"></span>
+                <input
+                  id="report-process-search"
+                  type="search"
+                  role="combobox"
+                  autocomplete="off"
+                  maxlength="250"
+                  placeholder="Escribe un nombre o código SIRHUS"
+                  aria-autocomplete="list"
+                  aria-controls="report-process-results"
+                  [attr.aria-expanded]="processResultsOpen()"
+                  [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'report-process-option-' + activeProcessIndex() : null"
+                  [value]="processQuery()"
+                  [disabled]="loading() || reportLoading()"
+                  (focus)="openProcessResults()"
+                  (input)="onProcessSearch($any($event.target).value)"
+                  (keydown)="onProcessKeydown($event)"
+                >
+                @if (selectedProcesoId()) { <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" [disabled]="loading() || reportLoading()" (click)="clearProcess()">×</button> }
+                @if (processSearchLoading()) { <span class="process-spinner" aria-label="Buscando procesos"></span> }
+              </div>
+              @if (processResultsOpen()) {
+                <div id="report-process-results" class="process-results" role="listbox" aria-label="Procesos selectivos">
+                  <div class="process-results__heading"><strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong><span>Selecciona un resultado</span></div>
+                  @if (processSearchError()) {
+                    <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p>
+                  } @else if (processSearchLoading()) {
+                    <p class="process-results__message" role="status">Buscando procesos…</p>
+                  } @else if (procesos().length === 0) {
+                    <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p>
+                  } @else {
+                    <div class="process-results__list">
+                      @for (process of procesos(); track process.id; let index = $index) {
+                        <button type="button" role="option" [id]="'report-process-option-' + index" [class.is-active]="activeProcessIndex() === index" [class.is-selected]="selectedProcesoId() === process.id" [attr.aria-selected]="selectedProcesoId() === process.id" (mouseenter)="activeProcessIndex.set(index)" (click)="selectProcess(process)"><span class="process-result__code">{{ process.codigoSirhus || "Sin código SIRHUS" }}</span><span class="process-result__name">{{ process.nombre }}</span></button>
+                      }
+                    </div>
+                    @if (processTotal() > procesos().length) { <p class="process-results__footer">Mostrando los {{ procesos().length }} primeros resultados. Escribe más texto para precisar la búsqueda.</p> }
+                  }
+                </div>
+              }
+            </div>
+            <small class="field-help">Busca por la denominación oficial o por su código SIRHUS.</small>
+          </div>
+          <div class="field">
+            <label for="report-exam">Ejercicio</label>
+            <select id="report-exam" [value]="selectedExamenId()" [disabled]="!selectedProcesoId() || reportLoading()" (change)="selectExam($any($event.target).value)"><option value="">{{ reportLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>@for (exam of examenes(); track exam.id) { <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option> }</select>
+            @if (!selectedProcesoId()) { <small class="field-help">Selecciona primero un proceso.</small> } @else if (!reportLoading() && examenes().length === 0) { <small class="field-help">Este proceso no tiene ejercicios disponibles.</small> }
+          </div>
+        </div>
+      </div>
+
+      <aside class="upcoming-exercises" aria-labelledby="upcoming-exercises-title">
+        <div class="upcoming-exercises__heading"><div><p class="eyebrow">Acceso rápido</p><h2 id="upcoming-exercises-title">{{ quickExercisePeriod() === "proximos" ? "Próximos ejercicios" : "Ejercicios anteriores" }}</h2></div><span>{{ quickExercises().length }} {{ quickExercisePeriod() === "proximos" ? "más cercanos" : "más recientes" }}</span></div>
+        <div class="quick-exercises-toggle" role="group" aria-label="Periodo de ejercicios"><button type="button" [class.is-active]="quickExercisePeriod() === 'anteriores'" [attr.aria-pressed]="quickExercisePeriod() === 'anteriores'" (click)="setQuickExercisePeriod('anteriores')">Anteriores ejercicios</button><button type="button" [class.is-active]="quickExercisePeriod() === 'proximos'" [attr.aria-pressed]="quickExercisePeriod() === 'proximos'" (click)="setQuickExercisePeriod('proximos')">Próximos ejercicios</button></div>
+        @if (quickExercises().length) {
+          <div class="upcoming-exercises__list">
+            @for (item of quickExercises(); track item.examenId) { <button type="button" class="upcoming-exercise" [class.is-selected]="selectedExamenId() === item.examenId" [attr.aria-current]="selectedExamenId() === item.examenId ? 'true' : null" [disabled]="loading() || reportLoading()" [attr.aria-label]="'Seleccionar ' + (item.codigoSirhus || item.procesoNombre) + ', ' + item.numeroEjercicio + '.º ejercicio'" (click)="selectQuickExercise(item)"><span class="upcoming-exercise__process">{{ item.codigoSirhus || "Proceso sin código" }} · {{ item.procesoNombre }}</span><strong>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</strong><small>{{ formatDateTime(item.fechaHora) }} · {{ item.convocados }} {{ item.convocados === 1 ? "persona convocada" : "personas convocadas" }} · {{ item.aulas }} {{ item.aulas === 1 ? "aula" : "aulas" }}</small></button> }
+          </div>
+        } @else if (!loading()) { <p class="upcoming-exercises__empty">{{ quickExercisePeriod() === "proximos" ? "No hay próximos ejercicios programados." : "No hay ejercicios anteriores disponibles." }}</p> } @else { <p class="upcoming-exercises__empty" role="status">Cargando ejercicios…</p> }
+      </aside>
     </div>
   </section>
 

@@ -61,6 +61,10 @@
 .process-editor .form-actions { align-items: center; background: var(--jda-surface-muted); justify-content: space-between; margin: 0; padding: 1rem 1.5rem; }
 .process-editor .form-actions p { color: var(--jda-neutral-mid); margin: 0; }
 .process-editor .form-actions > div { display: flex; gap: .5rem; }
+.test-cleanup { align-items: center; background: #fff; border: 1px solid #ead1cf; border-left: 4px solid var(--jda-error); border-radius: 8px; display: flex; gap: 1rem; justify-content: space-between; margin: 0 0 1rem; padding: 1rem 1.25rem; }
+.test-cleanup .eyebrow { color: var(--jda-error); margin-bottom: .15rem; }
+.test-cleanup h2 { font-size: 1.1rem; margin: 0; }
+.test-cleanup p:last-child { color: var(--jda-neutral-mid); margin: .25rem 0 0; }
 .explorer-layout { display: grid; gap: 1rem; grid-template-columns: minmax(18rem, .8fr) minmax(0, 1.4fr); }
 .explorer-panel { background: #fff; border: 1px solid var(--jda-neutral-border); border-radius: 8px; box-shadow: var(--jda-shadow-sm); min-height: 32rem; padding: 1.15rem; }
 .panel-heading { border-bottom: 1px solid #e6e9e7; margin-bottom: 1rem; padding-bottom: .75rem; }
@@ -90,6 +94,7 @@
 .process-code { color: var(--jda-primary-dark); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 1.05rem; }
 .process-name { line-height: 1.25; }
 .exam-list { display: grid; gap: .75rem; }
+.exam-editor { margin-bottom: 0; margin-top: 1rem; scroll-margin-top: 1rem; }
 .exam-list article { align-items: center; border: 1px solid var(--jda-neutral-border); border-left: 4px solid var(--jda-primary); border-radius: 8px; display: grid; gap: 1rem; grid-template-columns: auto minmax(0, 1fr) auto; padding: 1rem; }
 .exam-number { align-items: center; background: #eaf4ed; color: var(--jda-primary-dark); display: flex; font-size: 1.3rem; font-weight: 800; height: 2.75rem; justify-content: center; width: 2.75rem; }
 .exam-copy p, .exam-copy small { color: var(--jda-neutral-mid); margin: .2rem 0 0; }
@@ -97,5 +102,13 @@
 .exam-actions { display: flex; gap: .5rem; }
 .empty-state--large { align-content: center; display: grid; gap: .4rem; min-height: 24rem; }
 .empty-state__index { color: #c4d2c8; font-size: 3rem; font-weight: 800; }
+.confirmation-dialog { border: 0; border-radius: 8px; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%); max-width: 36rem; padding: 1.5rem; width: calc(100% - 2rem); }
+.confirmation-dialog::backdrop { background: rgb(3 55 19 / 55%); }
+.dialog-warning { background: #fff5df; border-left: 4px solid var(--jda-warning); padding: .7rem; }
+.confirmation-check { align-items: flex-start; display: flex; gap: .65rem; margin-top: 1rem; }
+.confirmation-check input { accent-color: var(--jda-error); height: 1.15rem; margin-top: .15rem; width: 1.15rem; }
+.confirmation-check input:focus-visible { outline: 3px solid var(--jda-focus); outline-offset: 2px; }
+.dialog-actions { display: flex; gap: .7rem; justify-content: flex-end; margin-top: 1.2rem; }
 @media (max-width: 900px) { .explorer-layout, .form-grid { grid-template-columns: 1fr; } .explorer-panel { min-height: 0; } .field--wide, .field--name, .field--code { grid-column: auto; } .form-section { gap: .85rem; grid-template-columns: 1fr; } .oep-summary { justify-content: flex-start; margin: .85rem 0; } }
 @media (max-width: 620px) { .heading-actions, .panel-actions, .form-actions { width: 100%; } .heading-actions .button, .panel-actions .button, .form-actions .button { flex: 1; } .panel-heading--actions { align-items: stretch; flex-direction: column; } .exam-list article { align-items: start; grid-template-columns: auto 1fr; } .exam-actions { grid-column: 1 / -1; flex-direction: column; width: 100%; } .process-editor .editor-heading, .form-section, .oep-fieldset { padding-left: 1rem; padding-right: 1rem; } .editor-heading__icon { display: none; } .form-meta { align-items: flex-start; flex-direction: column; gap: .25rem; padding: .65rem 1rem; } .oep-options { grid-template-columns: 1fr; } .process-editor .form-actions { align-items: stretch; flex-direction: column; padding: 1rem; } .process-editor .form-actions > div { flex-direction: column-reverse; } }
+@media (max-width: 620px) { .test-cleanup, .dialog-actions { align-items: stretch; flex-direction: column; } .test-cleanup .button { width: 100%; } .dialog-actions { flex-direction: column-reverse; } }

@@ -1,38 +1,197 @@
 <div class="page-shell dashboard-page">
   <header class="page-heading">
-    <div><p class="eyebrow">{{ isManager() ? "Gestión de colaboradores" : "Administración" }}</p><h1>{{ isManager() ? "Seguimiento de colaboradores" : "Cuadro de mandos" }}</h1><p>{{ isManager() ? "Prioriza la cobertura, las confirmaciones y los próximos ejercicios a los que prestar atención." : "Visión operativa de los procesos selectivos, llamamientos y cobertura de colaboradores." }}</p></div>
-    <div class="heading-actions">@if (!isManager()) { <a class="button button--secondary" routerLink="/admin/importaciones">Importar datos</a> }<a class="button button--primary" routerLink="/admin/asignaciones">Gestionar asignaciones</a></div>
+    <div>
+      <p class="eyebrow">{{ isManager() ? "Gestión de colaboradores" : "Administración" }}</p>
+      <h1>{{ isManager() ? "Seguimiento de colaboradores" : "Cuadro de mandos" }}</h1>
+      <p>{{ isManager() ? "Prioriza la cobertura, las confirmaciones y los próximos ejercicios a los que prestar atención." : "Visión operativa de la planificación, los llamamientos y la cobertura de colaboradores." }}</p>
+    </div>
+    <div class="heading-actions">
+      @if (!isManager()) {
+        <a class="button button--secondary" routerLink="/admin/importaciones">Importar datos</a>
+      }
+      <a class="button button--primary" routerLink="/admin/asignaciones">Gestionar asignaciones</a>
+    </div>
   </header>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido cargar el cuadro de mandos.</strong> {{ error() }}</div> }
-  @if (loading()) { <p class="loading-message">Actualizando indicadores…</p> }
-  @else if (resumen(); as data) {
-    <section class="metric-grid" aria-label="Indicadores generales">
-      <a class="metric-card" routerLink="/admin/procesos"><span>Procesos selectivos</span><strong>{{ data.totalProcesos }}</strong><small>{{ data.totalEjercicios }} ejercicios registrados</small></a>
-      <a class="metric-card" routerLink="/admin/procesos"><span>Llamamientos cargados</span><strong>{{ data.totalConvocados }}</strong><small>{{ data.totalAulas }} aulas operativas</small></a>
-      <a class="metric-card" routerLink="/admin/asignaciones"><span>Asignaciones</span><strong>{{ data.totalAsignaciones }}</strong><small>{{ data.asignacionesConfirmadas }} confirmadas</small></a>
-      <a class="metric-card metric-card--attention" [class.metric-card--critical]="data.aulasSinResponsable > 0" routerLink="/admin/asignaciones"><span>Cobertura de aulas</span><strong>{{ aulasCubiertas() }}/{{ data.totalAulas }}</strong><small>{{ data.aulasSinResponsable ? data.aulasSinResponsable + " sin responsable" : "Todas con responsable" }}</small></a>
+  @if (error()) {
+    <div class="alert alert--error" role="alert"><strong>No se ha podido cargar el cuadro de mandos.</strong> {{ error() }}</div>
+  }
+  @if (loading()) {
+    <p class="loading-message">Actualizando indicadores…</p>
+  } @else if (resumen(); as data) {
+    <section class="planning-block" aria-labelledby="planning-title">
+      <div class="section-heading section-heading--major">
+        <div>
+          <p class="eyebrow">Operativa actual</p>
+          <h2 id="planning-title">Próxima planificación</h2>
+          <p>Procesos activos y ejercicios con fecha de realización programada.</p>
+        </div>
+        <a routerLink="/admin/procesos">Ver procesos y ejercicios</a>
+      </div>
+
+      <div class="metric-grid metric-grid--planning" aria-label="Indicadores de próxima planificación">
+        <a class="metric-card metric-card--planning" routerLink="/admin/procesos">
+          <span>Procesos selectivos</span>
+          <strong>{{ data.proximaPlanificacion.totalProcesos }}</strong>
+          <small>Con ejercicios planificados</small>
+        </a>
+        <a class="metric-card metric-card--planning" routerLink="/admin/procesos">
+          <span>Ejercicios</span>
+          <strong>{{ data.proximaPlanificacion.totalEjercicios }}</strong>
+          <small>Con fecha de realización</small>
+        </a>
+        <a class="metric-card metric-card--planning" routerLink="/admin/procesos">
+          <span>Llamamientos cargados</span>
+          <strong>{{ data.proximaPlanificacion.ejerciciosConLlamamientoImportado }}</strong>
+          <small>Ejercicios con convocados, aulas o llamamientos registrados</small>
+        </a>
+        <a class="metric-card metric-card--planning" routerLink="/admin/asignaciones">
+          <span>Asignaciones en curso</span>
+          <strong>{{ data.proximaPlanificacion.ejerciciosConAsignacionesEnCurso }}</strong>
+          <small>Ejercicios con al menos una asignación</small>
+        </a>
+      </div>
+
+      <section class="monitoring-grid" aria-label="Cobertura y confirmaciones de la planificación">
+        <article class="monitor-card monitor-card--coverage">
+          <div class="monitor-card__heading">
+            <div>
+              <p class="eyebrow">Cobertura</p>
+              <h3>Responsables de aula</h3>
+            </div>
+            <strong [attr.aria-label]="data.proximaPlanificacion.totalAulas ? coberturaPorcentaje() + '%' : 'Sin aulas planificadas'">{{ data.proximaPlanificacion.totalAulas ? coberturaPorcentaje() + "%" : "—" }}</strong>
+          </div>
+          <p>
+            @if (data.proximaPlanificacion.totalAulas) {
+              {{ aulasCubiertas() }} de {{ data.proximaPlanificacion.totalAulas }} aulas tienen al menos una persona responsable asignada.
+            } @else {
+              No hay aulas planificadas para los ejercicios actuales.
+            }
+          </p>
+          @if (data.proximaPlanificacion.totalAulas) {
+            <div class="progress-track progress-track--coverage" role="progressbar" aria-label="Aulas cubiertas" [attr.aria-valuenow]="coberturaPorcentaje()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="coberturaPorcentaje()"></span></div>
+          } @else {
+            <div class="progress-track progress-track--coverage" aria-hidden="true"></div>
+          }
+          <div class="monitor-card__footer">
+            <span>
+              @if (data.proximaPlanificacion.totalAulas) {
+                {{ data.proximaPlanificacion.aulasSinResponsable ? data.proximaPlanificacion.aulasSinResponsable + " sin responsable" : "Cobertura completa" }}
+              } @else {
+                Sin aulas planificadas
+              }
+            </span>
+            <a routerLink="/admin/asignaciones">Abrir vista por aulas</a>
+          </div>
+        </article>
+        <article class="monitor-card">
+          <div class="monitor-card__heading">
+            <div>
+              <p class="eyebrow">Confirmaciones</p>
+              <h3>Respuesta del equipo</h3>
+            </div>
+            <strong>{{ confirmacionPorcentaje() }}%</strong>
+          </div>
+          <p>{{ data.proximaPlanificacion.asignacionesConfirmadas }} confirmadas de {{ data.proximaPlanificacion.totalAsignaciones }} asignaciones.</p>
+          <div class="progress-track" role="progressbar" aria-label="Asignaciones confirmadas" [attr.aria-valuenow]="confirmacionPorcentaje()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="confirmacionPorcentaje()"></span></div>
+          <div class="monitor-card__footer">
+            <span>{{ data.proximaPlanificacion.asignacionesPendientes }} pendientes · {{ data.proximaPlanificacion.asignacionesRechazadas }} rechazadas</span>
+            <a routerLink="/admin/asignaciones">Revisar asignaciones</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="attention-grid" aria-label="Tareas pendientes de cerrar">
+        <article class="attention-card" [class.attention-card--warning]="data.proximaPlanificacion.ejerciciosConHorasPendientes > 0">
+          <div>
+            <p class="eyebrow">Cierre de ejercicio</p>
+            <h3>Horas trabajadas pendientes</h3>
+            <p>Ejercicios ya realizados con responsables de aula asignados que aún tienen horas sin registrar.</p>
+          </div>
+          <div class="attention-card__action">
+            <strong>{{ data.proximaPlanificacion.ejerciciosConHorasPendientes }}</strong>
+            <a routerLink="/admin/asignaciones">Completar horas</a>
+          </div>
+        </article>
+        <article class="attention-card" [class.attention-card--warning]="data.proximaPlanificacion.ejerciciosSinInformesGenerados > 0">
+          <div>
+            <p class="eyebrow">Documentación</p>
+            <h3>Informes pendientes</h3>
+            <p>Ejercicios ya realizados sin registro de generación de control de firmas ni informe de pagos.</p>
+          </div>
+          <div class="attention-card__action">
+            <strong>{{ data.proximaPlanificacion.ejerciciosSinInformesGenerados }}</strong>
+            <a routerLink="/admin/informes">Generar informes</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="upcoming-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Calendario</p>
+            <h3 id="upcoming-title">Próximos ejercicios</h3>
+            <p>Los siguientes ejercicios con fecha programada y su estado operativo.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table upcoming-table">
+            <thead><tr><th>Proceso y ejercicio</th><th>Fecha</th><th>Convocados</th><th>Aulas</th><th>Asignaciones</th><th>Seguimiento</th></tr></thead>
+            <tbody>
+              @for (item of data.proximosEjercicios; track item.examenId) {
+                <tr>
+                  <td data-label="Proceso y ejercicio"><strong>{{ item.codigoSirhus || "Proceso" }}</strong><span>{{ item.procesoNombre }}</span><small>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</small></td>
+                  <td data-label="Fecha">{{ item.fechaHora | date:"d MMM y, HH:mm":"":"es" }}</td>
+                  <td data-label="Convocados">{{ item.convocados }}</td>
+                  <td data-label="Aulas">{{ item.aulas }}</td>
+                  <td data-label="Asignaciones">{{ item.asignaciones }}</td>
+                  <td data-label="Seguimiento"><div class="row-status"><span [class.status-pill--warning]="item.asignacionesPendientes > 0" class="status-pill">{{ item.asignacionesPendientes }} pendientes</span>@if (item.aulasSinResponsable) { <span class="status-pill status-pill--warning">{{ item.aulasSinResponsable }} sin responsable</span> } @else { <span class="status-pill status-pill--success">Aulas cubiertas</span> }</div></td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="table-empty">No hay ejercicios futuros con fecha programada.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
     </section>
 
-    <section class="monitoring-grid" aria-label="Seguimiento prioritario">
-      <article class="monitor-card"><div class="monitor-card__heading"><div><p class="eyebrow">Confirmaciones</p><h2>Respuesta del equipo</h2></div><strong>{{ confirmacionPorcentaje() }}%</strong></div><p>{{ data.asignacionesConfirmadas }} confirmadas de {{ data.totalAsignaciones }} asignaciones.</p><div class="progress-track" role="progressbar" aria-label="Asignaciones confirmadas" [attr.aria-valuenow]="confirmacionPorcentaje()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="confirmacionPorcentaje()"></span></div><div class="monitor-card__footer"><span>{{ data.asignacionesPendientes }} pendientes · {{ data.asignacionesRechazadas }} rechazadas</span><a routerLink="/admin/asignaciones">Revisar asignaciones</a></div></article>
-      <article class="monitor-card"><div class="monitor-card__heading"><div><p class="eyebrow">Cobertura</p><h2>Responsables de aula</h2></div><strong>{{ coberturaPorcentaje() }}%</strong></div><p>{{ aulasCubiertas() }} de {{ data.totalAulas }} aulas tienen al menos una persona responsable asignada.</p><div class="progress-track progress-track--coverage" role="progressbar" aria-label="Aulas cubiertas" [attr.aria-valuenow]="coberturaPorcentaje()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="coberturaPorcentaje()"></span></div><div class="monitor-card__footer"><span>{{ data.aulasSinResponsable ? "Requiere atención" : "Cobertura completa" }}</span><a routerLink="/admin/asignaciones">Abrir vista por aulas</a></div></article>
-    </section>
-
-    <section class="dashboard-section" aria-labelledby="upcoming-title">
-      <div class="section-heading"><div><p class="eyebrow">Planificación</p><h2 id="upcoming-title">Próximos ejercicios</h2><p>Los siguientes ejercicios con fecha programada y su estado operativo.</p></div><a routerLink="/admin/procesos">Ver procesos y ejercicios</a></div>
-      <div class="table-wrap">
-        <table class="admin-table upcoming-table"><thead><tr><th>Proceso y ejercicio</th><th>Fecha</th><th>Convocados</th><th>Aulas</th><th>Asignaciones</th><th>Seguimiento</th></tr></thead><tbody>
-          @for (item of data.proximosEjercicios; track item.examenId) {
-            <tr><td><strong>{{ item.codigoSirhus || "Proceso" }}</strong><span>{{ item.procesoNombre }}</span><small>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</small></td><td>{{ item.fechaHora | date:"d MMM y, HH:mm":"":"es" }}</td><td>{{ item.convocados }}</td><td>{{ item.aulas }}</td><td>{{ item.asignaciones }}</td><td><div class="row-status"><span [class.status-pill--warning]="item.asignacionesPendientes > 0" class="status-pill">{{ item.asignacionesPendientes }} pendientes</span>@if (item.aulasSinResponsable) { <span class="status-pill status-pill--warning">{{ item.aulasSinResponsable }} sin responsable</span> } @else { <span class="status-pill status-pill--success">Aulas cubiertas</span> }</div></td></tr>
-          } @empty { <tr><td colspan="6" class="table-empty">No hay ejercicios futuros con fecha programada.</td></tr> }
-        </tbody></table>
+    <section class="historical-section" aria-labelledby="historical-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Visión acumulada</p>
+          <h2 id="historical-title">Histórico</h2>
+          <p>Actividad registrada en SICOL para poner en contexto la planificación actual.</p>
+        </div>
+      </div>
+      <div class="metric-grid metric-grid--historical" aria-label="Indicadores históricos">
+        <article class="metric-card metric-card--historical"><span>Procesos selectivos</span><strong>{{ data.historico.totalProcesos }}</strong><small>Registrados en SICOL</small></article>
+        <article class="metric-card metric-card--historical"><span>Ejercicios</span><strong>{{ data.historico.totalEjercicios }}</strong><small>En todos los procesos</small></article>
+        <article class="metric-card metric-card--historical"><span>Colaboradores involucrados</span><strong>{{ data.historico.totalColaboradoresInvolucrados }}</strong><small>Con alguna asignación</small></article>
+        <article class="metric-card metric-card--historical"><span>Aulas utilizadas</span><strong>{{ data.historico.totalAulas }}</strong><small>Aulas físicas distintas</small></article>
+        <article class="metric-card metric-card--historical"><span>Personas convocadas</span><strong>{{ data.historico.totalConvocados }}</strong><small>Convocados activos</small></article>
+        <article class="metric-card metric-card--historical"><span>Asignaciones realizadas</span><strong>{{ data.historico.totalAsignaciones }}</strong><small>Histórico de colaboraciones</small></article>
       </div>
     </section>
 
-    <section class="dashboard-section" aria-labelledby="shortcuts-title">
-      <div class="section-heading"><div><p class="eyebrow">Accesos directos</p><h2 id="shortcuts-title">Operativa habitual</h2></div></div>
-      <div class="shortcut-grid"><a routerLink="/admin/colaboradores"><strong>Colaboradores</strong><span>Consultar, validar e importar el personal disponible.</span></a><a routerLink="/admin/asignaciones"><strong>Asignaciones</strong><span>Organizar aulas, ámbito general y confirmaciones.</span></a><a routerLink="/admin/informes"><strong>Informes</strong><span>Generar controles de firma e informes de pagos.</span></a><a routerLink="/admin/procesos"><strong>Procesos y ejercicios</strong><span>Consultar convocatorias, ejercicios y llamamientos.</span></a></div>
+    <section class="dashboard-section shortcuts-section" aria-labelledby="shortcuts-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Accesos directos</p>
+          <h2 id="shortcuts-title">Operativa actual</h2>
+          <p>Pasos ordenados para preparar y cerrar un ejercicio.</p>
+        </div>
+      </div>
+      <ol class="shortcut-grid">
+        @if (!isManager()) {
+          <li><a routerLink="/admin/importaciones/convocatorias"><span class="shortcut-step">01</span><strong>Importar procesos y ejercicios</strong><span>Incorporar la planificación desde el Datamart de convocatorias.</span></a></li>
+          <li><a routerLink="/admin/importaciones/opositores-aulas"><span class="shortcut-step">02</span><strong>Importar llamamientos</strong><span>Cargar convocados, centros y aulas para cada ejercicio.</span></a></li>
+        }
+        <li><a routerLink="/admin/colaboradores"><span class="shortcut-step">{{ isManager() ? "01" : "03" }}</span><strong>Gestionar colaboradores</strong><span>Consultar y actualizar el personal disponible.</span></a></li>
+        <li><a routerLink="/admin/asignaciones"><span class="shortcut-step">{{ isManager() ? "02" : "04" }}</span><strong>Gestionar asignaciones</strong><span>Organizar aulas, responsables y confirmaciones.</span></a></li>
+        <li><a routerLink="/admin/informes"><span class="shortcut-step">{{ isManager() ? "03" : "05" }}</span><strong>Generar informes</strong><span>Emitir controles de firmas e informes de pagos.</span></a></li>
+        <li><a routerLink="/admin/procesos"><span class="shortcut-step">{{ isManager() ? "04" : "06" }}</span><strong>Consultar procesos y ejercicios</strong><span>Revisar el estado y las fechas de la planificación.</span></a></li>
+      </ol>
     </section>
   }
 </div>

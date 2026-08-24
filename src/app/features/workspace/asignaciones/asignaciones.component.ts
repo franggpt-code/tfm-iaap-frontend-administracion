@@ -1,16 +1,18 @@
-import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
-import { finalize, forkJoin } from "rxjs";
+import { catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of, startWith, Subject, switchMap } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import {
-  AsignacionColaborador, Colaborador, ContextoAsignacion, ConvocadoExamen, Examen, ExamenAula,
+  AsignacionColaborador, Colaborador, ContextoAsignacion, ConvocadoExamen, CuadroMandoEjercicio, Examen, ExamenAula,
   EstadoConfirmacionAsignacion, PerfilColaboracion, ProcesoSelectivo,
 } from "../../../api/sicol.types";
 
 type SelectionMode = "proceso" | "fecha";
 type ViewMode = "tabla" | "aulas";
+type QuickExercisePeriod = "proximos" | "anteriores";
 
 @Component({
   selector: "app-asignaciones",
@@ -21,30 +23,48 @@ type ViewMode = "tabla" | "aulas";
 export class AsignacionesComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private collaboratorSearchTimer?: ReturnType<typeof setTimeout>;
-  private processSearchTimer?: ReturnType<typeof setTimeout>;
+  private readonly processSearchTerms = new Subject<string>();
   private collaboratorSearchRequest = 0;
+  private examSearchRequest = 0;
+  private assignmentLoadRequest = 0;
+  private upcomingSelectionRequest = 0;
   @ViewChild("deleteDialog") private deleteDialog?: ElementRef<HTMLDialogElement>;
 
   readonly selectionMode = signal<SelectionMode>("proceso");
   readonly viewMode = signal<ViewMode>("tabla");
   readonly procesos = signal<ProcesoSelectivo[]>([]);
+  readonly proximosEjercicios = signal<CuadroMandoEjercicio[]>([]);
+  readonly anterioresEjercicios = signal<CuadroMandoEjercicio[]>([]);
   readonly examenes = signal<Examen[]>([]);
   readonly contextosFecha = signal<ContextoAsignacion[]>([]);
+  readonly fechasDisponibles = signal<string[]>([]);
   readonly perfiles = signal<PerfilColaboracion[]>([]);
   readonly colaboradores = signal<Colaborador[]>([]);
   readonly convocados = signal<ConvocadoExamen[]>([]);
   readonly aulas = signal<ExamenAula[]>([]);
   readonly asignaciones = signal<AsignacionColaborador[]>([]);
   readonly selectedProcesoId = signal("");
+  readonly selectedProceso = signal<ProcesoSelectivo | null>(null);
   readonly selectedExamenId = signal("");
+  readonly processQuery = signal("");
+  readonly processResultsOpen = signal(false);
+  readonly processSearchLoading = signal(false);
+  readonly processSearchError = signal<string | null>(null);
+  readonly activeProcessIndex = signal(0);
+  readonly processTotal = signal(0);
+  readonly upcomingExercisesLoading = signal(true);
+  readonly quickExercisePeriod = signal<QuickExercisePeriod>("proximos");
+  readonly selectingUpcomingExerciseId = signal<string | null>(null);
   readonly selectedCenter = signal("");
   readonly selectedCollaboratorId = signal("");
   readonly collaboratorQuery = signal("");
   readonly collaboratorResultsOpen = signal(false);
   readonly collaboratorSearchLoading = signal(false);
   readonly collaboratorSearchError = signal<string | null>(null);
-  readonly selectedDate = signal(new Date().toISOString().slice(0, 10));
+  readonly selectedDate = signal("");
+  readonly availableDatesLoading = signal(true);
   readonly assignmentSearch = signal("");
   readonly profileFilter = signal("");
   readonly scopeFilter = signal<"" | "GENERAL" | "AULA">("");
@@ -53,6 +73,7 @@ export class AsignacionesComponent implements OnInit {
   readonly bulkUpdating = signal(false);
   readonly loading = signal(true);
   readonly contextLoading = signal(false);
+  readonly examLoading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly confirmationUpdating = signal<Set<string>>(new Set());
@@ -76,6 +97,7 @@ export class AsignacionesComponent implements OnInit {
       .sort((a, b) => a.aulaNombre.localeCompare(b.aulaNombre, "es", { numeric: true }));
   });
   readonly selectedExam = computed(() => this.examenes().find(item => item.id === this.selectedExamenId()));
+  readonly quickExercises = computed(() => this.quickExercisePeriod() === "proximos" ? this.proximosEjercicios() : this.anterioresEjercicios());
   readonly filteredAssignments = computed(() => {
     const query = this.assignmentSearch().trim().toLocaleLowerCase("es");
     const profile = this.profileFilter();
@@ -116,30 +138,147 @@ export class AsignacionesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    forkJoin({ procesos: this.api.listProcesos(0, 200), perfiles: this.api.listPerfilesColaboracion(), colaboradores: this.api.listColaboradores({ estado: "ACTIVO", size: 100 }) })
-      .pipe(finalize(() => this.loading.set(false))).subscribe({
-        next: ({ procesos, perfiles, colaboradores }) => { this.procesos.set(procesos.content); this.perfiles.set(perfiles); this.colaboradores.set(colaboradores.content); },
+    this.processSearchTerms.pipe(
+      startWith(""),
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap((search) => {
+        this.processSearchLoading.set(true);
+        this.processSearchError.set(null);
+        this.procesos.set([]);
+        this.processTotal.set(0);
+        this.activeProcessIndex.set(-1);
+        return this.api.listProcesos(0, 20, search).pipe(
+          catchError((error: unknown) => {
+            this.processSearchError.set(apiErrorMessage(error));
+            return of(null);
+          }),
+          finalize(() => this.processSearchLoading.set(false)),
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((page) => {
+      if (!page) return;
+      this.procesos.set(page.content);
+      this.processTotal.set(page.totalElements);
+      this.activeProcessIndex.set(page.content.length ? 0 : -1);
+    });
+
+    forkJoin({ perfiles: this.api.listPerfilesColaboracion(), colaboradores: this.api.listColaboradores({ estado: "ACTIVO", size: 100 }), fechas: this.api.listFechasAsignacion() })
+      .pipe(finalize(() => { this.loading.set(false); this.availableDatesLoading.set(false); })).subscribe({
+        next: ({ perfiles, colaboradores, fechas }) => { this.perfiles.set(perfiles); this.colaboradores.set(colaboradores.content); this.fechasDisponibles.set(fechas); },
         error: (error: unknown) => this.error.set(apiErrorMessage(error)),
       });
+
+    this.api.getCuadroMandoAdministracion().pipe(finalize(() => this.upcomingExercisesLoading.set(false))).subscribe({
+      next: (resumen) => {
+        this.proximosEjercicios.set(resumen.proximosEjercicios.slice(0, 3));
+        this.anterioresEjercicios.set(resumen.anterioresEjercicios.slice(0, 3));
+      },
+      error: () => {
+        this.proximosEjercicios.set([]);
+        this.anterioresEjercicios.set([]);
+      },
+    });
   }
 
   setSelectionMode(mode: SelectionMode): void {
     this.selectionMode.set(mode); this.clearContext(); this.error.set(null); this.success.set(null);
-    if (mode === "fecha") this.loadByDate();
   }
 
-  selectProcess(procesoId: string): void {
-    this.selectedProcesoId.set(procesoId); this.selectedExamenId.set(""); this.clearAssignments();
-    if (!procesoId) { this.examenes.set([]); return; }
-    this.contextLoading.set(true);
-    this.api.listExamenes(procesoId).pipe(finalize(() => this.contextLoading.set(false))).subscribe({
-      next: exams => this.examenes.set(exams), error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+  onProcessSearch(value: string): void {
+    this.processQuery.set(value);
+    this.upcomingSelectionRequest++; this.selectingUpcomingExerciseId.set(null);
+    this.processResultsOpen.set(true);
+    this.activeProcessIndex.set(0);
+    const selected = this.selectedProceso();
+    if (!selected || value !== this.processOptionLabel(selected)) this.clearProcessSelection();
+    this.processSearchTerms.next(value);
+  }
+
+  openProcessResults(): void { this.processResultsOpen.set(true); }
+
+  closeProcessResults(event: FocusEvent): void {
+    const container = event.currentTarget as HTMLElement;
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !container.contains(nextTarget)) this.processResultsOpen.set(false);
+  }
+
+  onProcessKeydown(event: KeyboardEvent): void {
+    const results = this.procesos();
+    if (event.key === "Escape") {
+      this.processResultsOpen.set(false);
+      return;
+    }
+    if (!results.length || !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
+    if (event.key === "Enter") {
+      if (this.processResultsOpen() && this.activeProcessIndex() >= 0) {
+        event.preventDefault();
+        this.selectProcess(results[this.activeProcessIndex()]);
+      }
+      return;
+    }
+    event.preventDefault();
+    this.processResultsOpen.set(true);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const nextIndex = this.activeProcessIndex() + direction;
+    this.activeProcessIndex.set(Math.max(0, Math.min(results.length - 1, nextIndex)));
+  }
+
+  selectProcess(proceso: ProcesoSelectivo, requestedExamenId = ""): void {
+    this.selectedProcesoId.set(proceso.id);
+    this.selectedProceso.set(proceso);
+    this.processQuery.set(this.processOptionLabel(proceso));
+    this.processResultsOpen.set(false);
+    this.selectedExamenId.set("");
+    this.examenes.set([]);
+    this.clearAssignments();
+    this.loadExamenes(proceso.id, requestedExamenId);
+  }
+
+  clearProcess(): void {
+    this.processQuery.set("");
+    this.upcomingSelectionRequest++; this.selectingUpcomingExerciseId.set(null);
+    this.clearProcessSelection();
+    this.processResultsOpen.set(true);
+    this.processSearchTerms.next("");
+  }
+
+  setQuickExercisePeriod(period: QuickExercisePeriod): void {
+    this.quickExercisePeriod.set(period);
+  }
+
+  selectQuickExercise(item: CuadroMandoEjercicio): void {
+    const requestId = ++this.upcomingSelectionRequest;
+    this.selectingUpcomingExerciseId.set(item.examenId);
+    const proceso = this.procesos().find(value => value.id === item.procesoSelectivoId);
+    if (proceso) {
+      this.selectProcess(proceso, item.examenId);
+      this.selectingUpcomingExerciseId.set(null);
+      return;
+    }
+    this.api.getProceso(item.procesoSelectivoId).pipe(finalize(() => {
+      if (requestId === this.upcomingSelectionRequest) this.selectingUpcomingExerciseId.set(null);
+    })).subscribe({
+      next: (loaded) => {
+        if (requestId !== this.upcomingSelectionRequest) return;
+        if (!this.procesos().some(value => value.id === loaded.id)) this.procesos.update(values => [...values, loaded]);
+        this.selectProcess(loaded, item.examenId);
+      },
+      error: (error: unknown) => {
+        if (requestId === this.upcomingSelectionRequest) this.error.set(apiErrorMessage(error));
+      },
     });
   }
 
-  loadByDate(): void {
-    const date = this.selectedDate(); if (!date) return;
-    this.contextLoading.set(true); this.clearAssignments();
+  onAvailableDateSelected(value: string): void {
+    this.selectedDate.set(value);
+    this.clearContext();
+    if (value) this.loadByDate();
+  }
+
+  loadByDate(): void {    const date = this.selectedDate(); if (!date) return;
+    this.clearAssignments(); this.contextLoading.set(true);
     this.api.listContextosAsignacion(date).pipe(finalize(() => this.contextLoading.set(false))).subscribe({
       next: contexts => this.contextosFecha.set(contexts), error: (error: unknown) => this.error.set(apiErrorMessage(error)),
     });
@@ -150,6 +289,7 @@ export class AsignacionesComponent implements OnInit {
     this.selectedExamenId.set(examenId);
     if (context) {
       this.selectedProcesoId.set(context.procesoSelectivoId);
+      this.selectedProceso.set(null);
       this.examenes.set([{ id: context.examenId, procesoSelectivoId: context.procesoSelectivoId, nombre: context.examenNombre, numeroEjercicio: context.numeroEjercicio, fechaHora: context.fechaHora }]);
     }
     this.loadAssignments();
@@ -159,11 +299,18 @@ export class AsignacionesComponent implements OnInit {
 
   loadAssignments(): void {
     const examId = this.selectedExamenId(); if (!examId) { this.clearAssignments(); return; }
+    const requestId = ++this.assignmentLoadRequest;
     this.contextLoading.set(true); this.closeForm(); this.error.set(null);
     forkJoin({ aulas: this.api.listExamenAulas(examId), asignaciones: this.api.listAsignaciones(examId), convocados: this.api.listConvocadosByExamen(examId) })
-      .pipe(finalize(() => this.contextLoading.set(false))).subscribe({
-        next: ({ aulas, asignaciones, convocados }) => { this.aulas.set(aulas); this.asignaciones.set(asignaciones); this.convocados.set(convocados); this.clearTableSelection(); },
-        error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      .subscribe({
+        next: ({ aulas, asignaciones, convocados }) => {
+          if (requestId !== this.assignmentLoadRequest || examId !== this.selectedExamenId()) return;
+          this.aulas.set(aulas); this.asignaciones.set(asignaciones); this.convocados.set(convocados); this.clearTableSelection(); this.contextLoading.set(false);
+        },
+        error: (error: unknown) => {
+          if (requestId !== this.assignmentLoadRequest || examId !== this.selectedExamenId()) return;
+          this.contextLoading.set(false); this.error.set(apiErrorMessage(error));
+        },
       });
   }
 
@@ -252,12 +399,7 @@ export class AsignacionesComponent implements OnInit {
     this.collaboratorResultsOpen.set(false); this.collaboratorSearchError.set(null);
   }
 
-  searchProcesses(value: string): void {
-    clearTimeout(this.processSearchTimer);
-    this.processSearchTimer = setTimeout(() => {
-      this.api.listProcesos(0, 100, value.trim()).subscribe({ next: result => this.procesos.set(result.content) });
-    }, 250);
-  }
+
 
   setAssignmentSearch(value: string): void { this.assignmentSearch.set(value); this.clearTableSelection(); }
   setProfileFilter(value: string): void { this.profileFilter.set(value); this.clearTableSelection(); }
@@ -349,16 +491,49 @@ export class AsignacionesComponent implements OnInit {
   }
 
   processLabel(id: string): string {
-    const item = this.procesos().find(process => process.id === id);
+    const selected = this.selectedProceso();
+    const item = selected?.id === id ? selected : this.procesos().find(process => process.id === id);
     if (item) return `${item.codigoSirhus ? item.codigoSirhus + " · " : ""}${item.nombre}`;
     const context = this.contextosFecha().find(value => value.procesoSelectivoId === id);
     return context ? `${context.codigoSirhus ? context.codigoSirhus + " · " : ""}${context.procesoNombre}` : "Proceso selectivo";
   }
-  formatDate(value?: string): string { return value ? new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Fecha pendiente"; }
-  money(value?: number | null): string { return value == null ? "—" : value.toLocaleString("es-ES", { style: "currency", currency: "EUR" }); }
+  formatAvailableDate(value: string): string {
+    return new Intl.DateTimeFormat("es-ES", { dateStyle: "full" }).format(new Date(`${value}T12:00:00`));
+  }
 
-  private clearContext(): void { this.selectedProcesoId.set(""); this.selectedExamenId.set(""); this.examenes.set([]); this.contextosFecha.set([]); this.clearAssignments(); }
-  private clearAssignments(): void { this.aulas.set([]); this.asignaciones.set([]); this.convocados.set([]); this.clearTableSelection(); this.closeForm(); }
+  formatDate(value?: string | null): string { return value ? new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Fecha pendiente"; }
+  money(value?: number | null): string { return value == null ? "—" : value.toLocaleString("es-ES", { style: "currency", currency: "EUR" }); }
+  processOptionLabel(proceso: ProcesoSelectivo): string { return `${proceso.codigoSirhus || "Sin código SIRHUS"} · ${proceso.nombre}`; }
+
+  private loadExamenes(procesoId: string, requestedExamenId = ""): void {
+    const requestId = ++this.examSearchRequest;
+    this.examLoading.set(true); this.error.set(null);
+    this.api.listExamenes(procesoId).subscribe({
+      next: (examenes) => {
+        if (requestId !== this.examSearchRequest || procesoId !== this.selectedProcesoId()) return;
+        this.examenes.set(examenes); this.examLoading.set(false);
+        if (requestedExamenId && examenes.some(examen => examen.id === requestedExamenId)) this.selectExam(requestedExamenId);
+        else if (requestedExamenId) this.error.set("El ejercicio seleccionado ya no está disponible.");
+      },
+      error: (error: unknown) => {
+        if (requestId !== this.examSearchRequest || procesoId !== this.selectedProcesoId()) return;
+        this.examenes.set([]); this.examLoading.set(false); this.error.set(apiErrorMessage(error));
+      },
+    });
+  }
+  private clearContext(): void {
+    this.upcomingSelectionRequest++; this.selectingUpcomingExerciseId.set(null);
+    this.processQuery.set(""); this.processResultsOpen.set(false); this.clearProcessSelection();
+    this.contextosFecha.set([]);
+  }
+  private clearProcessSelection(): void {
+    this.examSearchRequest++; this.examLoading.set(false);
+    this.selectedProcesoId.set(""); this.selectedProceso.set(null); this.selectedExamenId.set(""); this.examenes.set([]); this.clearAssignments();
+  }
+  private clearAssignments(): void {
+    this.assignmentLoadRequest++; this.contextLoading.set(false);
+    this.aulas.set([]); this.asignaciones.set([]); this.convocados.set([]); this.clearTableSelection(); this.closeForm();
+  }
   private clearTableSelection(): void { this.selectedAssignmentIds.set(new Set()); }
   private resetCollaboratorSearch(): void {
     clearTimeout(this.collaboratorSearchTimer); this.collaboratorSearchRequest++;
