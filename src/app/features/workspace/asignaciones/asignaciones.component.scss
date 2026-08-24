@@ -107,12 +107,14 @@
 .process-team__heading p:last-child { color: var(--jda-text-subtle); margin: 0; max-width: 48rem; }
 .process-team__count { background: #fff; border: 1px solid #c7d8cc; border-radius: 999px; color: var(--jda-primary-dark); flex: 0 0 auto; font-size: .8rem; font-weight: 800; padding: .3rem .65rem; white-space: nowrap; }
 .process-team__actions { align-items: center; display: flex; flex: 0 0 auto; gap: .65rem; }
-.process-team__people { border-top: 1px solid #d6e1d9; display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); padding: .65rem; }
-.process-person { align-items: center; background: #fff; border: 1px solid #d6e1d9; border-radius: 6px; display: grid; gap: .6rem; grid-template-columns: auto minmax(0, 1fr) auto auto; min-height: 54px; padding: .55rem .65rem; text-align: left; }
+.process-team__people { border-top: 1px solid #d6e1d9; display: grid; gap: .65rem; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: .65rem; }
+.process-person { align-items: center; background: #fff; border: 1px solid #d6e1d9; border-radius: 6px; display: grid; gap: .6rem; grid-template-columns: auto minmax(0, 1fr) 7rem auto; min-height: 58px; padding: .65rem .75rem; text-align: left; }
 .process-person:hover { background: #edf6f0; border-color: #91b99d; }
 .process-person__identity { display: grid; min-width: 0; }
-.process-person strong, .process-person small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.process-person strong, .process-person small { overflow: visible; text-overflow: clip; white-space: normal; }
+.process-person strong { line-height: 1.25; }
 .process-person small { color: var(--jda-text-subtle); }
+.process-person .confirmation-select--compact { font-size: .75rem; max-width: 7rem; min-height: 32px; padding: .15rem 1.5rem .15rem .5rem; width: 7rem; }
 .general-category { color: var(--jda-primary-dark); font-size: .75rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .process-team__empty { border-top: 1px solid #d6e1d9; color: var(--jda-text-subtle); padding: .9rem 1rem; }
 .rooms-grid { align-items: stretch; display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -169,6 +171,7 @@
 .dialog-warning { background: #fff5df; border-left: 4px solid var(--jda-warning); padding: .7rem; }
 .dialog-actions { display: flex; gap: .7rem; justify-content: flex-end; margin-top: 1.2rem; }
 
+@media (max-width: 960px) { .process-team__people { grid-template-columns: 1fr; } }
 @media (max-width: 1050px) { .context-selection-grid { grid-template-columns: 1fr; }  .coverage-card { align-items: stretch; flex-direction: column; } .assignment-layout--form { grid-template-columns: 1fr; } .assignment-form { grid-row: 1; position: static; } }
 @media (max-width: 800px) { .context-heading, .work-toolbar, .process-team__heading, .confirmation-dashboard__heading { align-items: stretch; flex-direction: column; gap: .8rem; } .process-team__actions { align-items: flex-start; flex-wrap: wrap; } .process-team__count { align-self: flex-start; } .segmented { display: grid; grid-template-columns: 1fr 1fr; } .context-fields, .context-fields--date, .context-fields--process, .rooms-grid, .table-filters__fields { grid-template-columns: 1fr; } .work-toolbar .search-field { min-width: 0; } .coverage-stats { display: grid; grid-template-columns: repeat(3, 1fr); } .coverage-stats div { min-width: 0; } .confirmation-metrics { grid-template-columns: repeat(2, 1fr); } .bulk-hours { align-items: stretch; grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .exam-summary { align-items: stretch; flex-direction: column; gap: 1rem; } .coverage-main { align-items: flex-start; } .coverage-stats { grid-template-columns: 1fr; } .coverage-stats div { border-left: 0; border-top: 1px solid #c8d3cc; padding: .4rem 0 0; } .process-person, .person-row { grid-template-columns: auto minmax(0, 1fr); } .process-person .confirmation-select, .person-row .confirmation-select { grid-column: 1 / -1; max-width: none; width: 100%; } .process-person .button, .person-row .button { grid-column: 2; justify-self: end; } .table-filters__heading, .table-filters__result { align-items: flex-start; flex-direction: column; gap: .35rem; } .bulk-hours__actions { flex-direction: column-reverse; } .table-wrap { background: transparent; border: 0; box-shadow: none; overflow: visible; } .assignment-table { min-width: 0; } .assignment-table .selection-cell { align-items: center; display: flex; justify-content: space-between; width: auto; } .row-actions, .form-actions, .dialog-actions { flex-direction: column-reverse; } }
