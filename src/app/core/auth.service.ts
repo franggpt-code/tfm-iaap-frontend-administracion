@@ -11,6 +11,7 @@ interface StoredSession {
 }
 
 const SESSION_KEY = "sicol.admin.session";
+const SESSION_EXPIRED_KEY = "sicol.admin.session-expired";
 
 @Injectable({ providedIn: "root" })
 export class AuthService {
@@ -76,6 +77,17 @@ export class AuthService {
     this.session.set(null);
   }
 
+  expireSession(): void {
+    this.clearSession();
+    sessionStorage.setItem(SESSION_EXPIRED_KEY, "true");
+  }
+
+  consumeSessionExpiredNotice(): boolean {
+    const expired = sessionStorage.getItem(SESSION_EXPIRED_KEY) === "true";
+    sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+    return expired;
+  }
+
   private storeSession(response: LoginResponse): void {
     this.persist({
       token: response.token,
@@ -99,6 +111,7 @@ export class AuthService {
       const parsed = JSON.parse(rawSession) as StoredSession;
       if (!parsed.token || !parsed.expiresAt || new Date(parsed.expiresAt).getTime() <= Date.now()) {
         localStorage.removeItem(SESSION_KEY);
+        sessionStorage.setItem(SESSION_EXPIRED_KEY, "true");
         return null;
       }
       return parsed;

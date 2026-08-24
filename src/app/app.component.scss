@@ -117,9 +117,11 @@
   width: 2.25rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 
-  .jda-mark-svg {
-    height: 1.5rem;
-    width: 1.5rem;
+  .jda-mark-image {
+    display: block;
+    height: 100%;
+    object-fit: contain;
+    width: 100%;
   }
 }
 

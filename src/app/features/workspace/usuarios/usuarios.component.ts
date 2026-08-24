@@ -26,14 +26,36 @@ export class UsuariosComponent implements OnInit {
   readonly formOpen = signal(false);
   readonly editing = signal<UsuarioAdmin | null>(null);
   readonly search = signal("");
+  readonly filtersExpanded = signal(false);
+  readonly roleFilter = signal<UsuarioRol | "">("");
+  readonly statusFilter = signal<"" | "active" | "inactive">("");
+  readonly authenticationFilter = signal<"" | "local" | "ldap">("");
+  readonly collaboratorFilter = signal<"" | "linked" | "unlinked">("");
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly currentUserId = computed(() => this.auth.user()?.idUsuario);
   readonly filteredUsers = computed(() => {
     const term = this.search().trim().toLocaleLowerCase("es");
-    if (!term) return this.users();
-    return this.users().filter(user => `${user.login} ${user.nombreCompleto} ${user.email} ${user.roles.join(" ")}`.toLocaleLowerCase("es").includes(term));
+    return this.users().filter(user => {
+      const matchesText = !term || `${user.login} ${user.nombreCompleto} ${user.email} ${user.roles.join(" ")}`
+        .toLocaleLowerCase("es")
+        .includes(term);
+      const matchesRole = !this.roleFilter() || user.roles.includes(this.roleFilter() as UsuarioRol);
+      const matchesStatus = !this.statusFilter()
+        || (this.statusFilter() === "active" ? user.activo : !user.activo);
+      const matchesAuthentication = !this.authenticationFilter()
+        || (this.authenticationFilter() === "local" ? user.ldapBypass : !user.ldapBypass);
+      const matchesCollaborator = !this.collaboratorFilter()
+        || (this.collaboratorFilter() === "linked" ? !!user.colaboradorId : !user.colaboradorId);
+      return matchesText && matchesRole && matchesStatus && matchesAuthentication && matchesCollaborator;
+    });
   });
+  readonly activeFiltersCount = computed(() => [
+    this.roleFilter(),
+    this.statusFilter(),
+    this.authenticationFilter(),
+    this.collaboratorFilter(),
+  ].filter(Boolean).length);
 
   readonly form = this.fb.nonNullable.group({
     login: ["", Validators.required],
@@ -137,6 +159,17 @@ export class UsuariosComponent implements OnInit {
     });
   }
 
+  toggleFilters(): void {
+    this.filtersExpanded.update(expanded => !expanded);
+  }
+
+  resetFilters(): void {
+    this.search.set("");
+    this.roleFilter.set("");
+    this.statusFilter.set("");
+    this.authenticationFilter.set("");
+    this.collaboratorFilter.set("");
+  }
   roleLabel(role: UsuarioRol): string {
     return role === "ADMIN" ? "Administrador" : role === "GESTOR" ? "Gestor de colaboradores" : "Usuario colaborador";
   }
