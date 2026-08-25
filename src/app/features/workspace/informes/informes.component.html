@@ -1,137 +1,542 @@
 <div class="page-shell reports-page">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Informes</span></nav>
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Informes</span>
+  </nav>
+
   <header class="page-heading">
-    <div><p class="eyebrow">Documentación operativa</p><h1>Informes</h1><p>Genera el control de firmas y la relación de pagos a partir de las asignaciones del proceso y ejercicio.</p></div>
+    <div>
+      <p class="eyebrow">Documentación operativa y económica</p>
+      <h1>Generación de Informes</h1>
+      <p>Selecciona el tipo de informe oficial que deseas emitir, localiza el ejercicio correspondiente y valida los datos antes de exportar.</p>
+    </div>
   </header>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
+    </div>
+  }
 
-  <section class="report-context" aria-labelledby="report-context-title">
-    <div class="report-context__layout">
-      <div class="report-context__selection">
-        <div class="report-context__heading"><div><p class="eyebrow">Paso 1</p><h2 id="report-context-title">Selecciona el ejercicio</h2><p>Busca por nombre o código SIRHUS y elige después el ejercicio que quieres revisar.</p></div></div>
-        <div class="report-context__fields">
-          <div class="field report-process-picker">
-            <label for="report-process-search">Proceso selectivo</label>
-            <div class="report-process-combobox" (focusout)="closeProcessResults($event)">
-              <div class="report-process-combobox__input">
-                <span class="search-icon" aria-hidden="true"></span>
-                <input
-                  id="report-process-search"
-                  type="search"
-                  role="combobox"
-                  autocomplete="off"
-                  maxlength="250"
-                  placeholder="Escribe un nombre o código SIRHUS"
-                  aria-autocomplete="list"
-                  aria-controls="report-process-results"
-                  [attr.aria-expanded]="processResultsOpen()"
-                  [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'report-process-option-' + activeProcessIndex() : null"
-                  [value]="processQuery()"
-                  [disabled]="loading() || reportLoading()"
-                  (focus)="openProcessResults()"
-                  (input)="onProcessSearch($any($event.target).value)"
-                  (keydown)="onProcessKeydown($event)"
-                >
-                @if (selectedProcesoId()) { <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" [disabled]="loading() || reportLoading()" (click)="clearProcess()">×</button> }
-                @if (processSearchLoading()) { <span class="process-spinner" aria-label="Buscando procesos"></span> }
-              </div>
-              @if (processResultsOpen()) {
-                <div id="report-process-results" class="process-results" role="listbox" aria-label="Procesos selectivos">
-                  <div class="process-results__heading"><strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong><span>Selecciona un resultado</span></div>
-                  @if (processSearchError()) {
-                    <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p>
-                  } @else if (processSearchLoading()) {
-                    <p class="process-results__message" role="status">Buscando procesos…</p>
-                  } @else if (procesos().length === 0) {
-                    <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p>
-                  } @else {
-                    <div class="process-results__list">
-                      @for (process of procesos(); track process.id; let index = $index) {
-                        <button type="button" role="option" [id]="'report-process-option-' + index" [class.is-active]="activeProcessIndex() === index" [class.is-selected]="selectedProcesoId() === process.id" [attr.aria-selected]="selectedProcesoId() === process.id" (mouseenter)="activeProcessIndex.set(index)" (click)="selectProcess(process)"><span class="process-result__code">{{ process.codigoSirhus || "Sin código SIRHUS" }}</span><span class="process-result__name">{{ process.nombre }}</span></button>
-                      }
-                    </div>
-                    @if (processTotal() > procesos().length) { <p class="process-results__footer">Mostrando los {{ procesos().length }} primeros resultados. Escribe más texto para precisar la búsqueda.</p> }
-                  }
-                </div>
-              }
-            </div>
-            <small class="field-help">Busca por la denominación oficial o por su código SIRHUS.</small>
-          </div>
-          <div class="field">
-            <label for="report-exam">Ejercicio</label>
-            <select id="report-exam" [value]="selectedExamenId()" [disabled]="!selectedProcesoId() || reportLoading()" (change)="selectExam($any($event.target).value)"><option value="">{{ reportLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>@for (exam of examenes(); track exam.id) { <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option> }</select>
-            @if (!selectedProcesoId()) { <small class="field-help">Selecciona primero un proceso.</small> } @else if (!reportLoading() && examenes().length === 0) { <small class="field-help">Este proceso no tiene ejercicios disponibles.</small> }
-          </div>
+  <!-- BARRA COMPACTA DE CONTEXTO SELECCIONADO (Cuando los pasos 1 y 2 están colapsados) -->
+  @if (selectedExamenId() && selectionCollapsed()) {
+    <section class="selected-context-bar" aria-label="Informe y ejercicio seleccionados">
+      <div class="selected-context-summary">
+        <div class="context-item context-item--report">
+          <span class="context-pill" [class]="currentReportMeta().badgeClass">
+            {{ currentReportMeta().categoryLabel }}
+          </span>
+          <strong class="context-title">{{ currentReportMeta().title }}</strong>
+        </div>
+
+        <div class="context-separator" aria-hidden="true"></div>
+
+        <div class="context-item context-item--process">
+          <span class="context-label">Proceso</span>
+          <span class="context-value" [title]="selectedProcess()?.nombre">
+            <strong>{{ selectedProcess()?.codigoSirhus || 'Proceso' }}</strong> · {{ selectedProcess()?.nombre }}
+          </span>
+        </div>
+
+        <div class="context-separator" aria-hidden="true"></div>
+
+        <div class="context-item context-item--exam">
+          <span class="context-label">Ejercicio</span>
+          <span class="context-value">
+            <strong>{{ selectedExam()?.numeroEjercicio }}.º</strong> · {{ selectedExam()?.nombre }}
+            <small class="context-date">({{ formatDate(selectedExam()?.fechaHora) }})</small>
+          </span>
         </div>
       </div>
 
-      <aside class="upcoming-exercises" aria-labelledby="upcoming-exercises-title">
-        <div class="upcoming-exercises__heading"><div><p class="eyebrow">Acceso rápido</p><h2 id="upcoming-exercises-title">{{ quickExercisePeriod() === "proximos" ? "Próximos ejercicios" : "Ejercicios anteriores" }}</h2></div><span>{{ quickExercises().length }} {{ quickExercisePeriod() === "proximos" ? "más cercanos" : "más recientes" }}</span></div>
-        <div class="quick-exercises-toggle" role="group" aria-label="Periodo de ejercicios"><button type="button" [class.is-active]="quickExercisePeriod() === 'anteriores'" [attr.aria-pressed]="quickExercisePeriod() === 'anteriores'" (click)="setQuickExercisePeriod('anteriores')">Anteriores ejercicios</button><button type="button" [class.is-active]="quickExercisePeriod() === 'proximos'" [attr.aria-pressed]="quickExercisePeriod() === 'proximos'" (click)="setQuickExercisePeriod('proximos')">Próximos ejercicios</button></div>
-        @if (quickExercises().length) {
-          <div class="upcoming-exercises__list">
-            @for (item of quickExercises(); track item.examenId) { <button type="button" class="upcoming-exercise" [class.is-selected]="selectedExamenId() === item.examenId" [attr.aria-current]="selectedExamenId() === item.examenId ? 'true' : null" [disabled]="loading() || reportLoading()" [attr.aria-label]="'Seleccionar ' + (item.codigoSirhus || item.procesoNombre) + ', ' + item.numeroEjercicio + '.º ejercicio'" (click)="selectQuickExercise(item)"><span class="upcoming-exercise__process">{{ item.codigoSirhus || "Proceso sin código" }} · {{ item.procesoNombre }}</span><strong>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</strong><small>{{ formatDateTime(item.fechaHora) }} · {{ item.convocados }} {{ item.convocados === 1 ? "persona convocada" : "personas convocadas" }} · {{ item.aulas }} {{ item.aulas === 1 ? "aula" : "aulas" }}</small></button> }
-          </div>
-        } @else if (!loading()) { <p class="upcoming-exercises__empty">{{ quickExercisePeriod() === "proximos" ? "No hay próximos ejercicios programados." : "No hay ejercicios anteriores disponibles." }}</p> } @else { <p class="upcoming-exercises__empty" role="status">Cargando ejercicios…</p> }
-      </aside>
-    </div>
-  </section>
-
-  @if (reportLoading()) { <p class="loading-message">Comprobando datos para los informes…</p> }
-  @if (selectedExamenId() && !reportLoading()) {
-    <section class="report-dashboard" aria-label="Calidad de los datos">
-      <div><span>Asignaciones</span><strong>{{ asignaciones().length }}</strong></div>
-      <div><span>Personas admitidas</span><strong>{{ activeConvokedCount() }}</strong></div>
-      <div [class.metric--warning]="missingHours()"><span>Sin horas</span><strong>{{ missingHours() }}</strong></div>
-      <div [class.metric--warning]="missingIban()"><span>Sin IBAN</span><strong>{{ missingIban() }}</strong></div>
-      <div [class.metric--warning]="resumen()?.duplicidades?.length"><span>Personas repetidas</span><strong>{{ resumen()?.duplicidades?.length || 0 }}</strong></div>
+      <div class="selected-context-actions">
+        <button
+          type="button"
+          class="button button--secondary change-selection-btn"
+          (click)="expandSelection()"
+          aria-label="Cambiar tipo de informe o ejercicio seleccionado"
+        >
+          <svg class="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Cambiar informe o ejercicio
+        </button>
+      </div>
     </section>
+  }
 
-    <div class="report-tabs" role="tablist" aria-label="Tipo de informe">
-      <button type="button" role="tab" [class.is-active]="reportType() === 'firmas'" [attr.aria-selected]="reportType() === 'firmas'" (click)="reportType.set('firmas')">Control de firmas</button>
-      <button type="button" role="tab" [class.is-active]="reportType() === 'pagos'" [attr.aria-selected]="reportType() === 'pagos'" (click)="reportType.set('pagos')">Informe de pagos</button>
+  <!-- SELECTOR COMPLETO DE PASO 1 Y PASO 2 -->
+  @if (!selectionCollapsed()) {
+    <div class="selection-steps-wrapper">
+      @if (selectedExamenId()) {
+        <div class="collapse-helper-bar">
+          <span>Modifica el informe o el ejercicio deseado, o vuelve a la previsualización:</span>
+          <button type="button" class="button button--secondary button--compact" (click)="toggleSelectionCollapse()">
+            Ocultar selector ↑
+          </button>
+        </div>
+      }
+
+      <!-- PASO 1: Selección del Tipo de Informe (Diseño compacto) -->
+      <section class="step-card step-card--catalog" aria-labelledby="step1-title">
+        <div class="step-heading">
+          <span class="step-number">1</span>
+          <div>
+            <h2 id="step1-title">Tipo de informe</h2>
+            <p>Selecciona el documento oficial que deseas emitir para adaptar sugerencias y validaciones.</p>
+          </div>
+        </div>
+
+        <div class="report-catalog-grid" role="radiogroup" aria-label="Tipo de informe">
+          @for (item of catalog(); track item.id) {
+            <button
+              type="button"
+              role="radio"
+              class="report-type-card"
+              [class.is-selected]="reportType() === item.id"
+              [attr.aria-checked]="reportType() === item.id"
+              (click)="selectReportType(item.id)"
+            >
+              <div class="report-type-card__icon-box">
+                @if (item.id === 'firmas') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <path d="M16 13H8"></path>
+                    <path d="M16 17H8"></path>
+                    <path d="M10 9H8"></path>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                    <path d="M6 15h2"></path>
+                    <path d="M12 15h6"></path>
+                  </svg>
+                }
+              </div>
+
+              <div class="report-type-card__info">
+                <div class="report-type-card__title-row">
+                  <strong class="report-type-card__title">{{ item.title }}</strong>
+                  <span class="report-category-badge" [class]="item.badgeClass">{{ item.categoryLabel }}</span>
+                  <span class="report-phase-badge" [class.is-pre]="item.phase === 'pre-examen'" [class.is-post]="item.phase === 'post-examen'">
+                    {{ item.phaseLabel }}
+                  </span>
+                </div>
+                <p class="report-type-card__desc">{{ item.description }}</p>
+              </div>
+
+              <div class="report-type-card__check">
+                @if (reportType() === item.id) {
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      </section>
+
+      <!-- PASO 2: Selección del Proceso y Ejercicio -->
+      <section class="step-card" aria-labelledby="step2-title">
+        <div class="step-heading">
+          <span class="step-number">2</span>
+          <div>
+            <h2 id="step2-title">Proceso y ejercicio</h2>
+            <p>Busca por denominación/SIRHUS o pulsa un ejercicio en el acceso rápido contextual.</p>
+          </div>
+        </div>
+
+        <div class="report-context__layout">
+          <!-- Buscador Manual -->
+          <div class="report-context__selection">
+            <div class="report-context__fields">
+              <div class="field report-process-picker">
+                <label for="report-process-search">Proceso selectivo</label>
+                <div class="report-process-combobox" (focusout)="closeProcessResults($event)">
+                  <div class="report-process-combobox__input">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input
+                      id="report-process-search"
+                      type="search"
+                      role="combobox"
+                      autocomplete="off"
+                      maxlength="250"
+                      placeholder="Escribe un nombre o código SIRHUS…"
+                      aria-autocomplete="list"
+                      aria-controls="report-process-results"
+                      [attr.aria-expanded]="processResultsOpen()"
+                      [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'report-process-option-' + activeProcessIndex() : null"
+                      [value]="processQuery()"
+                      [disabled]="loading() || reportLoading()"
+                      (focus)="openProcessResults()"
+                      (input)="onProcessSearch($any($event.target).value)"
+                      (keydown)="onProcessKeydown($event)"
+                    >
+                    @if (selectedProcesoId()) {
+                      <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" [disabled]="loading() || reportLoading()" (click)="clearProcess()">×</button>
+                    }
+                    @if (processSearchLoading()) {
+                      <span class="process-spinner" aria-label="Buscando procesos"></span>
+                    }
+                  </div>
+
+                  @if (processResultsOpen()) {
+                    <div id="report-process-results" class="process-results" role="listbox" aria-label="Procesos selectivos">
+                      <div class="process-results__heading">
+                        <strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong>
+                        <span>Selecciona un resultado</span>
+                      </div>
+                      @if (processSearchError()) {
+                        <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p>
+                      } @else if (processSearchLoading()) {
+                        <p class="process-results__message" role="status">Buscando procesos…</p>
+                      } @else if (procesos().length === 0) {
+                        <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p>
+                      } @else {
+                        <div class="process-results__list">
+                          @for (process of procesos(); track process.id; let index = $index) {
+                            <button
+                              type="button"
+                              role="option"
+                              [id]="'report-process-option-' + index"
+                              [class.is-active]="activeProcessIndex() === index"
+                              [class.is-selected]="selectedProcesoId() === process.id"
+                              [attr.aria-selected]="selectedProcesoId() === process.id"
+                              (mouseenter)="activeProcessIndex.set(index)"
+                              (click)="selectProcess(process)"
+                            >
+                              <span class="process-result__code">{{ process.codigoSirhus || "Sin código SIRHUS" }}</span>
+                              <span class="process-result__name">{{ process.nombre }}</span>
+                            </button>
+                          }
+                        </div>
+                        @if (processTotal() > procesos().length) {
+                          <p class="process-results__footer">Mostrando los {{ procesos().length }} primeros resultados. Escribe más texto para precisar la búsqueda.</p>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+                <small class="field-help">Busca por la denominación oficial o por su código SIRHUS.</small>
+              </div>
+
+              <div class="field">
+                <label for="report-exam">Ejercicio</label>
+                <select
+                  id="report-exam"
+                  [value]="selectedExamenId()"
+                  [disabled]="!selectedProcesoId() || reportLoading()"
+                  (change)="selectExam($any($event.target).value)"
+                >
+                  <option value="">{{ reportLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>
+                  @for (exam of examenes(); track exam.id) {
+                    <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option>
+                  }
+                </select>
+                @if (!selectedProcesoId()) {
+                  <small class="field-help">Selecciona primero un proceso arriba.</small>
+                } @else if (!reportLoading() && examenes().length === 0) {
+                  <small class="field-help">Este proceso no tiene ejercicios registrados.</small>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Acceso Rápido Inteligente -->
+          <aside class="upcoming-exercises" aria-labelledby="upcoming-exercises-title">
+            <div class="upcoming-exercises__heading">
+              <div>
+                <p class="eyebrow">Acceso rápido</p>
+                <h3 id="upcoming-exercises-title">{{ quickExercisePeriod() === "proximos" ? "Próximos ejercicios" : "Ejercicios anteriores" }}</h3>
+              </div>
+              <span class="quick-period-badge" [class.is-recommended]="quickExercisePeriod() === currentReportMeta().defaultPeriod">
+                {{ quickExercisePeriod() === currentReportMeta().defaultPeriod ? "Recomendado" : "Alternativo" }}
+              </span>
+            </div>
+
+            <div class="quick-exercises-toggle" role="group" aria-label="Periodo de ejercicios sugeridos">
+              <button
+                type="button"
+                [class.is-active]="quickExercisePeriod() === 'proximos'"
+                [attr.aria-pressed]="quickExercisePeriod() === 'proximos'"
+                (click)="setQuickExercisePeriod('proximos')"
+              >
+                Próximos
+              </button>
+              <button
+                type="button"
+                [class.is-active]="quickExercisePeriod() === 'anteriores'"
+                [attr.aria-pressed]="quickExercisePeriod() === 'anteriores'"
+                (click)="setQuickExercisePeriod('anteriores')"
+              >
+                Anteriores
+              </button>
+            </div>
+
+            @if (quickExercises().length) {
+              <div class="upcoming-exercises__list">
+                @for (item of quickExercises(); track item.examenId) {
+                  <button
+                    type="button"
+                    class="upcoming-exercise"
+                    [class.is-selected]="selectedExamenId() === item.examenId"
+                    [attr.aria-current]="selectedExamenId() === item.examenId ? 'true' : null"
+                    [disabled]="loading() || reportLoading()"
+                    [attr.aria-label]="'Seleccionar ' + (item.codigoSirhus || item.procesoNombre) + ', ' + item.numeroEjercicio + '.º ejercicio'"
+                    (click)="selectQuickExercise(item)"
+                  >
+                    <span class="upcoming-exercise__process">{{ item.codigoSirhus || "Proceso" }} · {{ item.procesoNombre }}</span>
+                    <strong>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</strong>
+                    <small>{{ formatDateTime(item.fechaHora) }} · {{ item.convocados }} convocados</small>
+                  </button>
+                }
+              </div>
+            } @else if (!loading()) {
+              <p class="upcoming-exercises__empty">{{ quickExercisePeriod() === "proximos" ? "No hay próximos ejercicios programados." : "No hay ejercicios anteriores disponibles." }}</p>
+            } @else {
+              <p class="upcoming-exercises__empty" role="status">Cargando ejercicios…</p>
+            }
+          </aside>
+        </div>
+      </section>
     </div>
+  }
 
-    @if (reportType() === "firmas") {
-      <section class="report-panel">
-        <header>
-          <div><p class="eyebrow">Control de asistencia</p><h2>Control de firmas</h2><p>La tabla permite revisar las personas incluidas. El PDF añade las columnas en blanco para hora de entrada, firma, hora de salida y firma.</p></div>
-          <button class="button button--primary" type="button" [disabled]="!signatureRows().length || commonGaps().length || !!exporting()" [attr.aria-busy]="exporting() === 'firmas'" (click)="exportPdf('firmas')">{{ exporting() === "firmas" ? "Generando…" : "Exportar a PDF" }}</button>
-        </header>
-        <div class="readiness"><h3>Comprobación previa</h3><ul><li class="is-ready">El DNI se muestra ofuscado tanto aquí como en el control de firmas.</li><li class="is-ready">El PDF reserva espacio para horas y firmas manuscritas.</li>@for (gap of commonGaps(); track gap) { <li class="is-missing">Falta completar: {{ gap }}</li> }</ul></div>
-        <div class="preview-table">
+  @if (reportLoading()) {
+    <p class="loading-message">Comprobando datos y calculando informe…</p>
+  }
+
+  @if (selectedExamenId() && !reportLoading()) {
+    <!-- PASO 3: Diagnóstico y Previsualización -->
+    <section class="step-card step-card--preview" aria-labelledby="step3-title">
+      <div class="step-heading">
+        <span class="step-number">3</span>
+        <div>
+          <p class="eyebrow">Auditoría y exportación</p>
+          <h2 id="step3-title">Diagnóstico y previsualización: {{ currentReportMeta().title }}</h2>
+          <p>Revisa la calidad de los datos del ejercicio seleccionado antes de emitir el documento final.</p>
+        </div>
+      </div>
+
+      <!-- Métricas del Informe -->
+      <div class="report-metrics-grid">
+        <div class="metric-card">
+          <span>Colaboradores asignados</span>
+          <strong>{{ asignaciones().length }}</strong>
+        </div>
+        <div class="metric-card">
+          <span>Personas admitidas</span>
+          <strong>{{ activeConvokedCount() }}</strong>
+        </div>
+        @if (reportType() === 'pagos') {
+          <div class="metric-card" [class.metric-card--warning]="missingHours()">
+            <span>Sin horas registradas</span>
+            <strong>{{ missingHours() }}</strong>
+          </div>
+          <div class="metric-card" [class.metric-card--warning]="missingIban()">
+            <span>Sin IBAN</span>
+            <strong>{{ missingIban() }}</strong>
+          </div>
+          <div class="metric-card metric-card--total">
+            <span>Importe total liquidado</span>
+            <strong>{{ money(pagos()?.totalImporte) }}</strong>
+          </div>
+        } @else {
+          <div class="metric-card">
+            <span>Centros evaluadores</span>
+            <strong>{{ hojasFirma()?.centros?.length || 0 }}</strong>
+          </div>
+          <div class="metric-card" [class.metric-card--warning]="resumen()?.duplicidades?.length">
+            <span>Personas repetidas</span>
+            <strong>{{ resumen()?.duplicidades?.length || 0 }}</strong>
+          </div>
+        }
+      </div>
+
+      <!-- Checklist de Calidad / Diagnóstico -->
+      <div class="readiness-card">
+        <h3>Comprobaciones previas de calidad</h3>
+        <ul class="readiness-list">
+          @if (reportType() === 'firmas') {
+            <li class="readiness-item is-ready">
+              <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>El DNI se muestra ofuscado (<code>***XXXX</code>) para protección de datos personales.</span>
+            </li>
+            <li class="readiness-item is-ready">
+              <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>El documento PDF reserva casillas en blanco para horas de entrada, salida y firmas manuscritas.</span>
+            </li>
+          } @else {
+            <li class="readiness-item" [class.is-ready]="!missingHours()" [class.is-missing]="missingHours()">
+              <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                @if (!missingHours()) { <polyline points="20 6 9 17 4 12"></polyline> }
+                @else { <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line> }
+              </svg>
+              <span>{{ missingHours() ? missingHours() + (missingHours() === 1 ? " asignación todavía no tiene horas registradas." : " asignaciones todavía no tienen horas registradas.") : "Todas las asignaciones tienen horas calculadas." }}</span>
+            </li>
+            <li class="readiness-item" [class.is-ready]="!missingIban()" [class.is-missing]="missingIban()">
+              <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                @if (!missingIban()) { <polyline points="20 6 9 17 4 12"></polyline> }
+                @else { <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line> }
+              </svg>
+              <span>{{ missingIban() ? missingIban() + (missingIban() === 1 ? " colaborador no tiene IBAN informado en su ficha." : " colaboradores no tienen IBAN informado en su ficha.") : "Todos los colaboradores cuentan con código IBAN bancario." }}</span>
+            </li>
+            <li class="readiness-item" [class.is-ready]="!missingReportParameters()" [class.is-missing]="missingReportParameters()">
+              <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                @if (!missingReportParameters()) { <polyline points="20 6 9 17 4 12"></polyline> }
+                @else { <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line> }
+              </svg>
+              <span>
+                {{ missingReportParameters() ? "Faltan cargos responsables de certificación o V.º B.º en Datos Maestros." : "Parámetros institucionales y firmas configurados correctamente." }}
+                @if (missingReportParameters()) {
+                  <a routerLink="/admin/datos-maestros" fragment="configuracion-informes" class="readiness-link">Configurar en Datos maestros →</a>
+                }
+              </span>
+            </li>
+          }
+          @for (gap of commonGaps(); track gap) {
+            <li class="readiness-item is-missing">
+              <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span>Falta completar en el proceso o ejercicio: <strong>{{ gap }}</strong></span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Barra de Acciones de Previsualización y Descarga -->
+      <div class="preview-header">
+        <div class="preview-search-box">
+          <label for="preview-filter" class="visually-hidden">Filtrar filas</label>
+          <input
+            id="preview-filter"
+            type="search"
+            placeholder="Filtrar colaboradores por nombre, DNI, centro o perfil…"
+            [value]="previewFilter()"
+            (input)="onPreviewFilterChange($any($event.target).value)"
+          >
+        </div>
+        <div class="preview-actions">
+          @if (reportType() === 'firmas') {
+            <button
+              class="button button--primary"
+              type="button"
+              [disabled]="!signatureRows().length || commonGaps().length || !!exporting()"
+              [attr.aria-busy]="exporting() === 'firmas'"
+              (click)="exportPdf('firmas')"
+            >
+              <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              {{ exporting() === "firmas" ? "Generando documento…" : "Exportar Control de firmas (PDF)" }}
+            </button>
+          } @else {
+            <button
+              class="button button--primary"
+              type="button"
+              [disabled]="!pagos()?.pagos?.length || commonGaps().length || missingHours() || missingIban() || missingReportParameters() || !!exporting()"
+              [attr.aria-busy]="exporting() === 'pagos'"
+              (click)="exportPdf('pagos')"
+            >
+              <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              {{ exporting() === "pagos" ? "Generando documento…" : "Exportar Informe de pagos (PDF)" }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Tabla de Previsualización: Control de firmas -->
+      @if (reportType() === 'firmas') {
+        <div class="table-wrap">
           <table class="admin-table report-data-table">
-            <thead><tr><th>Centro</th><th>Aula o zona</th><th>DNI</th><th>Nombre</th><th>Perfil</th></tr></thead>
+            <thead>
+              <tr>
+                <th scope="col">Centro</th>
+                <th scope="col">Aula o zona</th>
+                <th scope="col">DNI</th>
+                <th scope="col">Nombre completo</th>
+                <th scope="col">Perfil asignado</th>
+              </tr>
+            </thead>
             <tbody>
-              @for (person of signatureRows(); track $index) {
-                <tr><td data-label="Centro">{{ person.center }}</td><td data-label="Aula o zona">{{ person.location }}</td><td data-label="DNI"><span class="masked-id">{{ person.dni }}</span></td><td data-label="Nombre"><strong>{{ person.name }}</strong></td><td data-label="Perfil">{{ person.profile }}</td></tr>
-              } @empty { <tr><td colspan="5"><div class="empty-state"><strong>No hay asignaciones.</strong><span>Añade personas al ejercicio antes de generar el control.</span></div></td></tr> }
+              @for (person of filteredSignatureRows(); track $index) {
+                <tr>
+                  <td data-label="Centro">{{ person.center }}</td>
+                  <td data-label="Aula o zona">{{ person.location }}</td>
+                  <td data-label="DNI"><span class="masked-id">{{ person.dni }}</span></td>
+                  <td data-label="Nombre completo"><strong>{{ person.name }}</strong></td>
+                  <td data-label="Perfil">{{ person.profile }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <strong>No hay colaboradores que coincidan con la búsqueda.</strong>
+                      <span>Asegúrate de que el ejercicio tenga asignaciones configuradas.</span>
+                    </div>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-      </section>
-    } @else {
-      <section class="report-panel">
-        <header>
-          <div><p class="eyebrow">Certificación económica</p><h2>Informe de pagos</h2><p>Incluye el DNI completo, el IBAN, las horas y el importe íntegro de cada colaboración.</p></div>
-          <button class="button button--primary" type="button" [disabled]="!pagos()?.pagos?.length || commonGaps().length || missingHours() || missingIban() || missingReportParameters() || !!exporting()" [attr.aria-busy]="exporting() === 'pagos'" (click)="exportPdf('pagos')">{{ exporting() === "pagos" ? "Generando…" : "Exportar a PDF" }}</button>
-        </header>
-        <div class="readiness"><h3>Comprobación previa</h3><ul><li [class.is-ready]="!missingHours()" [class.is-missing]="missingHours()">{{ missingHours() ? missingHours() + (missingHours() === 1 ? " asignación todavía no tiene horas" : " asignaciones todavía no tienen horas") : "Todas las asignaciones tienen horas" }}</li><li [class.is-ready]="!missingIban()" [class.is-missing]="missingIban()">{{ missingIban() ? missingIban() + (missingIban() === 1 ? " pago no tiene IBAN" : " pagos no tienen IBAN") : "Todos los pagos tienen IBAN" }}</li><li [class.is-ready]="!missingReportParameters()" [class.is-missing]="missingReportParameters()">{{ missingReportParameters() ? "Completa los responsables de certificación y visto bueno en Datos maestros" : "Parámetros de certificación configurados" }} @if (missingReportParameters()) { <a routerLink="/admin/datos-maestros" fragment="configuracion-informes">Ir a Datos maestros</a> }</li>@for (gap of commonGaps(); track gap) { <li class="is-missing">Falta completar: {{ gap }}</li> }</ul></div>
-        <div class="payment-summary"><span>{{ pagos()?.pagos?.length || 0 }} líneas calculadas</span><strong>{{ money(pagos()?.totalImporte) }}</strong></div>
-        <div class="preview-table">
+      } @else {
+        <!-- Tabla de Previsualización: Informe de pagos -->
+        <div class="table-wrap">
           <table class="admin-table report-data-table payment-table">
-            <thead><tr><th>DNI</th><th>Persona</th><th>Perfil</th><th>IBAN</th><th>Horas</th><th>Íntegro</th></tr></thead>
+            <thead>
+              <tr>
+                <th scope="col">DNI</th>
+                <th scope="col">Persona colaboradora</th>
+                <th scope="col">Perfil</th>
+                <th scope="col">IBAN bancario</th>
+                <th scope="col" class="number-cell">Horas</th>
+                <th scope="col" class="number-cell">Importe íntegro</th>
+              </tr>
+            </thead>
             <tbody>
-              @for (payment of pagos()?.pagos || []; track $index) {
-                <tr><td data-label="DNI">{{ payment.dni }}</td><td data-label="Persona"><strong>{{ payment.nombreCompleto }}</strong></td><td data-label="Perfil">{{ payment.perfilDenominacion }}</td><td data-label="IBAN"><span class="iban">{{ payment.iban || "Pendiente" }}</span></td><td data-label="Horas" class="number-cell">{{ payment.horasRealizadas }}</td><td data-label="Íntegro" class="number-cell">{{ money(payment.importeTotal) }}</td></tr>
-              } @empty { <tr><td colspan="6"><div class="empty-state"><strong>No hay líneas de pago calculables.</strong><span>Registra las horas realizadas en las asignaciones.</span></div></td></tr> }
+              @for (payment of filteredPaymentRows(); track $index) {
+                <tr>
+                  <td data-label="DNI">{{ payment.dni }}</td>
+                  <td data-label="Persona colaboradora"><strong>{{ payment.nombreCompleto }}</strong></td>
+                  <td data-label="Perfil">{{ payment.perfilDenominacion }}</td>
+                  <td data-label="IBAN"><span class="iban">{{ payment.iban || "Pendiente de informar" }}</span></td>
+                  <td data-label="Horas" class="number-cell">{{ payment.horasRealizadas }}</td>
+                  <td data-label="Importe íntegro" class="number-cell"><strong>{{ money(payment.importeTotal) }}</strong></td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <strong>No hay líneas de liquidación calculadas.</strong>
+                      <span>Registra las horas de los colaboradores en la sección de Asignaciones.</span>
+                    </div>
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>
-      </section>
-    }
+      }
+    </section>
   } @else if (!loading()) {
-    <div class="initial-empty"><span class="initial-empty__icon" aria-hidden="true">1</span><strong>Selecciona un proceso y un ejercicio</strong><p>El sistema comprobará automáticamente si están todos los datos necesarios.</p></div>
+    <div class="initial-empty">
+      <span class="initial-empty__icon" aria-hidden="true">2</span>
+      <strong>Selecciona un proceso y un ejercicio en el Paso 2</strong>
+      <p>El sistema auditará automáticamente los datos y preparará la previsualización del informe seleccionado.</p>
+    </div>
   }
 </div>

@@ -379,15 +379,17 @@ export class SicolApiClient {
     return this.http.patch<void>(`${this.adminUrl}/colaboradores/estado`, payload);
   }
 
-  simularImportacionColaboradores(fichero: File): Observable<ImportacionColaboradoresResultado> {
+  simularImportacionColaboradores(fichero: File, actualizarExistentes = true): Observable<ImportacionColaboradoresResultado> {
     return this.http.post<ImportacionColaboradoresResultado>(
       `${this.adminUrl}/colaboradores/importacion-excel/simulacion`, this.toSingleFileFormData(fichero),
+      { params: { actualizarExistentes } },
     );
   }
 
-  confirmarImportacionColaboradores(fichero: File): Observable<ImportacionColaboradoresResultado> {
+  confirmarImportacionColaboradores(fichero: File, actualizarExistentes = true): Observable<ImportacionColaboradoresResultado> {
     return this.http.post<ImportacionColaboradoresResultado>(
       `${this.adminUrl}/colaboradores/importacion-excel`, this.toSingleFileFormData(fichero),
+      { params: { actualizarExistentes } },
     );
   }
 

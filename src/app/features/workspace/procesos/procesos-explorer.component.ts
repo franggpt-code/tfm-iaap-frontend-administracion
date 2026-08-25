@@ -1,7 +1,7 @@
 import { Component, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
 import { FormsModule, NgForm } from "@angular/forms";
 import { RouterLink } from "@angular/router";
-import { finalize, forkJoin } from "rxjs";
+import { catchError, finalize, forkJoin, map, of } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { Cuerpo, Examen, ExamenCreate, Oep, ProcesoSelectivo, ProcesoSelectivoCreate, TipoAcceso, TipoVinculacion } from "../../../api/sicol.types";
@@ -38,15 +38,14 @@ export class ProcesosExplorerComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly auth = inject(AuthService);
 
-  @ViewChild("examEditorHeading") private examEditorHeading?: ElementRef<HTMLHeadingElement>;
   @ViewChild("deleteExamDialog") private deleteExamDialog?: ElementRef<HTMLDialogElement>;
-  @ViewChild("clearProcessesDialog") private clearProcessesDialog?: ElementRef<HTMLDialogElement>;
 
   readonly canManageProcesos = this.auth.isAdmin;
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly selected = signal<ProcesoSelectivo | null>(null);
   readonly examenes = signal<Examen[]>([]);
+  readonly convocadosCount = signal<Record<string, number>>({});
   readonly oeps = signal<Oep[]>([]);
   readonly accesos = signal<TipoAcceso[]>([]);
   readonly vinculaciones = signal<TipoVinculacion[]>([]);
@@ -55,18 +54,18 @@ export class ProcesosExplorerComponent implements OnInit {
   readonly loadingExamenes = signal(false);
   readonly saving = signal(false);
   readonly deletingExam = signal(false);
-  readonly clearingProcesses = signal(false);
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly search = signal("");
   readonly statusFilter = signal<ProcessStatusFilter>("ACTIVOS");
   readonly processFormOpen = signal(false);
   readonly processFormMode = signal<FormMode>("create");
+  readonly processDrawerExpanded = signal(false);
   readonly examFormOpen = signal(false);
   readonly examFormMode = signal<FormMode>("create");
+  readonly examDrawerExpanded = signal(false);
   readonly editingExamId = signal<string | null>(null);
   readonly deleteExamTarget = signal<Examen | null>(null);
-  readonly cleanupAcknowledged = signal(false);
 
   processForm: ProcessFormValue = this.emptyProcessForm();
   examForm: ExamFormValue = this.emptyExamForm();
@@ -112,6 +111,10 @@ export class ProcesosExplorerComponent implements OnInit {
     return { BORRADOR: "Borrador", PUBLICADO: "Publicado", CERRADO: "Cerrado" }[status];
   }
 
+  tipoAccesoLabel(proceso: ProcesoSelectivo): string {
+    return proceso.tipoAcceso?.descripcion || proceso.tipoAcceso?.codigo || "";
+  }
+
   processCount(filter: ProcessStatusFilter): number {
     if (filter === "TODOS") return this.procesos().length;
     if (filter === "CERRADO") return this.procesos().filter((item) => item.estado === "CERRADO").length;
@@ -131,6 +134,7 @@ export class ProcesosExplorerComponent implements OnInit {
     this.processFormMode.set("create");
     this.processForm = this.emptyProcessForm();
     this.examFormOpen.set(false);
+    this.processDrawerExpanded.set(false);
     this.processFormOpen.set(true);
   }
 
@@ -151,6 +155,7 @@ export class ProcesosExplorerComponent implements OnInit {
       idTipoVinculacion: proceso.tipoVinculacion?.idTipoVinculacion ?? null,
     };
     this.examFormOpen.set(false);
+    this.processDrawerExpanded.set(false);
     this.processFormOpen.set(true);
   }
 
@@ -200,8 +205,8 @@ export class ProcesosExplorerComponent implements OnInit {
     this.editingExamId.set(null);
     this.examForm = { ...this.emptyExamForm(), numeroEjercicio: this.nextExamNumber() };
     this.processFormOpen.set(false);
+    this.examDrawerExpanded.set(false);
     this.examFormOpen.set(true);
-    this.revealExamEditor();
   }
 
   openEditExam(examen: Examen): void {
@@ -216,8 +221,8 @@ export class ProcesosExplorerComponent implements OnInit {
       observaciones: examen.observaciones ?? "",
     };
     this.processFormOpen.set(false);
+    this.examDrawerExpanded.set(false);
     this.examFormOpen.set(true);
-    this.revealExamEditor();
   }
 
   saveExam(form: NgForm): void {
@@ -245,6 +250,15 @@ export class ProcesosExplorerComponent implements OnInit {
     });
   }
 
+  askDeleteCurrentExam(): void {
+    const id = this.editingExamId();
+    if (!id || !this.canManageProcesos()) return;
+    const target = this.examenes().find((item) => item.id === id);
+    if (target) {
+      this.askDeleteExam(target);
+    }
+  }
+
   askDeleteExam(examen: Examen): void {
     if (!this.canManageProcesos()) return;
     this.clearMessages();
@@ -265,6 +279,11 @@ export class ProcesosExplorerComponent implements OnInit {
     this.api.deleteExamen(examen.id).pipe(finalize(() => this.deletingExam.set(false))).subscribe({
       next: () => {
         this.examenes.update((items) => items.filter((item) => item.id !== examen.id));
+        this.convocadosCount.update((counts) => {
+          const updated = { ...counts };
+          delete updated[examen.id];
+          return updated;
+        });
         if (this.editingExamId() === examen.id) this.closeForms();
         this.closeDeleteExam();
         this.success.set("El ejercicio y sus datos operativos se han eliminado.");
@@ -276,40 +295,23 @@ export class ProcesosExplorerComponent implements OnInit {
     });
   }
 
-  askClearAllProcesses(): void {
-    if (!this.canManageProcesos() || !this.procesos().length) return;
-    this.clearMessages();
-    this.cleanupAcknowledged.set(false);
-    this.clearProcessesDialog?.nativeElement.showModal();
+  getConvocadosCount(examenId: string): number {
+    return this.convocadosCount()[examenId] ?? 0;
   }
 
-  closeClearAllProcesses(): void {
-    this.clearProcessesDialog?.nativeElement.close();
-    this.cleanupAcknowledged.set(false);
-  }
-
-  confirmClearAllProcesses(): void {
-    if (!this.cleanupAcknowledged() || this.clearingProcesses()) return;
-    this.clearingProcesses.set(true);
-    this.clearMessages();
-    this.api.deleteAllProcesosForTesting().pipe(finalize(() => this.clearingProcesses.set(false))).subscribe({
-      next: () => {
-        this.closeClearAllProcesses();
-        this.closeForms();
-        this.procesos.set([]);
-        this.selected.set(null);
-        this.examenes.set([]);
-        this.success.set("Se han eliminado todos los procesos y sus datos operativos.");
-      },
-      error: (error: unknown) => {
-        this.closeClearAllProcesses();
-        this.error.set(apiErrorMessage(error));
-      },
-    });
-  }
   closeForms(): void {
     this.processFormOpen.set(false);
     this.examFormOpen.set(false);
+    this.processDrawerExpanded.set(false);
+    this.examDrawerExpanded.set(false);
+  }
+
+  toggleProcessDrawerExpand(): void {
+    this.processDrawerExpanded.update((v) => !v);
+  }
+
+  toggleExamDrawerExpand(): void {
+    this.examDrawerExpanded.update((v) => !v);
   }
 
   formatDate(value?: string): string {
@@ -318,22 +320,38 @@ export class ProcesosExplorerComponent implements OnInit {
 
   private loadExamenes(procesoId: string): void {
     this.examenes.set([]);
+    this.convocadosCount.set({});
     this.loadingExamenes.set(true);
     this.api.listExamenes(procesoId).pipe(finalize(() => this.loadingExamenes.set(false))).subscribe({
-      next: (items) => this.examenes.set(items.sort((a, b) => a.numeroEjercicio - b.numeroEjercicio)),
+      next: (items) => {
+        const sorted = items.sort((a, b) => a.numeroEjercicio - b.numeroEjercicio);
+        this.examenes.set(sorted);
+        this.loadConvocadosCounts(sorted);
+      },
       error: (error: unknown) => this.error.set(apiErrorMessage(error)),
     });
   }
 
-  private revealExamEditor(): void {
-    window.setTimeout(() => {
-      if (!this.examFormOpen()) return;
-      const heading = this.examEditorHeading?.nativeElement;
-      if (!heading) return;
-      heading.focus({ preventScroll: true });
-      heading.scrollIntoView({ behavior: "smooth", block: "start" });
+  private loadConvocadosCounts(examenes: Examen[]): void {
+    if (!examenes.length) {
+      this.convocadosCount.set({});
+      return;
+    }
+    const requests = examenes.map((e) =>
+      this.api.listConvocadosByExamen(e.id).pipe(
+        map((convocados) => ({ examId: e.id, count: convocados.length })),
+        catchError(() => of({ examId: e.id, count: 0 })),
+      ),
+    );
+    forkJoin(requests).subscribe((results) => {
+      const counts: Record<string, number> = {};
+      for (const r of results) {
+        counts[r.examId] = r.count;
+      }
+      this.convocadosCount.set(counts);
     });
   }
+
   private emptyProcessForm(): ProcessFormValue {
     return { nombre: "", codigoSirhus: "", urlWebProceso: "", estado: "BORRADOR", oepIds: [], idTipoAcceso: null, idCuerpo: null, idTipoVinculacion: null };
   }

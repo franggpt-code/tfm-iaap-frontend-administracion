@@ -33,7 +33,12 @@ export class AsignacionesComponent implements OnInit {
   @ViewChild("deleteDialog") private deleteDialog?: ElementRef<HTMLDialogElement>;
 
   readonly selectionMode = signal<SelectionMode>("proceso");
-  readonly viewMode = signal<ViewMode>("tabla");
+  readonly viewMode = signal<ViewMode>("aulas");
+  readonly selectionCollapsed = signal(false);
+  readonly drawerExpanded = signal(false);
+  readonly roomCoverageFilter = signal<"" | "COVERED" | "UNCOVERED">("");
+  readonly roomSearch = signal("");
+
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly proximosEjercicios = signal<CuadroMandoEjercicio[]>([]);
   readonly anterioresEjercicios = signal<CuadroMandoEjercicio[]>([]);
@@ -85,56 +90,146 @@ export class AsignacionesComponent implements OnInit {
   readonly fieldErrors = signal<Record<string, string>>({});
 
   readonly form = this.fb.nonNullable.group({
-    ambito: ["AULA" as "AULA" | "GENERAL"], centro: [""], examenAulaId: [""], colaboradorId: [""], perfilId: [""],
-    subcategoriaGeneral: [""], estadoConfirmacion: ["PENDIENTE" as EstadoConfirmacionAsignacion], horasRealizadas: [null as number | null],
+    ambito: ["AULA" as "AULA" | "GENERAL"],
+    centro: [""],
+    examenAulaId: [""],
+    colaboradorId: [""],
+    perfilId: [""],
+    subcategoriaGeneral: [""],
+    estadoConfirmacion: ["PENDIENTE" as EstadoConfirmacionAsignacion],
+    horasRealizadas: [null as number | null],
   });
 
-  readonly centers = computed(() => [...new Set(this.aulas().map(item => item.centroNombre || "Sin centro"))].sort((a, b) => a.localeCompare(b, "es")));
+  readonly centers = computed(() =>
+    [...new Set(this.aulas().map((item) => item.centroNombre || "Sin centro"))].sort((a, b) =>
+      a.localeCompare(b, "es")
+    )
+  );
+
   readonly availableRooms = computed(() => {
     const center = this.selectedCenter();
     return this.aulas()
-      .filter(item => (item.centroNombre || "Sin centro") === center)
+      .filter((item) => (item.centroNombre || "Sin centro") === center)
       .sort((a, b) => a.aulaNombre.localeCompare(b.aulaNombre, "es", { numeric: true }));
   });
-  readonly selectedExam = computed(() => this.examenes().find(item => item.id === this.selectedExamenId()));
-  readonly quickExercises = computed(() => this.quickExercisePeriod() === "proximos" ? this.proximosEjercicios() : this.anterioresEjercicios());
+
+  readonly selectedExam = computed(() =>
+    this.examenes().find((item) => item.id === this.selectedExamenId())
+  );
+
+  readonly selectedCollaborator = computed(() =>
+    this.colaboradores().find((c) => c.id === this.selectedCollaboratorId())
+  );
+
+  readonly quickExercises = computed(() =>
+    this.quickExercisePeriod() === "proximos"
+      ? this.proximosEjercicios()
+      : this.anterioresEjercicios()
+  );
+
   readonly filteredAssignments = computed(() => {
     const query = this.assignmentSearch().trim().toLocaleLowerCase("es");
     const profile = this.profileFilter();
     const scope = this.scopeFilter();
-    return this.asignaciones().filter(item => {
+    return this.asignaciones().filter((item) => {
       if (profile && item.perfilId !== profile) return false;
       if (scope === "GENERAL" && item.examenAulaId) return false;
       if (scope === "AULA" && !item.examenAulaId) return false;
       if (!query) return true;
-      return [item.colaboradorNombre, item.colaboradorDocumento, item.centroNombre, item.aulaNombre, item.subcategoriaGeneral, item.perfilDenominacion, this.confirmationLabel(item.estadoConfirmacion), item.examenAulaId ? "" : "Ámbito general"]
-        .filter(Boolean).join(" ").toLocaleLowerCase("es").includes(query);
+      return [
+        item.colaboradorNombre,
+        item.colaboradorDocumento,
+        item.centroNombre,
+        item.aulaNombre,
+        item.subcategoriaGeneral,
+        item.perfilDenominacion,
+        this.confirmationLabel(item.estadoConfirmacion),
+        item.examenAulaId ? "" : "Ámbito general",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase("es")
+        .includes(query);
     });
   });
-  readonly allFilteredSelected = computed(() => this.filteredAssignments().length > 0 && this.filteredAssignments().every(item => this.selectedAssignmentIds().has(item.id)));
-  readonly someFilteredSelected = computed(() => this.filteredAssignments().some(item => this.selectedAssignmentIds().has(item.id)));
-  readonly processAssignments = computed(() => this.asignaciones().filter(item => !item.examenAulaId));
-  readonly roomGroups = computed(() => this.aulas().map(aula => ({
-    aula,
-    assignments: this.asignaciones().filter(item => item.examenAulaId === aula.id),
-    responsibleCount: this.asignaciones().filter(item => item.examenAulaId === aula.id && item.perfilCodigo === "RESPONSABLE_DE_AULA").length,
-    convocadosCount: this.convocados().filter(item => item.examenAulaId === aula.id && item.activo).length,
-  })));
+
+  readonly allFilteredSelected = computed(
+    () =>
+      this.filteredAssignments().length > 0 &&
+      this.filteredAssignments().every((item) => this.selectedAssignmentIds().has(item.id))
+  );
+
+  readonly someFilteredSelected = computed(() =>
+    this.filteredAssignments().some((item) => this.selectedAssignmentIds().has(item.id))
+  );
+
+  readonly processAssignments = computed(() =>
+    this.asignaciones().filter((item) => !item.examenAulaId)
+  );
+
+  readonly roomGroups = computed(() =>
+    this.aulas().map((aula) => ({
+      aula,
+      assignments: this.asignaciones().filter((item) => item.examenAulaId === aula.id),
+      responsibleCount: this.asignaciones().filter(
+        (item) => item.examenAulaId === aula.id && item.perfilCodigo === "RESPONSABLE_DE_AULA"
+      ).length,
+      convocadosCount: this.convocados().filter(
+        (item) => item.examenAulaId === aula.id && item.activo
+      ).length,
+    }))
+  );
+
+  readonly filteredRoomGroups = computed(() => {
+    const search = this.roomSearch().trim().toLocaleLowerCase("es");
+    const coverage = this.roomCoverageFilter();
+    return this.roomGroups().filter((group) => {
+      if (coverage === "COVERED" && group.responsibleCount === 0) return false;
+      if (coverage === "UNCOVERED" && group.responsibleCount > 0) return false;
+      if (!search) return true;
+      const matchHeader = [group.aula.aulaNombre, group.aula.centroNombre]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase("es")
+        .includes(search);
+      if (matchHeader) return true;
+      return group.assignments.some((item) =>
+        [item.colaboradorNombre, item.colaboradorDocumento, item.perfilDenominacion]
+          .filter(Boolean)
+          .join(" ")
+          .toLocaleLowerCase("es")
+          .includes(search)
+      );
+    });
+  });
+
   readonly coverage = computed(() => {
     const total = this.aulas().length;
-    const covered = this.roomGroups().filter(item => item.responsibleCount > 0).length;
-    return { total, covered, pending: total - covered, percentage: total ? Math.round(covered * 100 / total) : 0 };
+    const covered = this.roomGroups().filter((item) => item.responsibleCount > 0).length;
+    return {
+      total,
+      covered,
+      pending: total - covered,
+      percentage: total ? Math.round((covered * 100) / total) : 0,
+    };
   });
+
   readonly confirmationSummary = computed(() => ({
     total: this.asignaciones().length,
-    confirmed: this.asignaciones().filter(item => item.estadoConfirmacion === "CONFIRMADA").length,
-    pending: this.asignaciones().filter(item => item.estadoConfirmacion === "PENDIENTE").length,
-    rejected: this.asignaciones().filter(item => item.estadoConfirmacion === "RECHAZADA").length,
+    confirmed: this.asignaciones().filter((item) => item.estadoConfirmacion === "CONFIRMADA").length,
+    pending: this.asignaciones().filter((item) => item.estadoConfirmacion === "PENDIENTE").length,
+    rejected: this.asignaciones().filter((item) => item.estadoConfirmacion === "RECHAZADA").length,
   }));
+
   readonly duplicateCollaborators = computed(() => {
     const grouped = new Map<string, AsignacionColaborador[]>();
-    for (const item of this.asignaciones()) grouped.set(item.colaboradorId, [...(grouped.get(item.colaboradorId) || []), item]);
-    return [...grouped.values()].filter(items => items.length > 1).sort((a, b) => (a[0].colaboradorNombre || "").localeCompare(b[0].colaboradorNombre || "", "es"));
+    for (const item of this.asignaciones())
+      grouped.set(item.colaboradorId, [...(grouped.get(item.colaboradorId) || []), item]);
+    return [...grouped.values()]
+      .filter((items) => items.length > 1)
+      .sort((a, b) =>
+        (a[0].colaboradorNombre || "").localeCompare(b[0].colaboradorNombre || "", "es")
+      );
   });
 
   ngOnInit(): void {
@@ -285,42 +380,97 @@ export class AsignacionesComponent implements OnInit {
   }
 
   selectDateContext(examenId: string): void {
-    const context = this.contextosFecha().find(item => item.examenId === examenId);
+    const context = this.contextosFecha().find((item) => item.examenId === examenId);
     this.selectedExamenId.set(examenId);
     if (context) {
       this.selectedProcesoId.set(context.procesoSelectivoId);
       this.selectedProceso.set(null);
-      this.examenes.set([{ id: context.examenId, procesoSelectivoId: context.procesoSelectivoId, nombre: context.examenNombre, numeroEjercicio: context.numeroEjercicio, fechaHora: context.fechaHora }]);
+      this.examenes.set([
+        {
+          id: context.examenId,
+          procesoSelectivoId: context.procesoSelectivoId,
+          nombre: context.examenNombre,
+          numeroEjercicio: context.numeroEjercicio,
+          fechaHora: context.fechaHora,
+        },
+      ]);
     }
+    if (examenId) this.selectionCollapsed.set(true);
     this.loadAssignments();
   }
 
-  selectExam(examenId: string): void { this.selectedExamenId.set(examenId); this.loadAssignments(); }
+  selectExam(examenId: string): void {
+    this.selectedExamenId.set(examenId);
+    if (examenId) this.selectionCollapsed.set(true);
+    this.loadAssignments();
+  }
+
+  toggleSelectionCollapse(): void {
+    this.selectionCollapsed.update((v) => !v);
+  }
+
+  expandSelection(): void {
+    this.selectionCollapsed.set(false);
+  }
+
+  toggleDrawerExpand(): void {
+    this.drawerExpanded.update((v) => !v);
+  }
 
   loadAssignments(): void {
-    const examId = this.selectedExamenId(); if (!examId) { this.clearAssignments(); return; }
+    const examId = this.selectedExamenId();
+    if (!examId) {
+      this.clearAssignments();
+      return;
+    }
     const requestId = ++this.assignmentLoadRequest;
-    this.contextLoading.set(true); this.closeForm(); this.error.set(null);
-    forkJoin({ aulas: this.api.listExamenAulas(examId), asignaciones: this.api.listAsignaciones(examId), convocados: this.api.listConvocadosByExamen(examId) })
-      .subscribe({
-        next: ({ aulas, asignaciones, convocados }) => {
-          if (requestId !== this.assignmentLoadRequest || examId !== this.selectedExamenId()) return;
-          this.aulas.set(aulas); this.asignaciones.set(asignaciones); this.convocados.set(convocados); this.clearTableSelection(); this.contextLoading.set(false);
-        },
-        error: (error: unknown) => {
-          if (requestId !== this.assignmentLoadRequest || examId !== this.selectedExamenId()) return;
-          this.contextLoading.set(false); this.error.set(apiErrorMessage(error));
-        },
-      });
+    this.contextLoading.set(true);
+    this.closeForm();
+    this.error.set(null);
+    forkJoin({
+      aulas: this.api.listExamenAulas(examId),
+      asignaciones: this.api.listAsignaciones(examId),
+      convocados: this.api.listConvocadosByExamen(examId),
+    }).subscribe({
+      next: ({ aulas, asignaciones, convocados }) => {
+        if (requestId !== this.assignmentLoadRequest || examId !== this.selectedExamenId()) return;
+        this.aulas.set(aulas);
+        this.asignaciones.set(asignaciones);
+        this.convocados.set(convocados);
+        this.clearTableSelection();
+        this.contextLoading.set(false);
+      },
+      error: (error: unknown) => {
+        if (requestId !== this.assignmentLoadRequest || examId !== this.selectedExamenId()) return;
+        this.contextLoading.set(false);
+        this.error.set(apiErrorMessage(error));
+      },
+    });
   }
 
   startCreate(aula?: ExamenAula): void {
-    const ambito = aula ? "AULA" : "GENERAL";
-    const center = aula?.centroNombre || "";
-    this.editing.set(null); this.fieldErrors.set({});
-    this.selectedCenter.set(center); this.resetCollaboratorSearch();
-    this.form.reset({ ambito, centro: center, examenAulaId: aula?.id || "", colaboradorId: "", perfilId: "", subcategoriaGeneral: "", estadoConfirmacion: "PENDIENTE", horasRealizadas: null });
-    this.formOpen.set(true); this.success.set(null);
+    this.startCreateForScope(aula ? "AULA" : "GENERAL", aula);
+  }
+
+  startCreateForScope(scope: "AULA" | "GENERAL", aula?: ExamenAula): void {
+    const center = aula?.centroNombre || (scope === "AULA" ? this.centers()[0] || "" : "");
+    this.editing.set(null);
+    this.fieldErrors.set({});
+    this.selectedCenter.set(center);
+    this.resetCollaboratorSearch();
+    this.form.reset({
+      ambito: scope,
+      centro: center,
+      examenAulaId: aula?.id || "",
+      colaboradorId: "",
+      perfilId: "",
+      subcategoriaGeneral: "",
+      estadoConfirmacion: "PENDIENTE",
+      horasRealizadas: null,
+    });
+    this.formOpen.set(true);
+    this.resetDrawerScroll();
+    this.success.set(null);
   }
 
   startEdit(item: AsignacionColaborador): void {
@@ -331,7 +481,17 @@ export class AsignacionesComponent implements OnInit {
     this.collaboratorQuery.set(`${item.colaboradorNombre ?? "Colaborador"} · ${item.colaboradorDocumento ?? ""}`.trim());
     this.collaboratorResultsOpen.set(false); this.collaboratorSearchError.set(null);
     this.form.reset({ ambito: room ? "AULA" : "GENERAL", centro: room?.centroNombre || "", examenAulaId: item.examenAulaId || "", colaboradorId: item.colaboradorId, perfilId: item.perfilId, subcategoriaGeneral: item.subcategoriaGeneral || "", estadoConfirmacion: item.estadoConfirmacion, horasRealizadas: item.horasRealizadas ?? null });
-    this.ensureCollaboratorOption(item); this.formOpen.set(true); this.success.set(null);
+    this.ensureCollaboratorOption(item);
+    this.formOpen.set(true);
+    this.resetDrawerScroll();
+    this.success.set(null);
+  }
+
+  private resetDrawerScroll(): void {
+    setTimeout(() => {
+      const el = document.querySelector(".drawer-body");
+      if (el) el.scrollTop = 0;
+    }, 0);
   }
 
   closeForm(): void { this.formOpen.set(false); this.editing.set(null); this.fieldErrors.set({}); this.collaboratorResultsOpen.set(false); }

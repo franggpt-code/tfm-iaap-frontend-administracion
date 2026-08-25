@@ -1,4 +1,5 @@
 .portal-page { display: grid; gap: 1.5rem; isolation: isolate; position: relative; z-index: 0; }
+.portal-link-needed { align-items: start; display: grid; gap: .8rem; justify-items: start; }
 .portal-tabs { border-bottom: 1px solid var(--jda-neutral-border); display: flex; gap: .25rem; overflow-x: auto; }
 .portal-tabs button { background: transparent; border: 0; border-bottom: 4px solid transparent; color: #3e4b43; cursor: pointer; font: inherit; font-weight: 700; padding: .75rem 1rem; white-space: nowrap; }
 .portal-tabs button:hover { background: #f1f5f2; color: var(--jda-primary-dark); }

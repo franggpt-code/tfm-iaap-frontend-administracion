@@ -1,103 +1,882 @@
 <div class="page-shell collaborators-page">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Colaboradores</span></nav>
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Colaboradores</span>
+  </nav>
 
   <header class="page-heading">
-    <div><p class="eyebrow">Personal colaborador</p><h1>Colaboradores</h1><p>Gestiona los datos, disponibilidad y perfiles preferidos de las personas que participan en los ejercicios.</p></div>
-    <div class="heading-actions"><button class="button button--secondary" type="button" (click)="openImport()">Importar Excel</button><button class="button button--primary" type="button" (click)="startCreate()">Nuevo colaborador</button></div>
+    <div>
+      <p class="eyebrow">Personal colaborador</p>
+      <h1>Colaboradores</h1>
+      <p>Gestiona los datos, disponibilidad y perfiles preferidos de las personas que participan en los ejercicios.</p>
+    </div>
+    <div class="heading-actions">
+      <button class="button button--secondary" type="button" (click)="openImport()">
+        <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Importar Excel
+      </button>
+      <button class="button button--primary" type="button" (click)="startCreate()">
+        <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nuevo colaborador
+      </button>
+    </div>
   </header>
 
-  @if (error() && !importDiagnostic()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
-  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+  @if (error() && !importDiagnostic()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
+    </div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      <strong>Operación correcta.</strong> {{ success() }}
+    </div>
+  }
 
-  <section class="filter-card" aria-labelledby="filters-title">
-    <div class="filter-card__heading"><div><p class="eyebrow">Localización rápida</p><h2 id="filters-title">Buscar y filtrar</h2></div><span class="result-count">{{ totalElements() }} {{ totalElements() === 1 ? "resultado" : "resultados" }}</span></div>
-    <form class="filters" [formGroup]="filters" (ngSubmit)="search()">
-      <div class="field field--search"><label for="collaborator-search">Nombre, DNI, correo o teléfono</label><input id="collaborator-search" type="search" formControlName="search" placeholder="Ej. Carmen García o 12345678A"></div>
-      <div class="field"><label for="collaborator-state">Estado</label><select id="collaborator-state" formControlName="estado"><option value="">Todos los estados</option>@for (estado of estados; track estado.value) { <option [value]="estado.value">{{ estado.label }}</option> }</select></div>
-      <div class="field"><label for="collaborator-role">Perfil preferido</label><select id="collaborator-role" formControlName="rol"><option value="">Todos los perfiles</option>@for (perfil of perfiles(); track perfil.id) { <option [value]="perfil.codigo">{{ perfil.denominacion }}</option> }</select></div>
-      <div class="filter-actions"><button class="button button--secondary" type="button" (click)="clearFilters()">Limpiar</button><button class="button button--primary" type="submit">Buscar</button></div>
-    </form>
+  <section class="filter-card" aria-labelledby="collab-search-title">
+    <div class="filter-card__heading">
+      <div>
+        <p class="eyebrow">Localización de colaboradores</p>
+        <h2 id="collab-search-title">Buscar y filtrar colaboradores</h2>
+      </div>
+      <span class="result-count" aria-live="polite">
+        {{ totalElements() }} {{ totalElements() === 1 ? "colaborador" : "colaboradores" }}
+      </span>
+    </div>
+
+    <div class="filter-card__body">
+      <div class="filter-main-search">
+        <label for="collab-search" class="visually-hidden">Buscar colaboradores</label>
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            id="collab-search"
+            type="search"
+            placeholder="Buscar por nombre, DNI, correo o teléfono…"
+            [value]="search()"
+            (input)="onSearchChange($any($event.target).value)"
+          >
+          @if (search()) {
+            <button class="search-clear" type="button" aria-label="Limpiar búsqueda" (click)="onSearchChange('')">×</button>
+          }
+        </div>
+        <button
+          class="button button--secondary filter-toggle-btn"
+          type="button"
+          (click)="toggleFilters()"
+          [attr.aria-expanded]="filtersExpanded()"
+          aria-controls="collab-filters"
+        >
+          <svg class="filter-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          {{ filtersExpanded() ? "Ocultar filtros" : activeFiltersCount() ? "Filtros (" + activeFiltersCount() + ")" : "Filtros" }}
+        </button>
+      </div>
+
+      @if (filtersExpanded()) {
+        <div id="collab-filters" class="filters-grid">
+          <div class="field">
+            <label for="filter-estado">Estado</label>
+            <select id="filter-estado" [value]="estadoFilter()" (change)="onEstadoFilterChange($any($event.target).value)">
+              <option value="">Todos los estados</option>
+              @for (estado of estados; track estado.value) {
+                <option [value]="estado.value">{{ estado.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="filter-rol">Perfil preferido</label>
+            <select id="filter-rol" [value]="rolFilter()" (change)="onRolFilterChange($any($event.target).value)">
+              <option value="">Todos los perfiles</option>
+              @for (perfil of perfiles(); track perfil.id) {
+                <option [value]="perfil.codigo">{{ perfil.denominacion }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="filter-provincia">Provincia</label>
+            <select id="filter-provincia" [value]="provinciaFilter()" (change)="onProvinciaFilterChange($any($event.target).value)">
+              <option value="">Todas las provincias</option>
+              @for (prov of provincias; track prov) {
+                <option [value]="prov">{{ prov }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="filter-centro">Centro directivo</label>
+            <select id="filter-centro" [value]="centroDirectivoFilter()" (change)="onCentroDirectivoFilterChange($any($event.target).value)">
+              <option value="">Todos</option>
+              <option value="yes">Pertenece a centro directivo</option>
+              <option value="no">No pertenece</option>
+            </select>
+          </div>
+
+          <div class="filters-actions">
+            <button class="button button--link" type="button" (click)="resetFilters()">Restablecer filtros</button>
+          </div>
+        </div>
+      }
+    </div>
   </section>
 
-  <div class="workspace-layout" [class.workspace-layout--panel]="formOpen() || importOpen()">
-    <section class="list-panel" aria-label="Listado de colaboradores">
-      @if (loading()) { <p class="loading-message">Cargando colaboradores…</p> }
-      @else {
-        @if (colaboradores().length) { <div class="selection-tools"><span>Selección de la página actual</span><button class="button button--link" type="button" (click)="toggleAllVisible(!allVisibleSelected())">{{ allVisibleSelected() ? "Deseleccionar visibles" : "Seleccionar " + colaboradores().length + (colaboradores().length === 1 ? " visible" : " visibles") }}</button></div> }
-        @if (selectedIds().size) {
-          <div class="bulk-toolbar" role="region" aria-label="Acciones sobre colaboradores seleccionados">
-            <div class="bulk-toolbar__summary"><strong>{{ selectedIds().size }} {{ selectedIds().size === 1 ? "persona seleccionada" : "personas seleccionadas" }}</strong><button class="button button--link" type="button" (click)="clearSelection()">Cancelar selección</button></div>
-            <div class="bulk-toolbar__action"><label for="bulk-collaborator-state">Cambiar estado a</label><select id="bulk-collaborator-state" [value]="bulkState()" (change)="bulkState.set($any($event.target).value)"><option value="">Selecciona un estado</option>@for (estado of estados; track estado.value) { <option [value]="estado.value">{{ estado.label }}</option> }</select><button class="button button--primary" type="button" [disabled]="!bulkState() || bulkUpdating()" (click)="applyBulkState()">{{ bulkUpdating() ? "Actualizando…" : "Aplicar cambio" }}</button></div>
+  <!-- Listado principal de colaboradores -->
+  <section class="list-panel" aria-label="Listado de colaboradores">
+    @if (loading()) {
+      <p class="loading-message">Cargando colaboradores…</p>
+    } @else {
+      @if (colaboradores().length) {
+        <div class="selection-tools">
+          <span>Selección de la página actual</span>
+          <button class="button button--link" type="button" (click)="toggleAllVisible(!allVisibleSelected())">
+            {{ allVisibleSelected() ? "Deseleccionar visibles" : "Seleccionar " + colaboradores().length + (colaboradores().length === 1 ? " visible" : " visibles") }}
+          </button>
+        </div>
+      }
+
+      @if (selectedIds().size) {
+        <div class="bulk-toolbar" role="region" aria-label="Acciones sobre colaboradores seleccionados">
+          <div class="bulk-toolbar__summary">
+            <strong>{{ selectedIds().size }} {{ selectedIds().size === 1 ? "persona seleccionada" : "personas seleccionadas" }}</strong>
+            <button class="button button--link" type="button" (click)="clearSelection()">Cancelar selección</button>
+          </div>
+          <div class="bulk-toolbar__action">
+            <label for="bulk-collaborator-state">Cambiar estado a</label>
+            <select id="bulk-collaborator-state" [value]="bulkState()" (change)="bulkState.set($any($event.target).value)">
+              <option value="">Selecciona un estado</option>
+              @for (estado of estados; track estado.value) {
+                <option [value]="estado.value">{{ estado.label }}</option>
+              }
+            </select>
+            <button
+              class="button button--primary"
+              type="button"
+              [disabled]="!bulkState() || bulkUpdating()"
+              (click)="applyBulkState()"
+            >
+              {{ bulkUpdating() ? "Actualizando…" : "Aplicar cambio" }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="table-wrap">
+        <table class="admin-table collaborators-table">
+          <thead>
+            <tr>
+              <th scope="col" class="selection-column">
+                <input
+                  type="checkbox"
+                  aria-label="Seleccionar todos los colaboradores visibles"
+                  [checked]="allVisibleSelected()"
+                  [indeterminate]="someVisibleSelected()"
+                  (change)="toggleAllVisible($any($event.target).checked)"
+                >
+              </th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'colaborador' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('colaborador')">
+                  <span>Colaborador</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'colaborador') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'contacto' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('contacto')">
+                  <span>Contacto</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'contacto') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'ubicacion' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('ubicacion')">
+                  <span>Ubicación</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'ubicacion') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th scope="col">Perfiles preferidos</th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'estado' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('estado')">
+                  <span>Estado</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'estado') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of sortedColaboradores(); track item.id) {
+              <tr [class.is-selected]="isSelected(item.id) || editing()?.id === item.id">
+                <td class="selection-column" data-label="Seleccionar">
+                  <input
+                    type="checkbox"
+                    [attr.aria-label]="'Seleccionar a ' + item.nombreCompleto"
+                    [checked]="isSelected(item.id)"
+                    (change)="toggleSelection(item.id, $any($event.target).checked)"
+                  >
+                </td>
+                <td data-label="Colaborador">
+                  <div class="collab-cell">
+                    <span class="collab-avatar-tag" aria-hidden="true">{{ item.nombreCompleto.slice(0, 2).toUpperCase() }}</span>
+                    <div>
+                      <strong>{{ item.nombreCompleto }}</strong>
+                      <small>{{ item.dni }}{{ item.letra }} · {{ item.sexo === "NO_INFORMA" ? "Sexo no informado" : item.sexo.replaceAll("_", " ") }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Contacto">
+                  <div class="contact-cell">
+                    <a [href]="'mailto:' + item.correoCorporativo" class="contact-email">{{ item.correoCorporativo }}</a>
+                    <small>{{ item.telefono || "Sin teléfono" }}</small>
+                    @if (item.iban) {
+                      <small class="iban-text">{{ item.iban }}</small>
+                    }
+                  </div>
+                </td>
+                <td data-label="Ubicación">
+                  <div class="location-cell">
+                    <span>{{ item.localidad || "Sin localidad" }}</span>
+                    <small>{{ item.provincia || "Sin provincia" }}</small>
+                    @if (item.perteneceCentroDirectivo) {
+                      <span class="centro-tag">Centro directivo</span>
+                    }
+                  </div>
+                </td>
+                <td data-label="Perfiles">
+                  <div class="tag-list">
+                    @for (role of item.rolesPreferidos ?? []; track role) {
+                      <span class="tag">{{ roleLabel(role) }}</span>
+                    } @empty {
+                      <span class="muted">Sin preferencias</span>
+                    }
+                  </div>
+                </td>
+                <td data-label="Estado">
+                  <span class="status" [class]="'status status--' + item.estado.toLowerCase()">
+                    {{ estadoLabel(item.estado) }}
+                  </span>
+                </td>
+                <td data-label="Acciones">
+                  <div class="row-actions">
+                    <button class="button button--link" type="button" (click)="startEdit(item)">Editar</button>
+                    <button class="button button--link danger-link" type="button" (click)="askDelete(item)">Eliminar</button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <strong>No se encontraron colaboradores.</strong>
+                    <span>Prueba con otros criterios de búsqueda o limpia los filtros activos.</span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Barra de Paginación -->
+      <div class="pagination-bar">
+        <div class="pagination-info">
+          @if (totalElements() > 0) {
+            <span>Mostrando <strong>{{ startIndex() }} - {{ endIndex() }}</strong> de <strong>{{ totalElements() }}</strong> {{ totalElements() === 1 ? "colaborador" : "colaboradores" }}</span>
+          } @else {
+            <span>0 colaboradores</span>
+          }
+        </div>
+
+        <div class="pagination-controls">
+          <div class="page-size-selector">
+            <label for="page-size-select">Filas por página:</label>
+            <select
+              id="page-size-select"
+              [value]="pageSize()"
+              (change)="setPageSize($any($event.target).value)"
+            >
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+          </div>
+
+          <div class="pagination-nav">
+            <button
+              class="pagination-btn"
+              type="button"
+              [disabled]="currentPage() <= 1"
+              (click)="setPage(currentPage() - 1)"
+              aria-label="Página anterior"
+              title="Página anterior"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <span class="pagination-current-page">
+              Página <strong>{{ currentPage() }}</strong> de <strong>{{ totalPages() }}</strong>
+            </span>
+
+            <button
+              class="pagination-btn"
+              type="button"
+              [disabled]="currentPage() >= totalPages()"
+              (click)="setPage(currentPage() + 1)"
+              aria-label="Página siguiente"
+              title="Página siguiente"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Panel Lateral derecho (Side Sheet / Drawer): Alta / Edición de Colaborador -->
+  @if (formOpen()) {
+    <div class="drawer-backdrop" (click)="closeForm()" aria-hidden="true"></div>
+    <aside
+      class="collaborator-drawer"
+      [class.is-expanded]="drawerExpanded()"
+      aria-labelledby="collab-form-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="drawer-header">
+        <div class="drawer-header__title">
+          <span class="panel-badge" [class.panel-badge--edit]="editing()">
+            {{ editing() ? "Edición" : "Alta" }}
+          </span>
+          <h2 id="collab-form-title">{{ editing() ? "Editar: " + editing()?.nombreCompleto : "Nuevo colaborador" }}</h2>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            class="drawer-ctrl-btn"
+            type="button"
+            (click)="toggleDrawerExpand()"
+            [attr.aria-label]="drawerExpanded() ? 'Reducir ancho' : 'Expandir ancho'"
+            [title]="drawerExpanded() ? 'Reducir ancho del panel' : 'Expandir ancho del panel'"
+          >
+            @if (drawerExpanded()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            }
+          </button>
+          <button class="drawer-close-btn" type="button" aria-label="Cerrar panel" (click)="closeForm()">×</button>
+        </div>
+      </div>
+
+      <div class="drawer-body">
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate class="collab-editor-form">
+          <!-- Bloque 1: Identificación personal -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">1</span>
+              <span>Identificación personal</span>
+            </legend>
+
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="col-name">
+                  Nombre completo <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="col-name"
+                  type="text"
+                  formControlName="nombreCompleto"
+                  placeholder="Carmen García Martínez"
+                  [attr.aria-invalid]="isFieldInvalid('nombreCompleto')"
+                >
+                @if (isFieldInvalid('nombreCompleto')) {
+                  <span class="field-error" role="alert">{{ getFieldError('nombreCompleto') }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="col-dni">
+                  DNI y Letra <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <div class="dni-input-group">
+                  <input
+                    id="col-dni"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="8"
+                    formControlName="dni"
+                    placeholder="12345678"
+                    class="dni-number-input"
+                    [attr.aria-invalid]="isFieldInvalid('dni')"
+                  >
+                  <span class="dni-separator" aria-hidden="true">-</span>
+                  <input
+                    id="col-letter"
+                    type="text"
+                    maxlength="1"
+                    formControlName="letra"
+                    placeholder="A"
+                    class="dni-letter-input"
+                    aria-label="Letra del DNI"
+                    [attr.aria-invalid]="isFieldInvalid('letra')"
+                  >
+                </div>
+                @if (isFieldInvalid('dni')) {
+                  <span class="field-error" role="alert">{{ getFieldError('dni') }}</span>
+                } @else if (isFieldInvalid('letra')) {
+                  <span class="field-error" role="alert">{{ getFieldError('letra') }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="col-sex">Sexo</label>
+                <select id="col-sex" formControlName="sexo">
+                  <option value="NO_INFORMA">No informa</option>
+                  <option value="MUJER">Mujer</option>
+                  <option value="HOMBRE">Hombre</option>
+                  <option value="NO_BINARIO">No binario</option>
+                </select>
+              </div>
+
+              @if (editing()) {
+                <div class="field field--wide">
+                  <label for="col-state-edit">Estado</label>
+                  <select id="col-state-edit" formControlName="estado">
+                    @for (estado of estados; track estado.value) {
+                      <option [value]="estado.value">{{ estado.label }}</option>
+                    }
+                  </select>
+                </div>
+              }
+            </div>
+          </fieldset>
+
+          <!-- Bloque 2: Contacto y ubicación -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">2</span>
+              <span>Contacto y ubicación</span>
+            </legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="col-email">
+                  Correo corporativo <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="col-email"
+                  type="email"
+                  formControlName="correoCorporativo"
+                  placeholder="carmen.garcia@juntadeandalucia.es"
+                  [attr.aria-invalid]="isFieldInvalid('correoCorporativo')"
+                >
+                @if (isFieldInvalid('correoCorporativo')) {
+                  <span class="field-error" role="alert">{{ getFieldError('correoCorporativo') }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="col-phone">
+                  Teléfono <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="col-phone"
+                  type="tel"
+                  formControlName="telefono"
+                  placeholder="600123456"
+                  [attr.aria-invalid]="isFieldInvalid('telefono')"
+                >
+                @if (isFieldInvalid('telefono')) {
+                  <span class="field-error" role="alert">{{ getFieldError('telefono') }}</span>
+                }
+              </div>
+
+              <div class="field field--wide">
+                <label for="col-iban">
+                  IBAN <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="col-iban"
+                  type="text"
+                  formControlName="iban"
+                  placeholder="ES00 0000 0000 0000 0000 0000"
+                  [attr.aria-invalid]="isFieldInvalid('iban')"
+                >
+                @if (isFieldInvalid('iban')) {
+                  <span class="field-error" role="alert">{{ getFieldError('iban') }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="col-province">Provincia</label>
+                <select id="col-province" formControlName="provincia">
+                  <option value="">— Selecciona provincia —</option>
+                  @for (prov of provincias; track prov) {
+                    <option [value]="prov">{{ prov }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="col-locality">Localidad</label>
+                <input id="col-locality" type="text" formControlName="localidad" placeholder="Ej. Sevilla">
+              </div>
+
+              <label class="checkbox-card field--wide">
+                <input type="checkbox" formControlName="perteneceCentroDirectivo">
+                <div class="checkbox-card__text">
+                  <strong>Pertenece a un centro directivo</strong>
+                  <small>Marca esta opción si forma parte de la estructura administrativa directa.</small>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Bloque 3: Perfiles de colaboración preferidos -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">3</span>
+              <span>Perfiles de colaboración preferidos</span>
+            </legend>
+
+            <div class="roles-selection-grid" [class.roles-selection-grid--expanded]="drawerExpanded()">
+              @for (perfil of perfiles(); track perfil.id) {
+                <label class="role-preference-card" [class.is-checked]="hasRole(perfil.codigo)">
+                  <input
+                    type="checkbox"
+                    [checked]="hasRole(perfil.codigo)"
+                    (change)="toggleRole(perfil.codigo, $any($event.target).checked)"
+                  >
+                  <div class="role-preference-info">
+                    <strong>{{ perfil.denominacion }}</strong>
+                    <span class="role-rate-tag">{{ perfil.importeHora.toLocaleString("es-ES", { minimumFractionDigits: 2 }) }} €/hora</span>
+                  </div>
+                </label>
+              }
+            </div>
+          </fieldset>
+
+          <!-- Bloque 4: Disponibilidad y notas -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">4</span>
+              <span>Disponibilidad y notas</span>
+            </legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="col-from">Disponible desde</label>
+                <input id="col-from" type="date" formControlName="disponibleDesde">
+              </div>
+
+              <div class="field">
+                <label for="col-to">Disponible hasta</label>
+                <input id="col-to" type="date" formControlName="disponibleHasta">
+              </div>
+
+              @if (fieldErrors()["disponibilidad"]) {
+                <span class="field-error field--wide" role="alert">{{ fieldErrors()["disponibilidad"] }}</span>
+              }
+
+              <div class="field field--wide">
+                <label for="col-notes">Observaciones</label>
+                <textarea id="col-notes" rows="3" formControlName="observaciones" placeholder="Notas adicionales o restricciones horarias…"></textarea>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <!-- Pie Fijo del Drawer -->
+      <div class="drawer-footer">
+        <div class="drawer-footer__left">
+          @if (editing(); as item) {
+            <button class="button button--danger" type="button" [disabled]="saving() || deleting()" (click)="askDelete(item)">
+              Eliminar colaborador
+            </button>
+          }
+        </div>
+        <div class="drawer-footer__right">
+          <button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForm()">
+            Cancelar
+          </button>
+          <button class="button button--primary" type="button" [disabled]="saving()" [attr.aria-busy]="saving()" (click)="save()">
+            {{ saving() ? "Guardando…" : editing() ? "Guardar cambios" : "Crear colaborador" }}
+          </button>
+        </div>
+      </div>
+    </aside>
+  }
+
+  <!-- Panel Lateral derecho: Importación Excel -->
+  @if (importOpen()) {
+    <div class="drawer-backdrop" (click)="closeImport()" aria-hidden="true"></div>
+    <aside
+      class="collaborator-drawer import-drawer"
+      [class.is-expanded]="drawerExpanded()"
+      aria-labelledby="import-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="drawer-header">
+        <div class="drawer-header__title">
+          <span class="panel-badge panel-badge--import">Carga masiva</span>
+          <h2 id="import-title">Importar desde Excel</h2>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            class="drawer-ctrl-btn"
+            type="button"
+            (click)="toggleDrawerExpand()"
+            [attr.aria-label]="drawerExpanded() ? 'Reducir ancho' : 'Expandir ancho'"
+            [title]="drawerExpanded() ? 'Reducir ancho del panel' : 'Expandir ancho del panel'"
+          >
+            @if (drawerExpanded()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            }
+          </button>
+          <button class="drawer-close-btn" type="button" aria-label="Cerrar importación" (click)="closeImport()">×</button>
+        </div>
+      </div>
+
+      <div class="drawer-body">
+        <p class="import-intro">Descarga la plantilla, completa una fila por persona y valida el fichero antes de importarlo al sistema.</p>
+
+        <div class="template-download">
+          <span class="template-download__icon" aria-hidden="true">XLSX</span>
+          <div>
+            <strong>Plantilla oficial de colaboradores</strong>
+            <small>Incluye cabeceras validadas, instrucciones de formato y filas de ejemplo.</small>
+          </div>
+          <a href="assets/plantillas/outputs/01a0116c-9f8f-7e81-ab9e-3ea6d9352e40/plantilla_colaboradores.xlsx" download="plantilla_colaboradores.xlsx">
+            Descargar plantilla
+          </a>
+        </div>
+
+        <div class="import-separator">
+          <span>Seleccionar fichero</span>
+        </div>
+
+        <label
+          class="file-drop"
+          [class.file-drop--active]="fileDragging()"
+          [class.file-drop--selected]="!!selectedFile()"
+          (dragover)="onFileDragOver($event)"
+          (dragleave)="onFileDragLeave($event)"
+          (drop)="onFileDrop($event)"
+        >
+          <input #importFileInput type="file" accept=".xlsx,.xls,.xlsm" [disabled]="importBusy()" (change)="selectFile($event)">
+          <span class="file-drop__icon" aria-hidden="true">{{ selectedFile() ? "✓" : "XLS" }}</span>
+          @if (selectedFile(); as file) {
+            <strong>{{ file.name }}</strong>
+            <small>{{ fileSize(file) }} · Pulsa o arrastra otro fichero para sustituirlo</small>
+          } @else {
+            <strong>Arrastra aquí el fichero Excel</strong>
+            <small>o pulsa para seleccionarlo · XLSX, XLS o XLSM</small>
+          }
+        </label>
+
+        @if (selectedFile()) {
+          <div class="selected-file-actions">
+            <span>Fichero preparado para validar</span>
+            <button class="button button--link" type="button" [disabled]="importBusy()" (click)="removeSelectedFile()">Quitar</button>
           </div>
         }
-        <div class="table-wrap"><table class="admin-table collaborators-table">
-          <thead><tr><th class="selection-column"><input type="checkbox" aria-label="Seleccionar todos los colaboradores visibles" [checked]="allVisibleSelected()" [indeterminate]="someVisibleSelected()" (change)="toggleAllVisible($any($event.target).checked)"></th><th>Colaborador</th><th>Contacto</th><th>Ubicación</th><th>Perfiles preferidos</th><th>Estado</th><th>Acciones</th></tr></thead>
-          <tbody>
-            @for (item of colaboradores(); track item.id) {
-              <tr [class.is-selected]="isSelected(item.id)">
-                <td class="selection-column" data-label="Seleccionar"><input type="checkbox" [attr.aria-label]="'Seleccionar a ' + item.nombreCompleto" [checked]="isSelected(item.id)" (change)="toggleSelection(item.id, $any($event.target).checked)"></td>
-                <td data-label="Colaborador"><strong>{{ item.nombreCompleto }}</strong><small>{{ item.dni }}{{ item.letra }} · {{ item.sexo === "NO_INFORMA" ? "Sexo no informado" : item.sexo.replaceAll("_", " ") }}</small></td>
-                <td data-label="Contacto"><span>{{ item.correoCorporativo }}</span><small>{{ item.telefono || "Sin teléfono" }}</small></td>
-                <td data-label="Ubicación"><span>{{ item.localidad || "Sin localidad" }}</span><small>{{ item.provincia || "Sin provincia" }}@if (item.perteneceCentroDirectivo) { · Centro directivo }</small></td>
-                <td data-label="Perfiles"><div class="tag-list">@for (role of item.rolesPreferidos ?? []; track role) { <span class="tag">{{ roleLabel(role) }}</span> } @empty { <span class="muted">Sin preferencias</span> }</div></td>
-                <td data-label="Estado"><span class="status" [class]="'status status--' + item.estado.toLowerCase()">{{ estadoLabel(item.estado) }}</span></td>
-                <td data-label="Acciones"><div class="row-actions"><button class="button button--link" type="button" (click)="startEdit(item)">Editar</button><button class="button button--link danger-link" type="button" (click)="askDelete(item)">Eliminar</button></div></td>
-              </tr>
-            } @empty { <tr><td colspan="7"><div class="empty-state"><strong>No hay colaboradores que coincidan.</strong><span>Modifica los filtros o crea un nuevo colaborador.</span></div></td></tr> }
-          </tbody>
-        </table></div>
-        @if (totalPages() > 1) { <nav class="pagination" aria-label="Paginación"><button class="button button--secondary" type="button" [disabled]="page() === 0" (click)="previousPage()">Anterior</button><span>Página <strong>{{ page() + 1 }}</strong> de {{ totalPages() }}</span><button class="button button--secondary" type="button" [disabled]="page() + 1 >= totalPages()" (click)="nextPage()">Siguiente</button></nav> }
-      }
-    </section>
 
-    @if (formOpen()) {
-      <aside class="side-panel" aria-labelledby="collaborator-form-title">
-        <div class="panel-header"><div><p class="eyebrow">{{ editing() ? "Edición" : "Alta" }}</p><h2 id="collaborator-form-title">{{ editing() ? "Editar colaborador" : "Nuevo colaborador" }}</h2></div><button class="panel-close" type="button" aria-label="Cerrar formulario" (click)="closeForm()">×</button></div>
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <fieldset><legend>Identificación</legend><div class="form-grid form-grid--document">
-            <div class="field"><label for="col-dni">DNI *</label><input id="col-dni" inputmode="numeric" maxlength="8" formControlName="dni" [attr.aria-invalid]="!!fieldErrors()['dni']">@if (fieldErrors()["dni"]) { <span class="field-error">{{ fieldErrors()["dni"] }}</span> }</div>
-            <div class="field"><label for="col-letter">Letra *</label><input id="col-letter" maxlength="1" formControlName="letra" [attr.aria-invalid]="!!fieldErrors()['letra']">@if (fieldErrors()["letra"]) { <span class="field-error">{{ fieldErrors()["letra"] }}</span> }</div>
-            <div class="field field--wide"><label for="col-name">Nombre completo *</label><input id="col-name" formControlName="nombreCompleto" [attr.aria-invalid]="!!fieldErrors()['nombreCompleto']">@if (fieldErrors()["nombreCompleto"]) { <span class="field-error">{{ fieldErrors()["nombreCompleto"] }}</span> }</div>
-            <div class="field"><label for="col-sex">Sexo</label><select id="col-sex" formControlName="sexo"><option value="NO_INFORMA">No informa</option><option value="MUJER">Mujer</option><option value="HOMBRE">Hombre</option><option value="NO_BINARIO">No binario</option></select></div>
-            @if (editing()) { <div class="field"><label for="col-state-edit">Estado</label><select id="col-state-edit" formControlName="estado">@for (estado of estados; track estado.value) { <option [value]="estado.value">{{ estado.label }}</option> }</select></div> }
-          </div></fieldset>
-          <fieldset><legend>Contacto y destino</legend><div class="form-grid">
-            <div class="field"><label for="col-email">Correo corporativo *</label><input id="col-email" type="email" formControlName="correoCorporativo" [attr.aria-invalid]="!!fieldErrors()['correoCorporativo']">@if (fieldErrors()["correoCorporativo"]) { <span class="field-error">{{ fieldErrors()["correoCorporativo"] }}</span> }</div>
-            <div class="field"><label for="col-phone">Teléfono *</label><input id="col-phone" type="tel" formControlName="telefono" [attr.aria-invalid]="!!fieldErrors()['telefono']">@if (fieldErrors()["telefono"]) { <span class="field-error">{{ fieldErrors()["telefono"] }}</span> }</div>
-            <div class="field field--wide"><label for="col-iban">IBAN *</label><input id="col-iban" formControlName="iban" [attr.aria-invalid]="!!fieldErrors()['iban']">@if (fieldErrors()["iban"]) { <span class="field-error">{{ fieldErrors()["iban"] }}</span> }</div>
-            <div class="field"><label for="col-province">Provincia</label><input id="col-province" formControlName="provincia"></div><div class="field"><label for="col-locality">Localidad</label><input id="col-locality" formControlName="localidad"></div>
-            <label class="checkbox-field field--wide"><input type="checkbox" formControlName="perteneceCentroDirectivo"><span><strong>Pertenece a un centro directivo</strong><small>Marca esta opción si forma parte de la estructura administrativa.</small></span></label>
-          </div></fieldset>
-          <fieldset><legend>Preferencias y disponibilidad</legend>
-            <div class="roles-grid">@for (perfil of perfiles(); track perfil.id) { <label class="role-option"><input type="checkbox" [checked]="hasRole(perfil.codigo)" (change)="toggleRole(perfil.codigo, $any($event.target).checked)"><span><strong>{{ perfil.denominacion }}</strong><small>{{ perfil.importeHora.toLocaleString("es-ES", { minimumFractionDigits: 2 }) }} €/hora</small></span></label> }</div>
-            <div class="form-grid availability"><div class="field"><label for="col-from">Disponible desde</label><input id="col-from" type="date" formControlName="disponibleDesde"></div><div class="field"><label for="col-to">Disponible hasta</label><input id="col-to" type="date" formControlName="disponibleHasta"></div>@if (fieldErrors()["disponibilidad"]) { <span class="field-error field--wide">{{ fieldErrors()["disponibilidad"] }}</span> }</div>
-            <div class="field"><label for="col-notes">Observaciones</label><textarea id="col-notes" rows="3" formControlName="observaciones"></textarea></div>
-          </fieldset>
-          <div class="form-actions"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()" [attr.aria-busy]="saving()">{{ saving() ? "Guardando…" : "Guardar colaborador" }}</button></div>
-        </form>
-      </aside>
-    }
-
-    @if (importOpen()) {
-      <aside class="side-panel import-panel" aria-labelledby="import-title">
-        <div class="panel-header"><div><p class="eyebrow">Carga masiva</p><h2 id="import-title">Importar desde Excel</h2></div><button class="panel-close" type="button" aria-label="Cerrar importación" (click)="closeImport()">×</button></div>
-        <p class="import-intro">Descarga la plantilla, completa una fila por persona y valida el fichero antes de importarlo.</p>
-        <div class="template-download"><span class="template-download__icon" aria-hidden="true">XLSX</span><div><strong>Plantilla de colaboradores</strong><small>Incluye las cabeceras, instrucciones y una fila ficticia de ejemplo.</small></div><a href="assets/plantillas/outputs/01a0116c-9f8f-7e81-ab9e-3ea6d9352e40/plantilla_colaboradores.xlsx" download="plantilla_colaboradores.xlsx">Descargar plantilla</a></div>
-        <div class="import-separator"><span>Después</span></div>
-        <label class="file-drop" [class.file-drop--active]="fileDragging()" [class.file-drop--selected]="!!selectedFile()" (dragover)="onFileDragOver($event)" (dragleave)="onFileDragLeave($event)" (drop)="onFileDrop($event)"><input #importFileInput type="file" accept=".xlsx,.xls,.xlsm" [disabled]="importBusy()" (change)="selectFile($event)"><span class="file-drop__icon" aria-hidden="true">{{ selectedFile() ? "✓" : "XLS" }}</span>@if (selectedFile(); as file) { <strong>{{ file.name }}</strong><small>{{ fileSize(file) }} · Pulsa o arrastra otro fichero para sustituirlo</small> } @else { <strong>Arrastra aquí el fichero Excel</strong><small>o pulsa para seleccionarlo · XLSX, XLS o XLSM</small> }</label>
-        @if (selectedFile()) { <div class="selected-file-actions"><span>Fichero preparado para validar</span><button class="button button--link" type="button" [disabled]="importBusy()" (click)="removeSelectedFile()">Quitar</button></div> }
-        @if (importFileError()) { <span class="field-error import-file-error" role="alert">{{ importFileError() }}</span> }
-        @if (importDiagnostic(); as diagnostic) { <app-import-error-panel [diagnostic]="diagnostic" /> }
-        <button class="button full-button" [class.button--primary]="!importResult()" [class.button--secondary]="!!importResult()" type="button" [disabled]="!selectedFile() || importBusy()" (click)="simulateImport()">{{ importBusy() ? "Analizando…" : importResult() ? "Validar de nuevo" : "Validar fichero" }}</button>
-        @if (importResult(); as result) {
-          <section class="import-summary" aria-live="polite"><h3>Resultado de la validación</h3><div class="summary-metrics"><div><strong>{{ result.totalFilas }}</strong><span>Filas</span></div><div class="metric--ok"><strong>{{ result.filasValidas }}</strong><span>Válidas</span></div><div class="metric--warning"><strong>{{ result.omitidos }}</strong><span>Omitidas</span></div></div>
-            @if (result.avisos.length) { <details><summary>Ver avisos ({{ result.avisos.length }})</summary><ul>@for (warning of result.avisos; track warning) { <li>{{ warning }}</li> }</ul></details> }
-          </section>
-          @if (result.creados === 0) { <button class="button button--primary full-button" type="button" [disabled]="!result.filasValidas || importBusy()" (click)="confirmImport()">{{ importBusy() ? "Importando…" : "Importar " + result.filasValidas + " colaboradores" }}</button> }
+        @if (importFileError()) {
+          <span class="field-error import-file-error" role="alert">{{ importFileError() }}</span>
         }
-      </aside>
-    }
-  </div>
+
+        <label class="import-update-choice">
+          <input type="checkbox" [checked]="actualizarExistentes()" [disabled]="importBusy()" (change)="setActualizarExistentes($any($event.target).checked)">
+          <span>
+            <strong>Actualizar colaboradores ya existentes</strong>
+            <small>Activado por defecto. Si lo desmarcas, las fichas existentes no se modificarán.</small>
+          </span>
+        </label>
+
+        @if (importDiagnostic(); as diagnostic) {
+          <app-import-error-panel [diagnostic]="diagnostic" />
+        }
+
+        @if (importResult(); as result) {
+          <section class="import-summary" aria-live="polite">
+            <h3>Resultado de la validación</h3>
+            <div class="summary-metrics">
+              <div>
+                <strong>{{ result.totalFilas }}</strong>
+                <span>Filas</span>
+              </div>
+              <div class="metric--ok">
+                <strong>{{ result.filasValidas }}</strong>
+                <span>Válidas</span>
+              </div>
+              <div>
+                <strong>{{ result.existentes }}</strong>
+                <span>Ya existentes</span>
+              </div>
+              <div class="metric--warning">
+                <strong>{{ result.omitidos }}</strong>
+                <span>Omitidas</span>
+              </div>
+            </div>
+            @if (result.avisos.length) {
+              <details>
+                <summary>Ver avisos ({{ result.avisos.length }})</summary>
+                <ul>
+                  @for (warning of result.avisos; track warning) {
+                    <li>{{ warning }}</li>
+                  }
+                </ul>
+              </details>
+            }
+          </section>
+        }
+      </div>
+
+      <div class="drawer-footer">
+        <button class="button button--secondary" type="button" [disabled]="importBusy()" (click)="closeImport()">
+          Cerrar
+        </button>
+        @if (!importResult() || importResult()?.filasValidas === 0) {
+          <button
+            class="button button--primary"
+            type="button"
+            [disabled]="!selectedFile() || importBusy()"
+            [attr.aria-busy]="importBusy()"
+            (click)="simulateImport()"
+          >
+            {{ importBusy() ? "Analizando…" : "Validar fichero" }}
+          </button>
+        } @else {
+          <button
+            class="button button--primary"
+            type="button"
+            [disabled]="importBusy()"
+            [attr.aria-busy]="importBusy()"
+            (click)="confirmImport()"
+          >
+            {{ importBusy() ? "Importando…" : "Importar " + importResult()?.filasValidas + " colaboradores" }}
+          </button>
+        }
+      </div>
+    </aside>
+  }
 </div>
 
-<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-collaborator-title"><form method="dialog"><p class="eyebrow">Confirmación necesaria</p><h2 id="delete-collaborator-title">¿Eliminar este colaborador?</h2>@if (deleteTarget(); as item) { <p>Se eliminará a <strong>{{ item.nombreCompleto }}</strong> ({{ item.dni }}{{ item.letra }}).</p> }<p>Si tiene asignaciones, el sistema protegerá sus relaciones operativas.</p><div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">Cancelar</button><button class="button button--danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">{{ deleting() ? "Eliminando…" : "Eliminar" }}</button></div></form></dialog>
+<!-- Diálogo de Confirmación de Eliminación -->
+<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-collaborator-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación necesaria</p>
+    <h2 id="delete-collaborator-title">¿Eliminar este colaborador?</h2>
+    @if (deleteTarget(); as item) {
+      <p>Se eliminará la ficha de <strong>{{ item.nombreCompleto }}</strong> ({{ item.dni }}{{ item.letra }}).</p>
+    }
+    <p class="dialog-warning">Si el colaborador cuenta con asignaciones operativas o asistencias, el sistema preservará su integridad.</p>
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">
+        {{ deleting() ? "Eliminando…" : "Eliminar colaborador" }}
+      </button>
+    </div>
+  </form>
+</dialog>

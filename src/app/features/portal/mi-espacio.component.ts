@@ -6,6 +6,7 @@ import { finalize, forkJoin } from "rxjs";
 import { apiErrorMessage } from "../../api/api-error";
 import { SicolApiClient } from "../../api/sicol-api-client.service";
 import { AsignacionColaborador, Colaborador, ColaboradorPortalPatch, EstadoConfirmacionAsignacion } from "../../api/sicol.types";
+import { AuthService } from "../../core/auth.service";
 
 type MiEspacioSection = "datos" | "proximas" | "historico";
 
@@ -18,10 +19,13 @@ type MiEspacioSection = "datos" | "proximas" | "historico";
 export class MiEspacioComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
 
   readonly perfil = signal<Colaborador | null>(null);
   readonly asignaciones = signal<AsignacionColaborador[]>([]);
   readonly loading = signal(true);
+  readonly missingCollaboratorLink = signal(false);
+  readonly canManageUsers = this.auth.isAdmin;
   readonly saving = signal(false);
   readonly pending = signal(new Set<string>());
   readonly error = signal<string | null>(null);
@@ -47,6 +51,11 @@ export class MiEspacioComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    if (!this.auth.user()?.colaboradorId) {
+      this.missingCollaboratorLink.set(true);
+      this.loading.set(false);
+      return;
+    }
     forkJoin({ perfil: this.api.getMiPerfil(), asignaciones: this.api.listMisAsignaciones() })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
