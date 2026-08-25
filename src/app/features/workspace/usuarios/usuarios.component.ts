@@ -127,7 +127,7 @@ export class UsuariosComponent implements OnInit {
       activo: value.activo,
       ldapBypass: value.ldapBypass,
       roles: [value.role],
-      colaboradorId: value.role === "COLABORADOR" ? value.colaboradorId : null,
+      colaboradorId: value.colaboradorId || null,
       ...(value.passwordLocal.trim() ? { passwordLocal: value.passwordLocal.trim() } : {}),
     };
     const current = this.editing();
