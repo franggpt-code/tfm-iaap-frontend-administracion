@@ -53,6 +53,21 @@ describe("SicolApiClient", () => {
     request.flush({ ...result(false), importacionId: "i1" });
   });
 
+
+  it("envía las asignaciones históricas como multipart con proceso y examen", () => {
+    const fichero = new File(["asignaciones"], "asignaciones.xlsx");
+    service.simularImportacionAsignacionesHistoricas("p1", "e1", fichero).subscribe();
+
+    const request = http.expectOne("/api/sicol/admin/importaciones/asignaciones-historicas/simulacion");
+    expect(request.request.method).toBe("POST");
+    expect(request.request.headers.has("Content-Type")).toBeFalse();
+    const body = request.request.body as FormData;
+    expect(body.get("procesoSelectivoId")).toBe("p1");
+    expect(body.get("examenId")).toBe("e1");
+    expect(body.get("fichero")).toBe(fichero);
+    request.flush({ simulacion: true, filasLeidas: 1, filasValidas: 1, asignacionesCreadas: 1,
+      asignacionesActualizadas: 0, horasInformadas: 0, ambitosGenerales: 0, filasOmitidas: 0, avisos: [] });
+  });
   it("envía el Datamart como multipart con el campo fichero", () => {
     const fichero = new File(["datamart"], "seguimiento-convocatorias.xls", { type: "application/vnd.ms-excel" });
     service.simularImportacionDatamart(fichero).subscribe();
