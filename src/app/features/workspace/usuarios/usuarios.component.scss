@@ -21,6 +21,8 @@
 .users-layout--editing { grid-template-columns: minmax(0, 1fr) minmax(330px, 400px); }
 .users-table-wrap { min-width: 0; overflow-x: auto; }
 .users-table td small { color: #5a6760; display: block; margin-top: .2rem; }
+.users-table .row-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem .9rem; }
+.users-table .row-actions .button { min-height: 36px; padding-inline: .2rem; }
 .user-form-panel { align-self: start; background: #fff; border: 1px solid var(--jda-neutral-border); border-top: 4px solid var(--jda-primary); border-radius: 6px; padding: 1.25rem; position: sticky; top: 1rem; }
 .user-form-panel h2 { margin: 0; }
 .user-form-panel form { display: grid; gap: 1rem; }
@@ -43,4 +45,5 @@
 }
 @media (max-width: 480px) {
   .filter-panel__options { grid-template-columns: 1fr; }
+  .users-table .row-actions { align-items: flex-start; flex-direction: column; gap: .25rem; }
 }
