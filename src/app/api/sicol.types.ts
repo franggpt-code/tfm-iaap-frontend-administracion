@@ -38,6 +38,7 @@ export type SexoColaborador = components["schemas"]["SexoColaborador"];
 export type PerfilColaboracion = components["schemas"]["PerfilColaboracion"];
 export type PerfilColaboracionCreateUpdate = components["schemas"]["PerfilColaboracionCreateUpdate"];
 export type ImportacionColaboradoresResultado = components["schemas"]["ImportacionColaboradoresResultado"];
+export type ImportacionAsignacionesHistoricasResultado = components["schemas"]["ImportacionAsignacionesHistoricasResultado"];
 export type AsignacionColaborador = components["schemas"]["AsignacionColaborador"];
 export type AsignacionColaboradorCreate = components["schemas"]["AsignacionColaboradorCreate"];
 export type AsignacionColaboradorPatch = components["schemas"]["AsignacionColaboradorPatch"];

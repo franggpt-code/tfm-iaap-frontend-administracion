@@ -1188,6 +1188,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/importaciones/asignaciones-historicas/simulacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["simularImportacionAsignacionesHistoricas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/importaciones/asignaciones-historicas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarImportacionAsignacionesHistoricas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/portal/mi-perfil": {
         parameters: {
             query?: never;
@@ -2521,6 +2553,22 @@ export interface components {
             filasCaronteNoUtilizadas: number;
             convocadosPreviosNoIncluidos: number;
             avisos: components["schemas"]["ImportacionOpositoresAulasAviso"][];
+        };
+        ImportacionAsignacionesHistoricasAviso: {
+            fila: number;
+            campo: string;
+            mensaje: string;
+        };
+        ImportacionAsignacionesHistoricasResultado: {
+            simulacion: boolean;
+            filasLeidas: number;
+            filasValidas: number;
+            asignacionesCreadas: number;
+            asignacionesActualizadas: number;
+            horasInformadas: number;
+            ambitosGenerales: number;
+            filasOmitidas: number;
+            avisos: components["schemas"]["ImportacionAsignacionesHistoricasAviso"][];
         };
         /** @description Envoltorio homogéneo de error para toda la API. */
         Error: {
@@ -5269,6 +5317,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportacionOpositoresAulasResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    simularImportacionAsignacionesHistoricas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: uuid */
+                    procesoSelectivoId: string;
+                    /** Format: uuid */
+                    examenId: string;
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Simulacion sin cambios en base de datos */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionAsignacionesHistoricasResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    confirmarImportacionAsignacionesHistoricas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: uuid */
+                    procesoSelectivoId: string;
+                    /** Format: uuid */
+                    examenId: string;
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Importacion persistida con las asignaciones confirmadas */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportacionAsignacionesHistoricasResultado"];
                 };
             };
             400: components["responses"]["BadRequest"];

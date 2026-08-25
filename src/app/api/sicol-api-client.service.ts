@@ -36,6 +36,7 @@ import {
   PerfilColaboracion,
   PerfilColaboracionCreateUpdate,
   ImportacionColaboradoresResultado,
+  ImportacionAsignacionesHistoricasResultado,
   AsignacionColaborador,
   AsignacionColaboradorCreate,
   AsignacionColaboradorPatch,
@@ -234,6 +235,24 @@ export class SicolApiClient {
     );
   }
 
+
+  simularImportacionAsignacionesHistoricas(
+    procesoSelectivoId: string, examenId: string, fichero: File,
+  ): Observable<ImportacionAsignacionesHistoricasResultado> {
+    return this.http.post<ImportacionAsignacionesHistoricasResultado>(
+      `${this.adminUrl}/importaciones/asignaciones-historicas/simulacion`,
+      this.toAsignacionesHistoricasFormData(procesoSelectivoId, examenId, fichero),
+    );
+  }
+
+  confirmarImportacionAsignacionesHistoricas(
+    procesoSelectivoId: string, examenId: string, fichero: File,
+  ): Observable<ImportacionAsignacionesHistoricasResultado> {
+    return this.http.post<ImportacionAsignacionesHistoricasResultado>(
+      `${this.adminUrl}/importaciones/asignaciones-historicas`,
+      this.toAsignacionesHistoricasFormData(procesoSelectivoId, examenId, fichero),
+    );
+  }
   simularImportacionDatamart(fichero: File): Observable<ImportacionDatamartResultado> {
     return this.http.post<ImportacionDatamartResultado>(
       `${this.adminUrl}/importaciones/datamart-convocatorias/simulacion`,
@@ -416,6 +435,14 @@ export class SicolApiClient {
     return formData;
   }
 
+
+  private toAsignacionesHistoricasFormData(procesoSelectivoId: string, examenId: string, fichero: File): FormData {
+    const formData = new FormData();
+    formData.append("procesoSelectivoId", procesoSelectivoId);
+    formData.append("examenId", examenId);
+    formData.append("fichero", fichero);
+    return formData;
+  }
   private toSingleFileFormData(fichero: File): FormData {
     const formData = new FormData();
     formData.append("fichero", fichero);
