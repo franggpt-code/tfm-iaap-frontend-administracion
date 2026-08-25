@@ -1,27 +1,74 @@
-<div class="page-shell page-shell--narrow">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Importaciones</span></nav>
+<div class="page-shell importaciones-page">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Importaciones</span>
+  </nav>
 
   <header class="page-heading">
-    <div><p class="eyebrow">Carga de datos</p><h1>Importaciones</h1><p>Selecciona el tipo de información que necesitas incorporar. Todos los procesos permiten revisar una simulación antes de guardar cambios.</p></div>
+    <div>
+      <p class="eyebrow">Carga masiva de datos</p>
+      <h1>Importaciones</h1>
+    </div>
   </header>
 
-  <div class="import-options">
-    <a class="import-option import-option--primary" routerLink="/admin/importaciones/convocatorias">
-      <span class="import-option__step">01</span>
-      <div><p class="eyebrow">Datamart de seguimiento</p><h2>Convocatorias</h2><p>Crea o actualiza procesos selectivos, OEP, ejercicios y pruebas desde el informe `.xls` del Datamart.</p></div>
-      <span class="import-option__action">Abrir importador <span aria-hidden="true">→</span></span>
+  <div class="import-grid">
+    <!-- Tarjeta 1: Convocatorias -->
+    <a class="import-card" routerLink="/admin/importaciones/convocatorias">
+      <div class="import-card__top">
+        <span class="import-card__step">01</span>
+        <span class="format-chip">Datamart .xls</span>
+      </div>
+      <div class="import-card__body">
+        <h2>Convocatorias</h2>
+        <p>Crea o actualiza procesos selectivos, OEP, ejercicios y pruebas.</p>
+      </div>
+      <div class="import-card__footer">
+        <span class="action-text">Abrir importador</span>
+        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
     </a>
 
-    <a class="import-option" routerLink="/admin/importaciones/opositores-aulas">
-      <span class="import-option__step">02</span>
-      <div><p class="eyebrow">Distribución por ejercicio</p><h2>Convocados y aulas</h2><p>Asigna personas convocadas, centros y aulas mediante los ficheros SIRHUS y Caronte.</p></div>
-      <span class="import-option__action">Abrir importador <span aria-hidden="true">→</span></span>
+    <!-- Tarjeta 2: Convocados y aulas -->
+    <a class="import-card" routerLink="/admin/importaciones/opositores-aulas">
+      <div class="import-card__top">
+        <span class="import-card__step">02</span>
+        <span class="format-chip">SIRHUS / Caronte</span>
+      </div>
+      <div class="import-card__body">
+        <h2>Convocados y aulas</h2>
+        <p>Asigna personas convocadas, centros y aulas por ejercicio.</p>
+      </div>
+      <div class="import-card__footer">
+        <span class="action-text">Abrir importador</span>
+        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
     </a>
 
-    <a class="import-option" routerLink="/admin/importaciones/colaboradores">
-      <span class="import-option__step">03</span>
-      <div><p class="eyebrow">Personal colaborador</p><h2>Colaboradores</h2><p>Da de alta o actualiza fichas desde Excel y crea los accesos LDAP necesarios.</p></div>
-      <span class="import-option__action">Abrir importador <span aria-hidden="true">→</span></span>
+    <!-- Tarjeta 3: Colaboradores -->
+    <a class="import-card" routerLink="/admin/importaciones/colaboradores">
+      <div class="import-card__top">
+        <span class="import-card__step">03</span>
+        <span class="format-chip">Excel / LDAP</span>
+      </div>
+      <div class="import-card__body">
+        <h2>Colaboradores</h2>
+        <p>Da de alta o actualiza personal colaborador y accesos.</p>
+      </div>
+      <div class="import-card__footer">
+        <span class="action-text">Abrir importador</span>
+        <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </div>
     </a>
   </div>
 </div>
+

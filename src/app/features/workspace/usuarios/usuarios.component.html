@@ -1,63 +1,721 @@
-<div class="page-shell">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Usuarios y permisos</span></nav>
+<div class="page-shell users-page">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Usuarios y permisos</span>
+  </nav>
+
   <header class="page-heading">
-    <div><p class="eyebrow">Administración de acceso</p><div class="title-with-info"><h1>Usuarios y permisos</h1><button class="info-button" type="button" aria-label="Consultar información sobre los perfiles de aplicación" (click)="openProfilesInfo()">i</button></div><p>Asigna a cada usuario un perfil de aplicación y, cuando corresponda, vincúlalo con su ficha de colaborador.</p></div>
-    <button class="button button--primary" type="button" (click)="startCreate()">Nuevo usuario</button>
+    <div>
+      <p class="eyebrow">Administración de acceso</p>
+      <div class="title-with-info">
+        <h1>Usuarios y permisos</h1>
+        <button class="info-button" type="button" aria-label="Consultar información sobre los perfiles de aplicación" (click)="openProfilesInfo()" title="Ver perfiles">i</button>
+      </div>
+    </div>
+    <div class="heading-actions">
+      <button class="button button--primary" type="button" (click)="startCreate()">
+        <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nuevo usuario
+      </button>
+    </div>
   </header>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
-  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
-
-  <section class="filter-panel" aria-labelledby="users-search-title">
-    <div class="filter-panel__header">
-      <label class="filter-panel__search" for="users-search"><span id="users-search-title">Buscar usuarios</span><input id="users-search" type="search" placeholder="Nombre, usuario, correo o perfil" [value]="search()" (input)="search.set($any($event.target).value)"></label>
-      <button class="button button--secondary filter-panel__toggle" type="button" (click)="toggleFilters()" [attr.aria-expanded]="filtersExpanded()" aria-controls="user-filters">
-        {{ filtersExpanded() ? "Ocultar filtros" : activeFiltersCount() ? "Filtros (" + activeFiltersCount() + ")" : "Filtros" }}
-      </button>
-      <span class="filter-panel__result" aria-live="polite">{{ filteredUsers().length }} {{ filteredUsers().length === 1 ? "usuario" : "usuarios" }}</span>
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
     </div>
-    @if (filtersExpanded()) {
-      <div id="user-filters" class="filter-panel__options">
-        <label><span>Perfil</span><select [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)"><option value="">Todos</option><option value="ADMIN">Administrador</option><option value="GESTOR">Gestor de colaboradores</option><option value="COLABORADOR">Usuario colaborador</option></select></label>
-        <label><span>Estado</span><select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)"><option value="">Todos</option><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
-        <label><span>Autenticación</span><select [value]="authenticationFilter()" (change)="authenticationFilter.set($any($event.target).value)"><option value="">Todas</option><option value="ldap">LDAP</option><option value="local">Contraseña local</option></select></label>
-        <label><span>Ficha de colaborador</span><select [value]="collaboratorFilter()" (change)="collaboratorFilter.set($any($event.target).value)"><option value="">Todas</option><option value="linked">Vinculada</option><option value="unlinked">Sin vincular</option></select></label>
-        <div class="filter-panel__actions"><button class="button button--link" type="button" (click)="resetFilters()">Restablecer filtros</button></div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      <strong>Operación correcta.</strong> {{ success() }}
+    </div>
+  }
+
+  <section class="filter-card" aria-labelledby="users-search-title">
+    <div class="filter-card__heading">
+      <div>
+        <p class="eyebrow">Localización de cuentas</p>
+        <h2 id="users-search-title">Buscar y filtrar usuarios</h2>
+      </div>
+      <span class="result-count" aria-live="polite">
+        {{ filteredUsers().length }} {{ filteredUsers().length === 1 ? "usuario" : "usuarios" }}
+      </span>
+    </div>
+
+    <div class="filter-card__body">
+      <div class="filter-main-search">
+        <label for="users-search" class="visually-hidden">Buscar usuarios</label>
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            id="users-search"
+            type="search"
+            placeholder="Buscar por login, nombre, correo o perfil…"
+            [value]="search()"
+            (input)="onSearchChange($any($event.target).value)"
+          >
+          @if (search()) {
+            <button class="search-clear" type="button" aria-label="Limpiar búsqueda" (click)="onSearchChange('')">×</button>
+          }
+        </div>
+        <button
+          class="button button--secondary filter-toggle-btn"
+          type="button"
+          (click)="toggleFilters()"
+          [attr.aria-expanded]="filtersExpanded()"
+          aria-controls="user-filters"
+        >
+          <svg class="filter-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          {{ filtersExpanded() ? "Ocultar filtros" : activeFiltersCount() ? "Filtros (" + activeFiltersCount() + ")" : "Filtros" }}
+        </button>
+      </div>
+
+      @if (filtersExpanded()) {
+        <div id="user-filters" class="filters-grid">
+          <div class="field">
+            <label for="filter-role">Perfil</label>
+            <select id="filter-role" [value]="roleFilter()" (change)="onRoleFilterChange($any($event.target).value)">
+              <option value="">Todos los perfiles</option>
+              <option value="ADMIN">Administrador</option>
+              <option value="GESTOR">Gestor de colaboradores</option>
+              <option value="COLABORADOR">Usuario colaborador</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filter-status">Estado</label>
+            <select id="filter-status" [value]="statusFilter()" (change)="onStatusFilterChange($any($event.target).value)">
+              <option value="">Todos los estados</option>
+              <option value="active">Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filter-auth">Autenticación</label>
+            <select id="filter-auth" [value]="authenticationFilter()" (change)="onAuthFilterChange($any($event.target).value)">
+              <option value="">Todas</option>
+              <option value="ldap">LDAP</option>
+              <option value="local">Contraseña local</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="filter-collab">Ficha vinculada</label>
+            <select id="filter-collab" [value]="collaboratorFilter()" (change)="onCollabFilterChange($any($event.target).value)">
+              <option value="">Todas</option>
+              <option value="linked">Con ficha</option>
+              <option value="unlinked">Sin ficha</option>
+            </select>
+          </div>
+          <div class="filters-actions">
+            <button class="button button--link" type="button" (click)="resetFilters()">Restablecer filtros</button>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Listado principal de usuarios (Ocupa todo el ancho) -->
+  <section class="list-panel" aria-label="Listado de usuarios registrados">
+    @if (loading()) {
+      <p class="loading-message">Cargando usuarios y permisos…</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="admin-table users-table">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'usuario' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('usuario')">
+                  <span>Usuario</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'usuario') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'persona' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('persona')">
+                  <span>Persona</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'persona') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'perfil' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('perfil')">
+                  <span>Perfil</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'perfil') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th
+                scope="col"
+                class="sortable-th"
+                [attr.aria-sort]="sortBy() === 'acceso' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              >
+                <button type="button" class="th-sort-btn" (click)="toggleSort('acceso')">
+                  <span>Acceso</span>
+                  <span class="sort-icon-box" aria-hidden="true">
+                    @if (sortBy() === 'acceso') {
+                      <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    } @else {
+                      <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m7 15 5 5 5-5"></path>
+                        <path d="m7 9 5-5 5 5"></path>
+                      </svg>
+                    }
+                  </span>
+                </button>
+              </th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of paginatedUsers(); track user.idUsuario) {
+              <tr [class.is-selected]="editing()?.idUsuario === user.idUsuario">
+                <td data-label="Usuario">
+                  <div class="user-cell">
+                    <span class="user-avatar-tag" aria-hidden="true">{{ user.login.slice(0, 2).toUpperCase() }}</span>
+                    <div>
+                      <strong>{{ user.login }}</strong>
+                      <small>{{ user.email }}</small>
+                    </div>
+                  </div>
+                </td>
+                <td data-label="Persona">
+                  <strong>{{ user.nombreCompleto }}</strong>
+                </td>
+                <td data-label="Perfil">
+                  <span class="role-badge" [class]="'role-badge--' + user.roles[0].toLowerCase()">
+                    {{ roleLabel(user.roles[0]) }}
+                  </span>
+                </td>
+                <td data-label="Acceso">
+                  <div class="access-cell">
+                    <span class="status-chip" [class.status-chip--success]="user.activo" [class.status-chip--muted]="!user.activo">
+                      {{ user.activo ? "Activo" : "Inactivo" }}
+                    </span>
+                    <span class="auth-pill" [class.auth-pill--ldap]="!user.ldapBypass" [class.auth-pill--local]="user.ldapBypass">
+                      {{ user.ldapBypass ? "Contraseña local" : "LDAP" }}
+                    </span>
+                  </div>
+                </td>
+                <td data-label="Acciones">
+                  <div class="row-actions">
+                    <button class="button button--link" type="button" (click)="startEdit(user)">Editar</button>
+                    <button
+                      class="button button--link danger-link"
+                      type="button"
+                      [disabled]="user.idUsuario === currentUserId() || deleting() === user.idUsuario"
+                      (click)="askDelete(user)"
+                      [title]="user.idUsuario === currentUserId() ? 'No puedes eliminar tu propio usuario' : 'Eliminar usuario'"
+                    >
+                      {{ user.idUsuario === currentUserId() ? "Sesión actual" : deleting() === user.idUsuario ? "Eliminando…" : "Eliminar" }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <strong>No se encontraron usuarios.</strong>
+                    <span>Prueba con otros criterios de búsqueda o limpia los filtros activos.</span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Barra de Paginación -->
+      <div class="pagination-bar">
+        <div class="pagination-info">
+          @if (totalItems() > 0) {
+            <span>Mostrando <strong>{{ startIndex() }} - {{ endIndex() }}</strong> de <strong>{{ totalItems() }}</strong> {{ totalItems() === 1 ? "usuario" : "usuarios" }}</span>
+          } @else {
+            <span>0 usuarios</span>
+          }
+        </div>
+
+        <div class="pagination-controls">
+          <div class="page-size-selector">
+            <label for="page-size-select">Filas por página:</label>
+            <select
+              id="page-size-select"
+              [value]="pageSize()"
+              (change)="setPageSize($any($event.target).value)"
+            >
+              <option [value]="20">20</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+          </div>
+
+          <div class="pagination-nav">
+            <button
+              class="pagination-btn"
+              type="button"
+              [disabled]="currentPage() <= 1"
+              (click)="setPage(currentPage() - 1)"
+              aria-label="Página anterior"
+              title="Página anterior"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <span class="pagination-current-page">
+              Página <strong>{{ currentPage() }}</strong> de <strong>{{ totalPages() }}</strong>
+            </span>
+
+            <button
+              class="pagination-btn"
+              type="button"
+              [disabled]="currentPage() >= totalPages()"
+              (click)="setPage(currentPage() + 1)"
+              aria-label="Página siguiente"
+              title="Página siguiente"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     }
   </section>
 
-  <div class="users-layout" [class.users-layout--editing]="formOpen()">
-    @if (formOpen()) {
-      <section class="user-form-panel" aria-labelledby="user-form-title">
-        <div class="user-form-panel__header"><div><p class="eyebrow">{{ editing() ? "Edición" : "Alta" }}</p><h2 id="user-form-title">{{ editing() ? "Editar usuario" : "Nuevo usuario" }}</h2></div><div class="user-form-panel__header-actions"><span class="required-note">* Obligatorios</span><button class="panel-close" type="button" aria-label="Cerrar formulario de usuario" (click)="closeForm()">×</button></div></div>
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <div class="field"><label for="user-login">Usuario *</label><input id="user-login" type="text" autocomplete="off" formControlName="login"></div>
-          <div class="field"><label for="user-name">Nombre completo *</label><input id="user-name" type="text" formControlName="nombreCompleto"></div>
-          <fieldset class="role-choice user-form-panel__wide"><legend>Perfil de aplicación *</legend><label><input type="radio" value="ADMIN" formControlName="role"><span><strong>Administrador</strong><small>Acceso completo</small></span></label><label><input type="radio" value="GESTOR" formControlName="role"><span><strong>Gestor de colaboradores</strong><small>Colaboradores, asignaciones e informes</small></span></label><label><input type="radio" value="COLABORADOR" formControlName="role"><span><strong>Usuario colaborador</strong><small>Área personal</small></span></label></fieldset>
-          <div class="field"><label for="user-email">Correo *</label><input id="user-email" type="email" formControlName="email"></div>
-          <div class="field"><label for="linked-collaborator">Colaborador vinculado {{ form.controls.role.value === "COLABORADOR" ? "*" : "(opcional)" }}</label><select id="linked-collaborator" formControlName="colaboradorId"><option value="">{{ form.controls.role.value === "COLABORADOR" ? "Seleccionar colaborador" : "Sin ficha vinculada" }}</option>@for (item of collaborators(); track item.id) { <option [value]="item.id">{{ item.nombreCompleto }} · {{ item.dni }}{{ item.letra }}</option> }</select><small>Vincula una ficha para que este usuario pueda consultar su espacio personal y sus asignaciones.</small></div>
-          <fieldset class="access-choice user-form-panel__wide"><legend>Acceso</legend><div class="access-choice__grid"><label class="check-field"><input type="checkbox" formControlName="activo"><span><strong>Usuario activo</strong><small>Permite iniciar sesión.</small></span></label><label class="check-field"><input type="checkbox" formControlName="ldapBypass"><span><strong>Usar contraseña local</strong><small>Desactivar para autenticar mediante LDAP.</small></span></label></div></fieldset>
-          @if (form.controls.ldapBypass.value) { <div class="field user-form-panel__wide"><label for="local-password">Contraseña local {{ editing() ? "(opcional)" : "*" }}</label><input id="local-password" type="password" autocomplete="new-password" formControlName="passwordLocal"><small>{{ editing() ? "Déjala vacía para conservar la contraseña actual." : "Necesaria para el primer acceso." }}</small></div> }
-          <div class="form-actions user-form-panel__wide"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()">{{ saving() ? "Guardando…" : "Guardar usuario" }}</button></div>
-        </form>
-      </section>
-    }
+  <!-- Panel Lateral derecho a pantalla completa (Side Sheet / Drawer) -->
+  @if (formOpen()) {
+    <div class="drawer-backdrop" (click)="closeForm()" aria-hidden="true"></div>
+    <aside
+      class="user-drawer"
+      [class.is-expanded]="drawerExpanded()"
+      aria-labelledby="user-form-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <!-- Cabecera del Drawer -->
+      <div class="drawer-header">
+        <div class="drawer-header__title">
+          <span class="panel-badge" [class.panel-badge--edit]="editing()">
+            {{ editing() ? "Edición" : "Alta" }}
+          </span>
+          <h2 id="user-form-title">{{ editing() ? "Editar: " + editing()?.login : "Nuevo usuario" }}</h2>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            class="drawer-ctrl-btn"
+            type="button"
+            (click)="toggleDrawerExpand()"
+            [attr.aria-label]="drawerExpanded() ? 'Reducir ancho' : 'Expandir ancho'"
+            [title]="drawerExpanded() ? 'Reducir ancho del panel' : 'Expandir ancho del panel'"
+          >
+            @if (drawerExpanded()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            }
+          </button>
+          <button class="drawer-close-btn" type="button" aria-label="Cerrar panel" (click)="closeForm()">×</button>
+        </div>
+      </div>
 
-    <section class="users-table-wrap" aria-label="Usuarios registrados">
-      @if (loading()) { <p class="loading-message">Cargando usuarios…</p> }
-      @else {
-        <table class="admin-table users-table">
-          <thead><tr><th>Usuario</th><th>Persona</th><th>Perfil</th><th>Acceso</th><th>Acciones</th></tr></thead>
-          <tbody>
-            @for (user of filteredUsers(); track user.idUsuario) {
-              <tr><td data-label="Usuario"><strong>{{ user.login }}</strong><small>{{ user.email }}</small></td><td data-label="Persona">{{ user.nombreCompleto }}@if (user.colaboradorId) { <small>Ficha: {{ collaboratorName(user.colaboradorId) }}</small> }</td><td data-label="Perfil"><span class="role-badge">{{ roleLabel(user.roles[0]) }}</span></td><td data-label="Acceso"><span class="status-chip" [class.status-chip--success]="user.activo">{{ user.activo ? "Activo" : "Inactivo" }}</span><small>{{ user.ldapBypass ? "Contraseña local" : "LDAP" }}</small></td><td data-label="Acciones"><div class="row-actions"><button class="button button--link" type="button" (click)="startEdit(user)">Editar</button><button class="button button--link danger-link" type="button" [disabled]="user.idUsuario === currentUserId() || deleting() === user.idUsuario" (click)="deleteUser(user)">{{ user.idUsuario === currentUserId() ? "Sesión actual" : deleting() === user.idUsuario ? "Eliminando…" : "Eliminar" }}</button></div></td></tr>
-            } @empty { <tr><td colspan="5"><div class="empty-state"><strong>No hay resultados.</strong><span>Prueba con otro criterio de búsqueda.</span></div></td></tr> }
-          </tbody>
-        </table>
-      }
-    </section>
-  </div>
+      <!-- Cuerpo scrolleable del Drawer -->
+      <div class="drawer-body">
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate class="user-editor-form">
+          <!-- Bloque 1: Identificación y Cuenta -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">1</span>
+              <span>Identificación y cuenta</span>
+            </legend>
+
+            <div class="form-grid" [class.form-grid--expanded]="drawerExpanded()">
+              <div class="field">
+                <label for="user-login">
+                  Usuario (login) <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <div class="input-with-prefix">
+                  <span class="input-prefix" aria-hidden="true">@</span>
+                  <input
+                    id="user-login"
+                    type="text"
+                    autocomplete="off"
+                    formControlName="login"
+                    placeholder="cgarcia"
+                    [attr.aria-invalid]="isFieldInvalid('login')"
+                  >
+                </div>
+                @if (isFieldInvalid('login')) {
+                  <span class="field-error" role="alert">{{ getFieldError('login') }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="user-name">
+                  Nombre completo <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="user-name"
+                  type="text"
+                  formControlName="nombreCompleto"
+                  placeholder="Carmen García Martínez"
+                  [attr.aria-invalid]="isFieldInvalid('nombreCompleto')"
+                >
+                @if (isFieldInvalid('nombreCompleto')) {
+                  <span class="field-error" role="alert">{{ getFieldError('nombreCompleto') }}</span>
+                }
+              </div>
+
+              <div class="field field--wide">
+                <label for="user-email">
+                  Correo electrónico <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="user-email"
+                  type="email"
+                  formControlName="email"
+                  placeholder="carmen.garcia@juntadeandalucia.es"
+                  [attr.aria-invalid]="isFieldInvalid('email')"
+                >
+                @if (isFieldInvalid('email')) {
+                  <span class="field-error" role="alert">{{ getFieldError('email') }}</span>
+                }
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Bloque 2: Perfil y Permisos -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">2</span>
+              <span>Perfil y permisos</span>
+            </legend>
+
+            <div class="role-selector-grid" [class.role-selector-grid--expanded]="drawerExpanded()">
+              <label class="role-card" [class.is-checked]="form.controls.role.value === 'ADMIN'">
+                <input type="radio" value="ADMIN" formControlName="role">
+                <span class="role-badge role-badge--admin">Administrador</span>
+              </label>
+
+              <label class="role-card" [class.is-checked]="form.controls.role.value === 'GESTOR'">
+                <input type="radio" value="GESTOR" formControlName="role">
+                <span class="role-badge role-badge--manager">Gestor</span>
+              </label>
+
+              <label class="role-card" [class.is-checked]="form.controls.role.value === 'COLABORADOR'">
+                <input type="radio" value="COLABORADOR" formControlName="role">
+                <span class="role-badge role-badge--collaborator">Colaborador</span>
+              </label>
+            </div>
+
+            @if (form.controls.role.value === 'COLABORADOR') {
+              <div class="context-banner context-banner--warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Requiere vincular obligatoriamente una ficha de colaborador.</span>
+              </div>
+            }
+          </fieldset>
+
+          <!-- Bloque 3: Ficha de Colaborador -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">3</span>
+              <span>Ficha de colaborador</span>
+            </legend>
+
+            <div class="field">
+              <label for="linked-collaborator">
+                Colaborador vinculado
+                @if (form.controls.role.value === 'COLABORADOR') {
+                  <span class="req-star" aria-hidden="true">*</span>
+                } @else {
+                  <span class="optional-label">(Opcional)</span>
+                }
+              </label>
+              <select id="linked-collaborator" formControlName="colaboradorId">
+                <option value="">{{ form.controls.role.value === 'COLABORADOR' ? "— Selecciona una ficha obligatoria —" : "— Sin ficha vinculada —" }}</option>
+                @for (item of collaborators(); track item.id) {
+                  <option [value]="item.id">
+                    {{ item.nombreCompleto }} · {{ item.dni }}{{ item.letra }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Ficha previsualizada del colaborador seleccionado -->
+            @if (selectedCollaborator(); as collab) {
+              <div class="collaborator-preview-card">
+                <div class="collaborator-preview-card__header">
+                  <div class="preview-avatar" aria-hidden="true">{{ collab.nombreCompleto.slice(0, 2).toUpperCase() }}</div>
+                  <div class="preview-details">
+                    <strong>{{ collab.nombreCompleto }}</strong>
+                    <span>DNI: {{ collab.dni }}{{ collab.letra }} · {{ collab.correoCorporativo }}</span>
+                    @if (collab.telefono || collab.localidad) {
+                      <small>{{ collab.telefono || "Sin teléfono" }} · {{ collab.localidad || "Sin localidad" }} ({{ collab.provincia || "Sin provincia" }})</small>
+                    }
+                  </div>
+                </div>
+
+                @if (!editing()) {
+                  <div class="preview-actions">
+                    <button class="button button--secondary button--sm" type="button" (click)="fillFromCollaborator()">
+                      <svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                      </svg>
+                      Autocompletar datos
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </fieldset>
+
+          <!-- Bloque 4: Acceso y Autenticación -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">4</span>
+              <span>Acceso y autenticación</span>
+            </legend>
+
+            <div class="auth-selector-grid">
+              <label class="auth-card" [class.is-checked]="!form.controls.ldapBypass.value" (click)="setLdapBypass(false)">
+                <input type="radio" [checked]="!form.controls.ldapBypass.value" name="authMode">
+                <div class="auth-card__body">
+                  <div class="auth-card__header">
+                    <strong>LDAP Corporativo</strong>
+                    <span class="recommended-tag">Recomendado</span>
+                  </div>
+                </div>
+              </label>
+
+              <label class="auth-card" [class.is-checked]="form.controls.ldapBypass.value" (click)="setLdapBypass(true)">
+                <input type="radio" [checked]="form.controls.ldapBypass.value" name="authMode">
+                <div class="auth-card__body">
+                  <div class="auth-card__header">
+                    <strong>Contraseña Local</strong>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <!-- Campo de Contraseña local condicional -->
+            @if (form.controls.ldapBypass.value) {
+              <div class="password-box">
+                <div class="field">
+                  <label for="local-password">
+                    Contraseña local {{ editing() ? "(opcional)" : "*" }}
+                  </label>
+                  <div class="password-input-wrap">
+                    <input
+                      id="local-password"
+                      [type]="showPassword() ? 'text' : 'password'"
+                      autocomplete="new-password"
+                      formControlName="passwordLocal"
+                      placeholder="••••••••••••"
+                      [attr.aria-invalid]="isFieldInvalid('passwordLocal')"
+                    >
+                    <button
+                      class="password-toggle-btn"
+                      type="button"
+                      (click)="toggleShowPassword()"
+                      [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Ver contraseña'"
+                    >
+                      @if (showPassword()) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <div class="account-status-card">
+              <label class="switch-field">
+                <input type="checkbox" formControlName="activo">
+                <div class="switch-field__text">
+                  <div class="switch-field__title">
+                    <strong>Usuario activo</strong>
+                    <span class="status-indicator-pill" [class.is-active]="form.controls.activo.value">
+                      {{ form.controls.activo.value ? "Activo" : "Bloqueado" }}
+                    </span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <!-- Pie fijo de Acciones en la parte inferior del Drawer -->
+      <div class="drawer-footer">
+        <button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForm()">
+          Cancelar
+        </button>
+        <button class="button button--primary" type="button" [disabled]="saving()" (click)="save()" [attr.aria-busy]="saving()">
+          {{ saving() ? "Guardando…" : editing() ? "Guardar cambios" : "Crear usuario" }}
+        </button>
+      </div>
+    </aside>
+  }
 </div>
 
-<dialog #profilesDialog class="profiles-dialog" aria-labelledby="profiles-dialog-title"><form method="dialog"><div class="profiles-dialog__header"><div><p class="eyebrow">Información</p><h2 id="profiles-dialog-title">Perfiles de aplicación</h2></div><button class="dialog-close" type="button" aria-label="Cerrar información sobre perfiles" (click)="closeProfilesInfo()">×</button></div><div class="profiles-dialog__items"><article><span class="role-badge role-badge--admin">Administrador</span><p>Acceso completo, incluida la configuración y la gestión de usuarios.</p></article><article><span class="role-badge role-badge--manager">Gestor de colaboradores</span><p>Colaboradores, asignaciones, informes y su espacio personal cuando tenga una ficha vinculada.</p></article><article><span class="role-badge role-badge--collaborator">Usuario colaborador</span><p>Datos propios, asignaciones y confirmación o rechazo de colaboraciones.</p></article></div><div class="dialog-actions"><button class="button button--primary" type="button" (click)="closeProfilesInfo()">Cerrar</button></div></form></dialog>
+<!-- Modal de Información de Perfiles -->
+<dialog #profilesDialog class="profiles-dialog" aria-labelledby="profiles-dialog-title">
+  <form method="dialog">
+    <div class="profiles-dialog__header">
+      <div>
+        <p class="eyebrow">Guía de permisos</p>
+        <h2 id="profiles-dialog-title">Perfiles de aplicación en SICOL</h2>
+      </div>
+      <button class="dialog-close" type="button" aria-label="Cerrar diálogo" (click)="closeProfilesInfo()">×</button>
+    </div>
+
+    <div class="profiles-dialog__items">
+      <article class="profile-card profile-card--admin">
+        <div class="profile-card__header">
+          <span class="role-badge role-badge--admin">ADMIN</span>
+          <h3>Administrador</h3>
+        </div>
+        <p>Control total sobre la plataforma: administración TIC, importación de convocatorias y opositores, gestión de usuarios, asignación de roles y parametrización general.</p>
+      </article>
+
+      <article class="profile-card profile-card--manager">
+        <div class="profile-card__header">
+          <span class="role-badge role-badge--manager">GESTOR</span>
+          <h3>Gestor de colaboradores</h3>
+        </div>
+        <p>Operativa completa de asignaciones a ejercicios, gestión de fichas de colaboradores, control de llamamientos e incidencias y generación de actas e informes.</p>
+      </article>
+
+      <article class="profile-card profile-card--collaborator">
+        <div class="profile-card__header">
+          <span class="role-badge role-badge--collaborator">COLABORADOR</span>
+          <h3>Usuario colaborador</h3>
+        </div>
+        <p>Acceso restringido al portal personal "Mi espacio" para consultar datos de colaborador, disponibilidad horaria y confirmar o revisar sus llamamientos asignados.</p>
+      </article>
+    </div>
+
+    <div class="dialog-actions">
+      <button class="button button--primary" type="button" (click)="closeProfilesInfo()">Entendido</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Diálogo Modal de Confirmación de Eliminación -->
+<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-user-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación requerida</p>
+    <h2 id="delete-user-title">¿Eliminar usuario del sistema?</h2>
+
+    @if (deleteTarget(); as target) {
+      <div class="delete-summary-box">
+        <p>Estás a punto de eliminar la cuenta de acceso de:</p>
+        <div class="delete-user-card">
+          <span class="user-avatar-tag" aria-hidden="true">{{ target.login.slice(0, 2).toUpperCase() }}</span>
+          <div>
+            <strong>{{ target.nombreCompleto }}</strong>
+            <small>{{ target.login }} · {{ target.email }}</small>
+            <span class="role-badge" [class]="'role-badge--' + target.roles[0].toLowerCase()">{{ roleLabel(target.roles[0]) }}</span>
+          </div>
+        </div>
+      </div>
+      <p class="delete-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Esta acción retirará de inmediato el acceso al sistema. Las fichas de colaborador vinculadas permanecerán protegidas.</span>
+      </p>
+    }
+
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">
+        {{ deleting() ? "Eliminando…" : "Eliminar usuario" }}
+      </button>
+    </div>
+  </form>
+</dialog>
+
+
