@@ -1,175 +1,657 @@
 <div class="page-shell">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Procesos y ejercicios</span></nav>
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Procesos y ejercicios</span>
+  </nav>
+
   <header class="page-heading">
-    <div><p class="eyebrow">Gestión de convocatorias</p><h1>Procesos y ejercicios</h1><p>{{ canManageProcesos() ? "Consulta, crea y actualiza procesos selectivos y sus ejercicios." : "Consulta los procesos, ejercicios y llamamientos disponibles para organizar las colaboraciones." }}</p></div>
-    @if (canManageProcesos()) { <div class="heading-actions"><a class="button button--secondary" routerLink="/admin/importaciones/opositores-aulas">Importar convocados</a><button class="button button--primary" type="button" (click)="openCreateProcess()">Crear proceso</button></div> }
+    <div>
+      <p class="eyebrow">Gestión de convocatorias</p>
+      <h1>Procesos y ejercicios</h1>
+      <p>{{ canManageProcesos() ? "Consulta, crea y actualiza procesos selectivos y sus ejercicios." : "Consulta los procesos, ejercicios y llamamientos disponibles para organizar las colaboraciones." }}</p>
+    </div>
+    @if (canManageProcesos()) {
+      <div class="heading-actions">
+        <a class="button button--secondary" routerLink="/admin/importaciones/convocatorias">
+          <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Importar procesos
+        </a>
+        <button class="button button--primary" type="button" (click)="openCreateProcess()">
+          <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Crear proceso
+        </button>
+      </div>
+    }
   </header>
 
-  @if (canManageProcesos()) {
-    <aside class="test-cleanup" aria-labelledby="test-cleanup-title">
-      <div><p class="eyebrow">Zona de pruebas</p><h2 id="test-cleanup-title">Limpiar procesos cargados</h2><p>Elimina todos los procesos y su operativa para volver a cargar datos de prueba.</p></div>
-      <button class="button button--danger" type="button" [disabled]="!procesos().length" (click)="askClearAllProcesses()">Eliminar todos los procesos</button>
-    </aside>
+  @if (!canManageProcesos()) {
+    <div class="alert alert--info" role="status">
+      <strong>Modo consulta.</strong> Puedes consultar procesos, ejercicios y convocados; la creación, edición e importación están reservadas a Administración.
+    </div>
   }
 
-
-  @if (!canManageProcesos()) { <div class="alert alert--info" role="status"><strong>Modo consulta.</strong> Puedes consultar procesos, ejercicios y convocados; la creación, edición e importación están reservadas a Administración.</div> }
-
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
-  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
-
-  @if (processFormOpen()) {
-    <section class="editor-panel process-editor" aria-labelledby="process-form-title">
-      <div class="editor-heading">
-        <div class="editor-heading__title">
-          <span class="editor-heading__icon" aria-hidden="true">{{ processFormMode() === "create" ? "+" : "✎" }}</span>
-          <div>
-            <p class="eyebrow">{{ processFormMode() === "create" ? "Nuevo proceso" : "Edición del proceso" }}</p>
-            <h2 id="process-form-title">{{ processFormMode() === "create" ? "Crear proceso selectivo" : "Editar proceso selectivo" }}</h2>
-            <p class="editor-description">{{ processFormMode() === "create" ? "Completa los datos básicos para incorporar un proceso al sistema." : "Revisa y actualiza la información administrativa del proceso seleccionado." }}</p>
-          </div>
-        </div>
-        <button class="close-button" type="button" aria-label="Cerrar formulario" (click)="closeForms()">×</button>
-      </div>
-      <form #processEditor="ngForm" (ngSubmit)="saveProcess(processEditor)">
-        <div class="form-meta">
-          <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
-          @if (processFormMode() === "create") {
-            <p class="draft-note"><span class="status-dot" aria-hidden="true"></span>El proceso se guardará inicialmente como borrador.</p>
-          }
-        </div>
-
-        <section class="form-section" aria-labelledby="process-identification-title">
-          <div class="form-section__heading">
-            <span class="form-section__index" aria-hidden="true">01</span>
-            <div><h3 id="process-identification-title">Identificación</h3><p>Datos que permiten reconocer y localizar el proceso.</p></div>
-          </div>
-          <div class="form-grid form-grid--identity">
-            <label class="field field--name">
-              <span>Nombre del proceso <span class="required-mark" aria-hidden="true">*</span></span>
-              <input #processName="ngModel" name="processName" [(ngModel)]="processForm.nombre" required maxlength="250" autocomplete="off" aria-describedby="process-name-help process-name-error" [attr.aria-invalid]="processName.invalid && (processName.touched || processEditor.submitted)">
-              <small id="process-name-help">Utiliza la denominación oficial de la convocatoria.</small>
-              @if (processName.invalid && (processName.touched || processEditor.submitted)) { <small class="field-error" id="process-name-error">Introduce el nombre del proceso.</small> }
-            </label>
-            <label class="field field--code">
-              <span>Código SIRHUS <small class="optional-label">(opcional)</small></span>
-              <input name="sirhusCode" [(ngModel)]="processForm.codigoSirhus" maxlength="50" placeholder="Ej. L2A11300" autocomplete="off" aria-describedby="sirhus-code-help">
-              <small id="sirhus-code-help">Código de referencia utilizado en SIRHUS.</small>
-            </label>
-            <label class="field field--wide">
-              <span>URL pública del proceso <small class="optional-label">(opcional)</small></span>
-              <input name="processUrl" [(ngModel)]="processForm.urlWebProceso" type="url" inputmode="url" placeholder="https://www.juntadeandalucia.es/…" autocomplete="url" aria-describedby="process-url-help">
-              <small id="process-url-help">Enlace al seguimiento oficial de la convocatoria.</small>
-            </label>
-          </div>
-        </section>
-
-        <section class="form-section" aria-labelledby="process-classification-title">
-          <div class="form-section__heading">
-            <span class="form-section__index" aria-hidden="true">02</span>
-            <div><h3 id="process-classification-title">Clasificación administrativa</h3><p>Información para organizar el proceso y facilitar su consulta.</p></div>
-          </div>
-          <div class="form-grid form-grid--classification">
-            @if (processFormMode() === "edit") {
-              <label class="field">
-                <span>Estado del proceso <span class="required-mark" aria-hidden="true">*</span></span>
-                <select name="processState" [(ngModel)]="processForm.estado" required aria-describedby="process-state-help"><option value="BORRADOR">Borrador · En preparación</option><option value="PUBLICADO">Publicado · En curso</option><option value="CERRADO">Cerrado · Finalizado</option></select>
-                <small id="process-state-help">Determina si el proceso aparece en los filtros operativos.</small>
-              </label>
-            }
-            <label class="field">
-              <span>Cuerpo <small class="optional-label">(opcional)</small></span>
-              <select name="body" [(ngModel)]="processForm.idCuerpo"><option [ngValue]="null">Sin asignar</option>@for (item of cuerpos(); track item.idCuerpo) { <option [ngValue]="item.idCuerpo">{{ item.codigo }} · {{ item.descripcion }}</option> }</select>
-            </label>
-            <label class="field">
-              <span>Tipo de acceso <small class="optional-label">(opcional)</small></span>
-              <select name="accessType" [(ngModel)]="processForm.idTipoAcceso"><option [ngValue]="null">Sin asignar</option>@for (item of accesos(); track item.idTipoAcceso) { <option [ngValue]="item.idTipoAcceso">{{ item.descripcion }}</option> }</select>
-            </label>
-            <label class="field">
-              <span>Tipo de vinculación <small class="optional-label">(opcional)</small></span>
-              <select name="bindingType" [(ngModel)]="processForm.idTipoVinculacion"><option [ngValue]="null">Sin asignar</option>@for (item of vinculaciones(); track item.idTipoVinculacion) { <option [ngValue]="item.idTipoVinculacion">{{ item.descripcion }}</option> }</select>
-            </label>
-          </div>
-        </section>
-
-        <fieldset class="oep-fieldset">
-          <legend><span class="form-section__index" aria-hidden="true">03</span><span><strong>Ofertas de empleo público</strong><small>Selecciona una o varias ofertas asociadas <span class="optional-label">(opcional)</span>.</small></span></legend>
-          <div class="oep-summary"><span>{{ processForm.oepIds.length }} seleccionada{{ processForm.oepIds.length === 1 ? "" : "s" }}</span><small>Puedes cambiar la selección en cualquier momento.</small></div>
-          <div class="oep-options">
-            @for (item of oeps(); track item.idOep) {
-              <label class="oep-option" [class.is-selected]="isOepSelected(item.idOep)">
-                <input type="checkbox" [checked]="isOepSelected(item.idOep)" (change)="toggleOep(item.idOep, $any($event.target).checked)">
-                <span><strong>OEP {{ item.anio }}</strong><small>{{ item.descripcion || "Oferta de empleo público" }}</small></span>
-              </label>
-            } @empty {
-              <p class="oep-empty">No hay ofertas de empleo público disponibles.</p>
-            }
-          </div>
-        </fieldset>
-
-        <div class="form-actions">
-          <p>Revisa los datos antes de continuar.</p>
-          <div><button class="button button--secondary" type="button" (click)="closeForms()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="processEditor.invalid || saving()" [attr.aria-busy]="saving()">{{ saving() ? "Guardando…" : processFormMode() === "create" ? "Crear proceso" : "Guardar cambios" }}</button></div>
-        </div>
-      </form>
-    </section>
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
+    </div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      <strong>Operación correcta.</strong> {{ success() }}
+    </div>
   }
 
   <div class="explorer-layout">
+    <!-- Panel Izquierdo: Lista de Procesos con Filtros -->
     <section class="explorer-panel" aria-labelledby="procesos-title">
-      <div class="panel-heading"><div><span class="panel-count">{{ filteredProcesos().length }}</span><h2 id="procesos-title">Procesos</h2><p>{{ filteredProcesos().length }} de {{ procesos().length }} visibles</p></div></div>
-      <div class="process-filters"><label class="search-field"><span>Buscar proceso</span><input type="search" placeholder="Nombre o código SIRHUS" [value]="search()" (input)="search.set($any($event.target).value)"></label><fieldset class="status-filter"><legend>Estado</legend><div class="status-segments"><button type="button" [class.is-selected]="statusFilter() === 'ACTIVOS'" [attr.aria-pressed]="statusFilter() === 'ACTIVOS'" (click)="statusFilter.set('ACTIVOS')"><span>Activos</span><strong>{{ processCount("ACTIVOS") }}</strong></button><button type="button" [class.is-selected]="statusFilter() === 'CERRADO'" [attr.aria-pressed]="statusFilter() === 'CERRADO'" (click)="statusFilter.set('CERRADO')"><span>Cerrados</span><strong>{{ processCount("CERRADO") }}</strong></button><button type="button" [class.is-selected]="statusFilter() === 'TODOS'" [attr.aria-pressed]="statusFilter() === 'TODOS'" (click)="statusFilter.set('TODOS')"><span>Todos</span><strong>{{ processCount("TODOS") }}</strong></button></div></fieldset></div>
-      @if (loading()) { <p class="loading-message">Cargando procesos…</p> }
+      <div class="panel-heading">
+        <div class="panel-heading__title-wrap">
+          <span class="panel-count">{{ filteredProcesos().length }}</span>
+          <h2 id="procesos-title">Procesos</h2>
+          <p>{{ filteredProcesos().length }} de {{ procesos().length }} visibles</p>
+        </div>
+      </div>
+      <div class="process-filters">
+        <label class="search-field">
+          <span>Buscar proceso</span>
+          <input type="search" placeholder="Nombre o código SIRHUS" [value]="search()" (input)="search.set($any($event.target).value)">
+        </label>
+        <fieldset class="status-filter">
+          <legend>Estado</legend>
+          <div class="status-segments">
+            <button
+              type="button"
+              [class.is-selected]="statusFilter() === 'ACTIVOS'"
+              [attr.aria-pressed]="statusFilter() === 'ACTIVOS'"
+              (click)="statusFilter.set('ACTIVOS')"
+            >
+              <span>Activos</span>
+              <strong>{{ processCount("ACTIVOS") }}</strong>
+            </button>
+            <button
+              type="button"
+              [class.is-selected]="statusFilter() === 'CERRADO'"
+              [attr.aria-pressed]="statusFilter() === 'CERRADO'"
+              (click)="statusFilter.set('CERRADO')"
+            >
+              <span>Cerrados</span>
+              <strong>{{ processCount("CERRADO") }}</strong>
+            </button>
+            <button
+              type="button"
+              [class.is-selected]="statusFilter() === 'TODOS'"
+              [attr.aria-pressed]="statusFilter() === 'TODOS'"
+              (click)="statusFilter.set('TODOS')"
+            >
+              <span>Todos</span>
+              <strong>{{ processCount("TODOS") }}</strong>
+            </button>
+          </div>
+        </fieldset>
+      </div>
+
+      @if (loading()) {
+        <p class="loading-message">Cargando procesos…</p>
+      }
+
       <div class="selection-list">
         @for (proceso of filteredProcesos(); track proceso.id) {
-          <button type="button" [class.is-selected]="selected()?.id === proceso.id" [attr.aria-pressed]="selected()?.id === proceso.id" (click)="selectProceso(proceso)">
-            <span><strong class="process-code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</strong><small class="process-name">{{ proceso.nombre }}</small></span>
-            <span class="status-chip" [class.status-chip--closed]="proceso.estado === 'CERRADO'">{{ statusLabel(proceso.estado) }}</span>
+          <button
+            type="button"
+            [class.is-selected]="selected()?.id === proceso.id"
+            [attr.aria-pressed]="selected()?.id === proceso.id"
+            (click)="selectProceso(proceso)"
+          >
+            <span>
+              <strong class="process-code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</strong>
+              <small class="process-name">
+                @if (tipoAccesoLabel(proceso); as acceso) {
+                  <span class="process-access-tag" title="Tipo de acceso">{{ acceso }}</span>
+                }
+                <span class="process-name-text">{{ proceso.nombre }}</span>
+              </small>
+            </span>
+            <span class="status-chip" [class.status-chip--closed]="proceso.estado === 'CERRADO'">
+              {{ statusLabel(proceso.estado) }}
+            </span>
           </button>
-        } @empty { @if (!loading()) { <p class="empty-state">No hay procesos que coincidan con la búsqueda.</p> } }
+        } @empty {
+          @if (!loading()) {
+            <p class="empty-state">No hay procesos que coincidan con la búsqueda.</p>
+          }
+        }
       </div>
     </section>
 
+    <!-- Panel Derecho: Detalle de Ejercicios del Proceso Seleccionado -->
     <section class="explorer-panel explorer-panel--detail" aria-labelledby="examenes-title">
       @if (selected(); as proceso) {
         <div class="panel-heading panel-heading--actions">
-          <div><span class="panel-count">{{ examenes().length }}</span><h2 id="examenes-title">Ejercicios</h2><p>{{ proceso.codigoSirhus || "Sin código" }} · {{ proceso.nombre }}</p></div>
-          @if (canManageProcesos()) { <div class="panel-actions"><button class="button button--secondary button--compact" type="button" (click)="openEditProcess()">Editar proceso</button><button class="button button--primary button--compact" type="button" (click)="openCreateExam()">Crear ejercicio</button></div> }
+          <div class="panel-heading__title-wrap">
+            <span class="panel-count">{{ examenes().length }}</span>
+            <h2 id="examenes-title">Ejercicios</h2>
+            <p>{{ proceso.codigoSirhus || "Sin código" }} · {{ proceso.nombre }}</p>
+          </div>
+          @if (canManageProcesos()) {
+            <div class="panel-actions">
+              <button class="button button--secondary button--compact" type="button" (click)="openEditProcess()">
+                <svg class="button-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                <span>Editar proceso</span>
+              </button>
+              <button class="button button--primary button--compact" type="button" (click)="openCreateExam()">
+                <svg class="button-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Crear ejercicio</span>
+              </button>
+            </div>
+          }
         </div>
-        @if (loadingExamenes()) { <p class="loading-message">Cargando ejercicios…</p> }
+
+        @if (loadingExamenes()) {
+          <p class="loading-message">Cargando ejercicios…</p>
+        }
+
         <div class="exam-list">
           @for (examen of examenes(); track examen.id) {
             <article>
               <div class="exam-number">{{ examen.numeroEjercicio }}</div>
-              <div class="exam-copy"><h3>{{ examen.nombre }}</h3><p [class.date-pending]="!examen.fechaHora">{{ formatDate(examen.fechaHora) }}</p>@if (examen.observaciones) { <small>{{ examen.observaciones }}</small> }</div>
+              <div class="exam-copy">
+                <div class="exam-copy__header">
+                  <h3>{{ examen.nombre }}</h3>
+                  @if (getConvocadosCount(examen.id) > 0) {
+                    <span class="convocados-badge convocados-badge--active" title="Convocados cargados">
+                      {{ getConvocadosCount(examen.id) }} convocados
+                    </span>
+                  } @else {
+                    <span class="convocados-badge convocados-badge--empty" title="Sin opositores asignados">
+                      Sin convocados
+                    </span>
+                  }
+                </div>
+                <p [class.date-pending]="!examen.fechaHora">{{ formatDate(examen.fechaHora) }}</p>
+                @if (examen.observaciones) {
+                  <small>{{ examen.observaciones }}</small>
+                }
+              </div>
               <div class="exam-actions">
-                @if (canManageProcesos()) { <button class="button button--secondary" type="button" (click)="openEditExam(examen)">Editar</button><a class="button button--secondary" [routerLink]="['/admin/importaciones/opositores-aulas']" [queryParams]="{ procesoId: proceso.id, examenId: examen.id }">Importar</a><button class="button button--danger" type="button" (click)="askDeleteExam(examen)">Eliminar ejercicio</button> }
-                <a class="button button--primary" [routerLink]="['/admin/procesos-selectivos', proceso.id, 'examenes', examen.id, 'convocados']">Ver convocados</a>
+                @if (canManageProcesos()) {
+                  <button class="button button--secondary" type="button" (click)="openEditExam(examen)">Editar</button>
+                  @if (getConvocadosCount(examen.id) === 0) {
+                    <a
+                      class="button button--import-action"
+                      [routerLink]="['/admin/importaciones/opositores-aulas']"
+                      [queryParams]="{ procesoId: proceso.id, examenId: examen.id }"
+                      title="Importar lista de opositores y asignación de aulas para este ejercicio"
+                    >
+                      <svg class="button-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      Importar convocados
+                    </a>
+                  }
+                }
+                @if (getConvocadosCount(examen.id) > 0) {
+                  <a
+                    class="button button--primary"
+                    [routerLink]="['/admin/procesos-selectivos', proceso.id, 'examenes', examen.id, 'convocados']"
+                    title="Ver el listado de personas convocadas a este ejercicio"
+                  >
+                    <svg class="button-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Ver convocados
+                  </a>
+                }
               </div>
             </article>
-          } @empty { @if (!loadingExamenes()) { <div class="empty-state"><strong>Este proceso aún no tiene ejercicios.</strong><span>{{ canManageProcesos() ? "Puedes crearlo manualmente o importarlo desde el Datamart." : "Cuando se publiquen, estarán disponibles aquí para su consulta." }}</span>@if (canManageProcesos()) { <button class="button button--primary" type="button" (click)="openCreateExam()">Crear ejercicio</button> }</div> } }
-        </div>
-        @if (examFormOpen()) {
-          <section class="editor-panel exam-editor" aria-labelledby="exam-form-title">
-            <div class="editor-heading"><div><p class="eyebrow">{{ examFormMode() === "create" ? "Nuevo registro" : "Edición" }}</p><h2 #examEditorHeading id="exam-form-title" tabindex="-1">{{ examFormMode() === "create" ? "Crear ejercicio" : "Editar ejercicio" }}</h2></div><button class="close-button" type="button" aria-label="Cerrar formulario" (click)="closeForms()">×</button></div>
-            <p class="editor-context">{{ selected()?.codigoSirhus }} · {{ selected()?.nombre }}</p><p class="required-note">* Campos obligatorios</p>
-            <form #examEditor="ngForm" (ngSubmit)="saveExam(examEditor)">
-              <div class="form-grid form-grid--exam">
-                <label class="field field--wide"><span>Nombre *</span><input name="examName" [(ngModel)]="examForm.nombre" required maxlength="250"></label>
-                <label class="field"><span>Número de ejercicio *</span><input name="examNumber" [(ngModel)]="examForm.numeroEjercicio" type="number" min="1" required></label>
-                <label class="field"><span>Fecha y hora</span><input name="examDate" [(ngModel)]="examForm.fechaHora" type="datetime-local"><small>Puede dejarse pendiente y completarse más adelante.</small></label>
-                <label class="field field--wide"><span>Observaciones</span><textarea name="examNotes" [(ngModel)]="examForm.observaciones" rows="3" maxlength="1000"></textarea></label>
+          } @empty {
+            @if (!loadingExamenes()) {
+              <div class="empty-state">
+                <strong>Este proceso aún no tiene ejercicios.</strong>
+                <span>{{ canManageProcesos() ? "Puedes crearlo manualmente o importarlo desde el Datamart." : "Cuando se publiquen, estarán disponibles aquí para su consulta." }}</span>
+                @if (canManageProcesos()) {
+                  <button class="button button--primary" type="button" (click)="openCreateExam()">Crear ejercicio</button>
+                }
               </div>
-              <div class="form-actions"><button class="button button--secondary" type="button" (click)="closeForms()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="examEditor.invalid || saving()">{{ saving() ? "Guardando…" : "Guardar ejercicio" }}</button></div>
-            </form>
-          </section>
-        }
+            }
+          }
+        </div>
       } @else {
-        <div class="empty-state empty-state--large"><span class="empty-state__index">01</span><strong>Selecciona un proceso</strong><span>Sus ejercicios aparecerán aquí sin cambiar de pantalla.</span></div>
+        <div class="empty-state empty-state--large">
+          <span class="empty-state__index">01</span>
+          <strong>Selecciona un proceso</strong>
+          <span>Sus ejercicios aparecerán aquí sin cambiar de pantalla.</span>
+        </div>
       }
     </section>
   </div>
 
+  <!-- Panel Lateral Derecho a Pantalla Completa (Side Sheet / Drawer para Crear/Editar Proceso) -->
+  @if (processFormOpen()) {
+    <div class="drawer-backdrop" (click)="closeForms()" aria-hidden="true"></div>
+    <aside
+      class="process-drawer"
+      [class.is-expanded]="processDrawerExpanded()"
+      aria-labelledby="process-form-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <!-- Cabecera del Drawer -->
+      <div class="drawer-header">
+        <div class="drawer-header__title">
+          <span class="panel-badge" [class.panel-badge--edit]="processFormMode() === 'edit'">
+            {{ processFormMode() === "create" ? "Alta" : "Edición" }}
+          </span>
+          <h2 id="process-form-title">
+            {{ processFormMode() === "create" ? "Nuevo proceso selectivo" : "Editar proceso selectivo" }}
+          </h2>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            class="drawer-ctrl-btn"
+            type="button"
+            (click)="toggleProcessDrawerExpand()"
+            [attr.aria-label]="processDrawerExpanded() ? 'Reducir ancho' : 'Expandir ancho'"
+            [title]="processDrawerExpanded() ? 'Reducir ancho del panel' : 'Expandir ancho del panel'"
+          >
+            @if (processDrawerExpanded()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            }
+          </button>
+          <button class="drawer-close-btn" type="button" aria-label="Cerrar panel" (click)="closeForms()">×</button>
+        </div>
+      </div>
+
+      <!-- Cuerpo con Scroll del Drawer -->
+      <div class="drawer-body">
+        <form #processEditor="ngForm" (ngSubmit)="saveProcess(processEditor)" class="drawer-editor-form" novalidate>
+          <div class="form-meta-note">
+            <p class="required-note"><span class="req-star" aria-hidden="true">*</span> Campos obligatorios</p>
+            @if (processFormMode() === "create") {
+              <p class="draft-note"><span class="status-dot" aria-hidden="true"></span>El proceso se guardará inicialmente como borrador.</p>
+            }
+          </div>
+
+          <!-- Bloque 1: Identificación -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">1</span>
+              <span>Identificación del proceso</span>
+            </legend>
+
+            <div class="form-grid" [class.form-grid--expanded]="processDrawerExpanded()">
+              <div class="field field--wide">
+                <label for="process-name">
+                  Nombre del proceso <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="process-name"
+                  #processName="ngModel"
+                  name="processName"
+                  [(ngModel)]="processForm.nombre"
+                  required
+                  maxlength="250"
+                  autocomplete="off"
+                  placeholder="Ej. Cuerpo Superior de Administradores Generales (A1.1100)"
+                  [attr.aria-invalid]="processName.invalid && (processName.touched || processEditor.submitted)"
+                >
+                <small class="field-hint">Utiliza la denominación oficial de la convocatoria.</small>
+                @if (processName.invalid && (processName.touched || processEditor.submitted)) {
+                  <span class="field-error" role="alert">Introduce el nombre del proceso.</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="sirhus-code">
+                  Código SIRHUS <span class="optional-label">(opcional)</span>
+                </label>
+                <input
+                  id="sirhus-code"
+                  name="sirhusCode"
+                  [(ngModel)]="processForm.codigoSirhus"
+                  maxlength="50"
+                  placeholder="Ej. L2A11300"
+                  autocomplete="off"
+                >
+                <small class="field-hint">Código de referencia oficial en SIRHUS.</small>
+              </div>
+
+              <div class="field" [class.field--wide]="!processDrawerExpanded()">
+                <label for="process-url">
+                  URL pública del proceso <span class="optional-label">(opcional)</span>
+                </label>
+                <input
+                  id="process-url"
+                  name="processUrl"
+                  [(ngModel)]="processForm.urlWebProceso"
+                  type="url"
+                  inputmode="url"
+                  placeholder="https://www.juntadeandalucia.es/…"
+                  autocomplete="url"
+                >
+                <small class="field-hint">Enlace al seguimiento oficial del proceso.</small>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Bloque 2: Clasificación administrativa -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">2</span>
+              <span>Clasificación administrativa</span>
+            </legend>
+
+            <div class="form-grid" [class.form-grid--expanded]="processDrawerExpanded()">
+              @if (processFormMode() === "edit") {
+                <div class="field field--wide">
+                  <label for="process-state">
+                    Estado del proceso <span class="req-star" aria-hidden="true">*</span>
+                  </label>
+                  <select id="process-state" name="processState" [(ngModel)]="processForm.estado" required>
+                    <option value="BORRADOR">Borrador · En preparación</option>
+                    <option value="PUBLICADO">Publicado · En curso</option>
+                    <option value="CERRADO">Cerrado · Finalizado</option>
+                  </select>
+                  <small class="field-hint">Determina si el proceso aparece en los filtros operativos.</small>
+                </div>
+              }
+
+              <div class="field">
+                <label for="process-body">
+                  Cuerpo <span class="optional-label">(opcional)</span>
+                </label>
+                <select id="process-body" name="body" [(ngModel)]="processForm.idCuerpo">
+                  <option [ngValue]="null">— Sin asignar —</option>
+                  @for (item of cuerpos(); track item.idCuerpo) {
+                    <option [ngValue]="item.idCuerpo">{{ item.codigo }} · {{ item.descripcion }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="access-type">
+                  Tipo de acceso <span class="optional-label">(opcional)</span>
+                </label>
+                <select id="access-type" name="accessType" [(ngModel)]="processForm.idTipoAcceso">
+                  <option [ngValue]="null">— Sin asignar —</option>
+                  @for (item of accesos(); track item.idTipoAcceso) {
+                    <option [ngValue]="item.idTipoAcceso">{{ item.descripcion }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field field--wide">
+                <label for="binding-type">
+                  Tipo de vinculación <span class="optional-label">(opcional)</span>
+                </label>
+                <select id="binding-type" name="bindingType" [(ngModel)]="processForm.idTipoVinculacion">
+                  <option [ngValue]="null">— Sin asignar —</option>
+                  @for (item of vinculaciones(); track item.idTipoVinculacion) {
+                    <option [ngValue]="item.idTipoVinculacion">{{ item.descripcion }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Bloque 3: Ofertas de empleo público -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">3</span>
+              <span>Ofertas de empleo público</span>
+            </legend>
+
+            <div class="oep-header-bar">
+              <span class="oep-count-tag">{{ processForm.oepIds.length }} seleccionada{{ processForm.oepIds.length === 1 ? "" : "s" }}</span>
+              <small class="text-muted">Selecciona una o varias ofertas asociadas (opcional).</small>
+            </div>
+
+            <div class="oep-options-grid" [class.oep-options-grid--expanded]="processDrawerExpanded()">
+              @for (item of oeps(); track item.idOep) {
+                <label class="oep-card" [class.is-selected]="isOepSelected(item.idOep)">
+                  <input
+                    type="checkbox"
+                    [checked]="isOepSelected(item.idOep)"
+                    (change)="toggleOep(item.idOep, $any($event.target).checked)"
+                  >
+                  <div class="oep-card__info">
+                    <strong>OEP {{ item.anio }}</strong>
+                    <small>{{ item.descripcion || "Oferta de empleo público" }}</small>
+                  </div>
+                </label>
+              } @empty {
+                <p class="oep-empty">No hay ofertas de empleo público registradas en el catálogo maestro.</p>
+              }
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <!-- Pie fijo de Acciones del Drawer -->
+      <div class="drawer-footer">
+        <button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForms()">
+          Cancelar
+        </button>
+        <button
+          class="button button--primary"
+          type="button"
+          [disabled]="processEditor.invalid || saving()"
+          (click)="saveProcess(processEditor)"
+          [attr.aria-busy]="saving()"
+        >
+          {{ saving() ? "Guardando…" : processFormMode() === "create" ? "Crear proceso" : "Guardar cambios" }}
+        </button>
+      </div>
+    </aside>
+  }
+
+  <!-- Panel Lateral Derecho a Pantalla Completa (Side Sheet / Drawer para Crear/Editar Ejercicio) -->
+  @if (examFormOpen()) {
+    <div class="drawer-backdrop" (click)="closeForms()" aria-hidden="true"></div>
+    <aside
+      class="exam-drawer"
+      [class.is-expanded]="examDrawerExpanded()"
+      aria-labelledby="exam-form-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <!-- Cabecera del Drawer -->
+      <div class="drawer-header">
+        <div class="drawer-header__title">
+          <span class="panel-badge" [class.panel-badge--edit]="examFormMode() === 'edit'">
+            {{ examFormMode() === "create" ? "Alta" : "Edición" }}
+          </span>
+          <div>
+            <h2 id="exam-form-title">
+              {{ examFormMode() === "create" ? "Nuevo ejercicio" : "Editar ejercicio" }}
+            </h2>
+            @if (selected(); as proceso) {
+              <small class="drawer-header__subtitle">{{ proceso.codigoSirhus || "Sin código" }} · {{ proceso.nombre }}</small>
+            }
+          </div>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            class="drawer-ctrl-btn"
+            type="button"
+            (click)="toggleExamDrawerExpand()"
+            [attr.aria-label]="examDrawerExpanded() ? 'Reducir ancho' : 'Expandir ancho'"
+            [title]="examDrawerExpanded() ? 'Reducir ancho del panel' : 'Expandir ancho del panel'"
+          >
+            @if (examDrawerExpanded()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            }
+          </button>
+          <button class="drawer-close-btn" type="button" aria-label="Cerrar panel" (click)="closeForms()">×</button>
+        </div>
+      </div>
+
+      <!-- Cuerpo con Scroll del Drawer -->
+      <div class="drawer-body">
+        <form #examEditor="ngForm" (ngSubmit)="saveExam(examEditor)" class="drawer-editor-form" novalidate>
+          <div class="form-meta-note">
+            <p class="required-note"><span class="req-star" aria-hidden="true">*</span> Campos obligatorios</p>
+          </div>
+
+          <!-- Bloque 1: Datos del ejercicio -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <span class="legend-number">1</span>
+              <span>Datos del ejercicio</span>
+            </legend>
+
+            <div class="form-grid" [class.form-grid--expanded]="examDrawerExpanded()">
+              <div class="field field--wide">
+                <label for="exam-name">
+                  Nombre del ejercicio <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="exam-name"
+                  #examName="ngModel"
+                  name="examName"
+                  [(ngModel)]="examForm.nombre"
+                  required
+                  maxlength="250"
+                  autocomplete="off"
+                  placeholder="Ej. Primer ejercicio (Teórico) o Ejercicio único"
+                  [attr.aria-invalid]="examName.invalid && (examName.touched || examEditor.submitted)"
+                >
+                @if (examName.invalid && (examName.touched || examEditor.submitted)) {
+                  <span class="field-error" role="alert">Introduce el nombre del ejercicio.</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="exam-number">
+                  Número de ejercicio <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="exam-number"
+                  #examNum="ngModel"
+                  name="examNumber"
+                  [(ngModel)]="examForm.numeroEjercicio"
+                  type="number"
+                  min="1"
+                  required
+                  [attr.aria-invalid]="examNum.invalid && (examNum.touched || examEditor.submitted)"
+                >
+                <small class="field-hint">Orden secuencial del ejercicio (1, 2, 3...).</small>
+                @if (examNum.invalid && (examNum.touched || examEditor.submitted)) {
+                  <span class="field-error" role="alert">Indica un número de ejercicio válido.</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="exam-date">
+                  Fecha y hora <span class="optional-label">(opcional)</span>
+                </label>
+                <input
+                  id="exam-date"
+                  name="examDate"
+                  [(ngModel)]="examForm.fechaHora"
+                  type="datetime-local"
+                >
+                <small class="field-hint">Puede dejarse pendiente y completarse más adelante.</small>
+              </div>
+
+              <div class="field field--wide">
+                <label for="exam-notes">
+                  Observaciones <span class="optional-label">(opcional)</span>
+                </label>
+                <textarea
+                  id="exam-notes"
+                  name="examNotes"
+                  [(ngModel)]="examForm.observaciones"
+                  rows="3"
+                  maxlength="1000"
+                  placeholder="Indicaciones adicionales sobre llamamiento, sedes, material..."
+                ></textarea>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <!-- Pie fijo de Acciones del Drawer -->
+      <div class="drawer-footer" [class.drawer-footer--with-danger]="examFormMode() === 'edit' && canManageProcesos()">
+        @if (examFormMode() === 'edit' && canManageProcesos()) {
+          <button
+            class="danger-action-btn"
+            type="button"
+            (click)="askDeleteCurrentExam()"
+            [disabled]="saving() || deletingExam()"
+            title="Eliminar este ejercicio"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            <span>Eliminar ejercicio</span>
+          </button>
+        }
+        <div class="drawer-footer__main-actions">
+          <button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForms()">
+            Cancelar
+          </button>
+          <button
+            class="button button--primary"
+            type="button"
+            [disabled]="examEditor.invalid || saving()"
+            (click)="saveExam(examEditor)"
+            [attr.aria-busy]="saving()"
+          >
+            {{ saving() ? "Guardando…" : examFormMode() === "create" ? "Crear ejercicio" : "Guardar cambios" }}
+          </button>
+        </div>
+      </div>
+    </aside>
+  }
+
+  <!-- Diálogos Modales de Confirmación -->
   <dialog #deleteExamDialog class="confirmation-dialog" aria-labelledby="delete-exam-title">
     <form method="dialog">
       <p class="eyebrow">Confirmación necesaria</p>
@@ -177,19 +659,17 @@
       @if (deleteExamTarget(); as examen) {
         <p>Se eliminará de forma definitiva <strong>{{ examen.numeroEjercicio }}.º · {{ examen.nombre }}</strong>.</p>
       }
-      <p class="dialog-warning">También se eliminarán sus asignaciones, convocados, llamamientos, asistencias, importaciones e informes asociados. Esta acción no se puede deshacer.</p>
-      <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="deletingExam()" (click)="closeDeleteExam()">Cancelar</button><button class="button button--danger" type="button" [disabled]="deletingExam()" [attr.aria-busy]="deletingExam()" (click)="confirmDeleteExam()">{{ deletingExam() ? "Eliminando…" : "Eliminar ejercicio" }}</button></div>
-    </form>
-  </dialog>
-
-  <dialog #clearProcessesDialog class="confirmation-dialog" aria-labelledby="clear-processes-title">
-    <form method="dialog">
-      <p class="eyebrow">Zona de pruebas</p>
-      <h2 id="clear-processes-title">¿Eliminar todos los procesos?</h2>
-      <p>Se eliminarán todos los procesos, ejercicios y sus datos operativos: asignaciones, convocados, llamamientos, asistencias, importaciones e informes.</p>
-      <p>Se conservarán colaboradores, personas opositoras, centros, aulas y catálogos maestros.</p>
-      <label class="confirmation-check"><input type="checkbox" [checked]="cleanupAcknowledged()" (change)="cleanupAcknowledged.set($any($event.target).checked)"><span>Entiendo que esta acción no se puede deshacer.</span></label>
-      <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="clearingProcesses()" (click)="closeClearAllProcesses()">Cancelar</button><button class="button button--danger" type="button" [disabled]="!cleanupAcknowledged() || clearingProcesses()" [attr.aria-busy]="clearingProcesses()" (click)="confirmClearAllProcesses()">{{ clearingProcesses() ? "Eliminando…" : "Eliminar todos los procesos" }}</button></div>
+      <p class="dialog-warning">
+        También se eliminarán sus asignaciones, convocados, llamamientos, asistencias, importaciones e informes asociados. Esta acción no se puede deshacer.
+      </p>
+      <div class="dialog-actions">
+        <button class="button button--secondary" type="button" [disabled]="deletingExam()" (click)="closeDeleteExam()">
+          Cancelar
+        </button>
+        <button class="button button--danger" type="button" [disabled]="deletingExam()" [attr.aria-busy]="deletingExam()" (click)="confirmDeleteExam()">
+          {{ deletingExam() ? "Eliminando…" : "Eliminar ejercicio" }}
+        </button>
+      </div>
     </form>
   </dialog>
 </div>

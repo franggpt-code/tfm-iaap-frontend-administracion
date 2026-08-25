@@ -1,96 +1,586 @@
-<div class="page-shell">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Datos maestros</span></nav>
+<div class="page-shell master-data-page">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Datos maestros</span>
+  </nav>
 
   <header class="page-heading">
-    <div><p class="eyebrow">Configuración funcional</p><h1>Datos maestros</h1><p>Gestiona los catálogos utilizados por los procesos selectivos. Los registros en uso pueden estar protegidos frente a su eliminación.</p></div>
-    @if (activeSection() !== "informes") { <div class="heading-actions"><button class="button button--primary" type="button" (click)="startCreate()">Añadir {{ config().singular }}</button></div> }
+    <div>
+      <p class="eyebrow">Configuración funcional</p>
+      <h1>Datos maestros</h1>
+    </div>
+    @if (activeSection() !== "informes") {
+      <div class="heading-actions">
+        <button class="button button--primary" type="button" (click)="startCreate()">
+          <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Añadir {{ config().singular }}
+        </button>
+      </div>
+    }
   </header>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
-  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
+    </div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      <strong>Operación correcta.</strong> {{ success() }}
+    </div>
+  }
 
+  <!-- Pestañas de Catálogos -->
   <div class="catalog-tabs" role="tablist" aria-label="Catálogos disponibles">
     @for (key of catalogKeys; track key) {
-      <button type="button" role="tab" [attr.aria-selected]="activeSection() === key" [class.is-active]="activeSection() === key" (click)="selectSection(key)">{{ catalogs[key].label }}</button>
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeSection() === key"
+        [class.is-active]="activeSection() === key"
+        (click)="selectSection(key)"
+      >
+        {{ catalogs[key].tabLabel }}
+      </button>
     }
-    <button type="button" role="tab" [attr.aria-selected]="activeSection() === 'informes'" [class.is-active]="activeSection() === 'informes'" (click)="selectSection('informes')">Parámetros de informes</button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeSection() === 'informes'"
+      [class.is-active]="activeSection() === 'informes'"
+      (click)="selectSection('informes')"
+    >
+      Informes
+    </button>
   </div>
 
   @if (activeSection() === "informes") {
-    <section id="configuracion-informes" class="report-config" aria-labelledby="report-config-title">
-      <header class="report-config__heading"><div><p class="eyebrow">Documentos oficiales</p><h2 id="report-config-title">Parámetros de informes</h2><p>Estos datos se reutilizan en la certificación y en las firmas del informe de pagos. El control de firmas no necesita parámetros adicionales.</p></div></header>
-      <p class="required-note">* Campos obligatorios</p>
+    <!-- Sección de Parámetros de Informes -->
+    <section id="configuracion-informes" class="report-config-card" aria-labelledby="report-config-title">
+      <div class="report-config-card__header">
+        <h2 id="report-config-title">Parámetros de firmas e informes</h2>
+      </div>
+
       <form class="report-config__form" [formGroup]="reportConfigForm" (ngSubmit)="saveReportConfiguration()" novalidate>
-        <div class="field field--wide"><label for="report-organismo">Organismo *</label><input id="report-organismo" type="text" maxlength="255" formControlName="organismo" [attr.aria-invalid]="!!reportConfigErrors()['organismo']">@if (reportConfigErrors()["organismo"]) { <span class="field-error">{{ reportConfigErrors()["organismo"] }}</span> }</div>
-        <div class="field"><label for="report-localidad">Localidad de firma *</label><input id="report-localidad" type="text" maxlength="120" formControlName="localidadFirma" [attr.aria-invalid]="!!reportConfigErrors()['localidadFirma']">@if (reportConfigErrors()["localidadFirma"]) { <span class="field-error">{{ reportConfigErrors()["localidadFirma"] }}</span> }</div>
+        <div class="field field--wide">
+          <label for="report-organismo">Organismo <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-organismo"
+            type="text"
+            maxlength="255"
+            formControlName="organismo"
+            placeholder="Instituto Andaluz de Administración Pública"
+            [attr.aria-invalid]="!!reportConfigErrors()['organismo']"
+          >
+          @if (reportConfigErrors()["organismo"]) {
+            <span class="field-error">{{ reportConfigErrors()["organismo"] }}</span>
+          }
+        </div>
+
+        <div class="field field--wide">
+          <label for="report-localidad">Localidad de firma <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-localidad"
+            type="text"
+            maxlength="120"
+            formControlName="localidadFirma"
+            placeholder="Sevilla"
+            [attr.aria-invalid]="!!reportConfigErrors()['localidadFirma']"
+          >
+          @if (reportConfigErrors()["localidadFirma"]) {
+            <span class="field-error">{{ reportConfigErrors()["localidadFirma"] }}</span>
+          }
+        </div>
+
         <div class="report-config__separator" aria-hidden="true"></div>
-        <div class="field"><label for="report-certifica-nombre">Nombre de quien certifica *</label><input id="report-certifica-nombre" type="text" maxlength="255" formControlName="nombreCertifica" [attr.aria-invalid]="!!reportConfigErrors()['nombreCertifica']">@if (reportConfigErrors()["nombreCertifica"]) { <span class="field-error">{{ reportConfigErrors()["nombreCertifica"] }}</span> }</div>
-        <div class="field"><label for="report-certifica-cargo">Cargo de quien certifica *</label><input id="report-certifica-cargo" type="text" maxlength="255" formControlName="cargoCertifica" [attr.aria-invalid]="!!reportConfigErrors()['cargoCertifica']">@if (reportConfigErrors()["cargoCertifica"]) { <span class="field-error">{{ reportConfigErrors()["cargoCertifica"] }}</span> }</div>
-        <div class="field"><label for="report-visto-nombre">Nombre para el visto bueno *</label><input id="report-visto-nombre" type="text" maxlength="255" formControlName="nombreVistoBueno" [attr.aria-invalid]="!!reportConfigErrors()['nombreVistoBueno']">@if (reportConfigErrors()["nombreVistoBueno"]) { <span class="field-error">{{ reportConfigErrors()["nombreVistoBueno"] }}</span> }</div>
-        <div class="field"><label for="report-visto-cargo">Cargo para el visto bueno *</label><input id="report-visto-cargo" type="text" maxlength="255" formControlName="cargoVistoBueno" [attr.aria-invalid]="!!reportConfigErrors()['cargoVistoBueno']">@if (reportConfigErrors()["cargoVistoBueno"]) { <span class="field-error">{{ reportConfigErrors()["cargoVistoBueno"] }}</span> }</div>
-        <div class="form-actions field--wide"><button class="button button--primary" type="submit" [disabled]="reportConfigSaving()" [attr.aria-busy]="reportConfigSaving()">{{ reportConfigSaving() ? "Guardando…" : "Guardar parámetros" }}</button></div>
+
+        <div class="field">
+          <label for="report-certifica-nombre">Nombre de quien certifica <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-certifica-nombre"
+            type="text"
+            maxlength="255"
+            formControlName="nombreCertifica"
+            placeholder="Nombre y apellidos"
+            [attr.aria-invalid]="!!reportConfigErrors()['nombreCertifica']"
+          >
+          @if (reportConfigErrors()["nombreCertifica"]) {
+            <span class="field-error">{{ reportConfigErrors()["nombreCertifica"] }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="report-certifica-cargo">Cargo de quien certifica <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-certifica-cargo"
+            type="text"
+            maxlength="255"
+            formControlName="cargoCertifica"
+            placeholder="Jefe/a de Servicio"
+            [attr.aria-invalid]="!!reportConfigErrors()['cargoCertifica']"
+          >
+          @if (reportConfigErrors()["cargoCertifica"]) {
+            <span class="field-error">{{ reportConfigErrors()["cargoCertifica"] }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="report-visto-nombre">Nombre para visto bueno <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-visto-nombre"
+            type="text"
+            maxlength="255"
+            formControlName="nombreVistoBueno"
+            placeholder="Nombre y apellidos"
+            [attr.aria-invalid]="!!reportConfigErrors()['nombreVistoBueno']"
+          >
+          @if (reportConfigErrors()["nombreVistoBueno"]) {
+            <span class="field-error">{{ reportConfigErrors()["nombreVistoBueno"] }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="report-visto-cargo">Cargo para visto bueno <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-visto-cargo"
+            type="text"
+            maxlength="255"
+            formControlName="cargoVistoBueno"
+            placeholder="Director/a del IAAP"
+            [attr.aria-invalid]="!!reportConfigErrors()['cargoVistoBueno']"
+          >
+          @if (reportConfigErrors()["cargoVistoBueno"]) {
+            <span class="field-error">{{ reportConfigErrors()["cargoVistoBueno"] }}</span>
+          }
+        </div>
+
+        <div class="form-actions field--wide">
+          <button class="button button--primary" type="submit" [disabled]="reportConfigSaving()" [attr.aria-busy]="reportConfigSaving()">
+            {{ reportConfigSaving() ? "Guardando…" : "Guardar parámetros" }}
+          </button>
+        </div>
       </form>
     </section>
   } @else {
-  <section class="catalog-toolbar" aria-labelledby="catalog-title">
-    <div><h2 id="catalog-title">{{ config().label }}</h2><p>{{ config().description }}</p></div>
-    <label class="search-field"><span>Buscar</span><input type="search" placeholder="Código o descripción" [value]="search()" (input)="search.set($any($event.target).value)"></label>
-  </section>
+    <!-- Barra de búsqueda y conteo del Catálogo Activo -->
+    <section class="filter-card" aria-labelledby="catalog-search-title">
+      <div class="filter-card__heading">
+        <div>
+          <p class="eyebrow">Catálogo activo</p>
+          <h2 id="catalog-search-title">{{ config().label }}</h2>
+        </div>
+        <span class="result-count" aria-live="polite">
+          {{ filteredItems().length }} {{ filteredItems().length === 1 ? "registro" : "registros" }}
+        </span>
+      </div>
 
-  <div class="master-layout" [class.master-layout--editing]="formOpen()">
-    <section class="master-list" aria-label="Listado del catálogo">
-      @if (loading()) { <p class="loading-message">Cargando datos maestros…</p> }
-      @else {
-        <div class="master-table-wrap">
+      <div class="filter-card__body">
+        <div class="filter-main-search">
+          <label for="master-search" class="visually-hidden">Buscar en catálogo</label>
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              id="master-search"
+              type="search"
+              placeholder="Buscar por código, año o descripción…"
+              [value]="search()"
+              (input)="onSearchChange($any($event.target).value)"
+            >
+            @if (search()) {
+              <button class="search-clear" type="button" aria-label="Limpiar búsqueda" (click)="onSearchChange('')">×</button>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla Principal del Catálogo (Ocupa todo el ancho) -->
+    <section class="list-panel" aria-label="Listado de registros del catálogo">
+      @if (loading()) {
+        <p class="loading-message">Cargando datos maestros…</p>
+      } @else {
+        <div class="table-wrap">
           <table class="admin-table master-table">
-            <thead><tr><th>{{ activeCatalog() === "oep" ? "Año" : "Código" }}</th><th>{{ activeCatalog() === "perfiles" ? "Denominación" : "Descripción" }}</th><th>{{ activeCatalog() === "oep" ? "Referencia BOJA" : activeCatalog() === "cuerpos" ? "Grupo" : activeCatalog() === "perfiles" ? "Importe" : "Tipo" }}</th><th>Acciones</th></tr></thead>
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'col1' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('col1')">
+                    <span>{{ activeCatalog() === "oep" ? "Año" : "Código" }}</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'col1') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'col2' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('col2')">
+                    <span>{{ activeCatalog() === "perfiles" ? "Denominación" : "Descripción" }}</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'col2') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'col3' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('col3')">
+                    <span>{{ activeCatalog() === "oep" ? "Referencia BOJA" : activeCatalog() === "cuerpos" ? "Grupo" : activeCatalog() === "perfiles" ? "Importe" : "Tipo" }}</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'col3') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
             <tbody>
-              @for (item of filteredItems(); track itemCode(item)) {
+              @for (item of paginatedItems(); track itemCode(item)) {
                 <tr>
-                  <td data-label="Código"><strong>{{ itemCode(item) }}</strong></td>
-                  <td data-label="Descripción">{{ itemDescription(item) }}</td>
-                  <td data-label="Información">{{ itemMeta(item) }}</td>
-                  <td data-label="Acciones"><div class="row-actions"><button class="button button--link" type="button" (click)="startEdit(item)">Editar</button><button class="button button--link danger-link" type="button" (click)="askDelete(item)">Eliminar</button></div></td>
+                  <td data-label="Código">
+                    <span class="code-badge">{{ itemCode(item) }}</span>
+                  </td>
+                  <td data-label="Descripción">
+                    <strong>{{ itemDescription(item) }}</strong>
+                  </td>
+                  <td data-label="Información">
+                    @if (activeCatalog() === 'perfiles') {
+                      <span class="price-chip">{{ itemMeta(item) }}</span>
+                    } @else if (activeCatalog() === 'cuerpos') {
+                      <span class="group-chip">{{ itemMeta(item) }}</span>
+                    } @else {
+                      <span class="text-muted">{{ itemMeta(item) }}</span>
+                    }
+                  </td>
+                  <td data-label="Acciones">
+                    <div class="row-actions">
+                      <button class="button button--link" type="button" (click)="startEdit(item)">Editar</button>
+                      <button class="button button--link danger-link" type="button" (click)="askDelete(item)">Eliminar</button>
+                    </div>
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="4"><div class="empty-state"><strong>No hay registros.</strong><span>{{ search() ? "Prueba con otra búsqueda." : "Añade el primer registro de este catálogo." }}</span></div></td></tr>
+                <tr>
+                  <td colspan="4">
+                    <div class="empty-state">
+                      <strong>No se encontraron registros.</strong>
+                      <span>{{ search() ? "Prueba con otra búsqueda o limpia el filtro." : "Añade el primer registro en este catálogo." }}</span>
+                    </div>
+                  </td>
+                </tr>
               }
             </tbody>
           </table>
         </div>
+
+        <!-- Barra de Paginación -->
+        <div class="pagination-bar">
+          <div class="pagination-info">
+            @if (totalItems() > 0) {
+              <span>Mostrando <strong>{{ startIndex() }} - {{ endIndex() }}</strong> de <strong>{{ totalItems() }}</strong> {{ totalItems() === 1 ? "registro" : "registros" }}</span>
+            } @else {
+              <span>0 registros</span>
+            }
+          </div>
+
+          <div class="pagination-controls">
+            <div class="page-size-selector">
+              <label for="master-page-size-select">Filas por página:</label>
+              <select
+                id="master-page-size-select"
+                [value]="pageSize()"
+                (change)="setPageSize($any($event.target).value)"
+              >
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+                <option [value]="100">100</option>
+              </select>
+            </div>
+
+            <div class="pagination-nav">
+              <button
+                class="pagination-btn"
+                type="button"
+                [disabled]="currentPage() <= 1"
+                (click)="setPage(currentPage() - 1)"
+                aria-label="Página anterior"
+                title="Página anterior"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+
+              <span class="pagination-current-page">
+                Página <strong>{{ currentPage() }}</strong> de <strong>{{ totalPages() }}</strong>
+              </span>
+
+              <button
+                class="pagination-btn"
+                type="button"
+                [disabled]="currentPage() >= totalPages()"
+                (click)="setPage(currentPage() + 1)"
+                aria-label="Página siguiente"
+                title="Página siguiente"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       }
     </section>
 
+    <!-- Panel Lateral Derecho a Pantalla Completa (Drawer) -->
     @if (formOpen()) {
-      <aside class="master-form-panel" aria-labelledby="master-form-title">
-        <div class="panel-heading"><div><p class="eyebrow">{{ editingId() === null ? "Nuevo registro" : "Edición" }}</p><h2 id="master-form-title">{{ editingId() === null ? "Añadir" : "Editar" }} {{ config().singular }}</h2></div></div>
-        <p class="required-note">* Campos obligatorios</p>
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
-          @if (activeCatalog() === "oep") {
-            <div class="field"><label for="master-anio">Año *</label><input id="master-anio" type="number" min="1900" max="2200" formControlName="anio" [attr.aria-invalid]="!!fieldErrors()['anio']">@if (fieldErrors()["anio"]) { <span class="field-error">{{ fieldErrors()["anio"] }}</span> }</div>
-            <div class="field"><label for="master-oep-descripcion">Descripción (opcional)</label><input id="master-oep-descripcion" type="text" maxlength="255" formControlName="descripcion"></div>
-            <div class="field"><label for="master-boja">Referencia BOJA (opcional)</label><input id="master-boja" type="text" maxlength="255" formControlName="bojaRef"></div>
-          } @else {
-            <div class="field"><label for="master-codigo">Código *</label><input id="master-codigo" type="text" maxlength="64" formControlName="codigo" [attr.aria-invalid]="!!fieldErrors()['codigo']">@if (fieldErrors()["codigo"]) { <span class="field-error">{{ fieldErrors()["codigo"] }}</span> }</div>
-            <div class="field"><label for="master-descripcion">Descripción *</label><textarea id="master-descripcion" rows="3" maxlength="500" formControlName="descripcion" [attr.aria-invalid]="!!fieldErrors()['descripcion']"></textarea>@if (fieldErrors()["descripcion"]) { <span class="field-error">{{ fieldErrors()["descripcion"] }}</span> }</div>
-            @if (activeCatalog() === "cuerpos") { <div class="field"><label for="master-grupo">Grupo *</label><input id="master-grupo" type="text" maxlength="16" formControlName="grupo" placeholder="Ej. C1" [attr.aria-invalid]="!!fieldErrors()['grupo']">@if (fieldErrors()["grupo"]) { <span class="field-error">{{ fieldErrors()["grupo"] }}</span> }</div> }
-            @if (activeCatalog() === "perfiles") { <div class="field"><label for="master-importe">Importe por hora (€) *</label><input id="master-importe" type="number" min="0" step="0.01" formControlName="importeHora" [attr.aria-invalid]="!!fieldErrors()['importeHora']">@if (fieldErrors()["importeHora"]) { <span class="field-error">{{ fieldErrors()["importeHora"] }}</span> }</div> }
-          }
-          <div class="form-actions"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="cancelForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()" [attr.aria-busy]="saving()">{{ saving() ? "Guardando…" : "Guardar" }}</button></div>
-        </form>
+      <div class="drawer-backdrop" (click)="cancelForm()" aria-hidden="true"></div>
+      <aside
+        class="master-drawer"
+        [class.is-expanded]="drawerExpanded()"
+        aria-labelledby="master-form-title"
+        role="dialog"
+        aria-modal="true"
+      >
+        <!-- Cabecera del Drawer -->
+        <div class="drawer-header">
+          <div class="drawer-header__title">
+            <span class="panel-badge" [class.panel-badge--edit]="editingId() !== null">
+              {{ editingId() === null ? "Alta" : "Edición" }}
+            </span>
+            <h2 id="master-form-title">{{ editingId() === null ? "Añadir " + config().singular : "Editar " + config().singular }}</h2>
+          </div>
+          <div class="drawer-header__controls">
+            <button
+              class="drawer-ctrl-btn"
+              type="button"
+              (click)="toggleDrawerExpand()"
+              [attr.aria-label]="drawerExpanded() ? 'Reducir ancho' : 'Expandir ancho'"
+              [title]="drawerExpanded() ? 'Reducir ancho del panel' : 'Expandir ancho del panel'"
+            >
+              @if (drawerExpanded()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="4 14 10 14 10 20"></polyline>
+                  <polyline points="20 10 14 10 14 4"></polyline>
+                  <line x1="14" y1="10" x2="21" y2="3"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              }
+            </button>
+            <button class="drawer-close-btn" type="button" aria-label="Cerrar panel" (click)="cancelForm()">×</button>
+          </div>
+        </div>
+
+        <!-- Cuerpo con scroll del Drawer -->
+        <div class="drawer-body">
+          <form [formGroup]="form" (ngSubmit)="save()" novalidate class="master-editor-form">
+            @if (activeCatalog() === "oep") {
+              <div class="field">
+                <label for="master-anio">Año <span class="req-star" aria-hidden="true">*</span></label>
+                <input
+                  id="master-anio"
+                  type="number"
+                  min="1900"
+                  max="2200"
+                  formControlName="anio"
+                  [attr.aria-invalid]="!!fieldErrors()['anio']"
+                >
+                @if (fieldErrors()["anio"]) {
+                  <span class="field-error">{{ fieldErrors()["anio"] }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="master-oep-descripcion">Descripción <span class="optional-label">(Opcional)</span></label>
+                <input
+                  id="master-oep-descripcion"
+                  type="text"
+                  maxlength="255"
+                  formControlName="descripcion"
+                  placeholder="Ej. Oferta Ordinaria 2025"
+                >
+              </div>
+
+              <div class="field">
+                <label for="master-boja">Referencia BOJA <span class="optional-label">(Opcional)</span></label>
+                <input
+                  id="master-boja"
+                  type="text"
+                  maxlength="255"
+                  formControlName="bojaRef"
+                  placeholder="Ej. BOJA núm. 142 de 24/07/2025"
+                >
+              </div>
+            } @else {
+              <div class="field">
+                <label for="master-codigo">Código <span class="req-star" aria-hidden="true">*</span></label>
+                <input
+                  id="master-codigo"
+                  type="text"
+                  maxlength="64"
+                  formControlName="codigo"
+                  placeholder="Ej. A1.1100"
+                  [attr.aria-invalid]="!!fieldErrors()['codigo']"
+                >
+                @if (fieldErrors()["codigo"]) {
+                  <span class="field-error">{{ fieldErrors()["codigo"] }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="master-descripcion">
+                  {{ activeCatalog() === "perfiles" ? "Denominación" : "Descripción" }} <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <textarea
+                  id="master-descripcion"
+                  rows="3"
+                  maxlength="500"
+                  formControlName="descripcion"
+                  placeholder="Introduce una descripción clara..."
+                  [attr.aria-invalid]="!!fieldErrors()['descripcion']"
+                ></textarea>
+                @if (fieldErrors()["descripcion"]) {
+                  <span class="field-error">{{ fieldErrors()["descripcion"] }}</span>
+                }
+              </div>
+
+              @if (activeCatalog() === "cuerpos") {
+                <div class="field">
+                  <label for="master-grupo">Grupo de titulación <span class="req-star" aria-hidden="true">*</span></label>
+                  <input
+                    id="master-grupo"
+                    type="text"
+                    maxlength="16"
+                    formControlName="grupo"
+                    placeholder="Ej. A1, A2, C1, C2"
+                    [attr.aria-invalid]="!!fieldErrors()['grupo']"
+                  >
+                  @if (fieldErrors()["grupo"]) {
+                    <span class="field-error">{{ fieldErrors()["grupo"] }}</span>
+                  }
+                </div>
+              }
+
+              @if (activeCatalog() === "perfiles") {
+                <div class="field">
+                  <label for="master-importe">Importe por hora (€) <span class="req-star" aria-hidden="true">*</span></label>
+                  <input
+                    id="master-importe"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    formControlName="importeHora"
+                    placeholder="0.00"
+                    [attr.aria-invalid]="!!fieldErrors()['importeHora']"
+                  >
+                  @if (fieldErrors()["importeHora"]) {
+                    <span class="field-error">{{ fieldErrors()["importeHora"] }}</span>
+                  }
+                </div>
+              }
+            }
+          </form>
+        </div>
+
+        <!-- Pie fijo de Acciones del Drawer -->
+        <div class="drawer-footer">
+          <button class="button button--secondary" type="button" [disabled]="saving()" (click)="cancelForm()">
+            Cancelar
+          </button>
+          <button class="button button--primary" type="button" [disabled]="saving()" (click)="save()" [attr.aria-busy]="saving()">
+            {{ saving() ? "Guardando…" : "Guardar" }}
+          </button>
+        </div>
       </aside>
     }
-  </div>
   }
-
 </div>
 
+<!-- Diálogo Modal de Confirmación de Eliminación -->
 <dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-title">
   <form method="dialog">
     <p class="eyebrow">Confirmación necesaria</p>
     <h2 id="delete-title">¿Eliminar este registro?</h2>
-    @if (deleteTarget(); as target) { <p>Se eliminará <strong>{{ itemCode(target.item) }}</strong> · {{ itemDescription(target.item) }}.</p> }
-    <p>Si está siendo utilizado por un proceso, el backend impedirá la eliminación.</p>
-    <div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">Cancelar</button><button class="button button--danger" type="button" [disabled]="deleting()" [attr.aria-busy]="deleting()" (click)="confirmDelete()">{{ deleting() ? "Eliminando…" : "Eliminar" }}</button></div>
+
+    @if (deleteTarget(); as target) {
+      <div class="delete-summary-box">
+        <p>Estás a punto de eliminar el siguiente elemento:</p>
+        <div class="delete-item-card">
+          <span class="code-badge">{{ itemCode(target.item) }}</span>
+          <div>
+            <strong>{{ itemDescription(target.item) }}</strong>
+            <small>{{ itemMeta(target.item) }}</small>
+          </div>
+        </div>
+      </div>
+      <p class="delete-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Si este registro está siendo utilizado en convocatorias o llamamientos activos, la operación no se completará.</span>
+      </p>
+    }
+
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="button" [disabled]="deleting()" [attr.aria-busy]="deleting()" (click)="confirmDelete()">
+        {{ deleting() ? "Eliminando…" : "Eliminar" }}
+      </button>
+    </div>
   </form>
 </dialog>
+

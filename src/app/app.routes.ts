@@ -6,6 +6,7 @@ import { ConvocadosComponent } from "./features/workspace/convocados/convocados.
 import { DatosMaestrosComponent } from "./features/workspace/datos-maestros/datos-maestros.component";
 import { DashboardComponent } from "./features/workspace/dashboard/dashboard.component";
 import { ImportacionOpositoresComponent } from "./features/workspace/importacion/importacion-opositores.component";
+import { ImportacionColaboradoresComponent } from "./features/workspace/importacion/importacion-colaboradores.component";
 import { ImportacionesComponent } from "./features/workspace/importacion/importaciones.component";
 import { ImportacionConvocatoriasComponent } from "./features/workspace/importacion-convocatorias/importacion-convocatorias.component";
 import { ProcesosExplorerComponent } from "./features/workspace/procesos/procesos-explorer.component";
@@ -14,6 +15,7 @@ import { ColaboradoresComponent } from "./features/workspace/colaboradores/colab
 import { AsignacionesComponent } from "./features/workspace/asignaciones/asignaciones.component";
 import { InformesComponent } from "./features/workspace/informes/informes.component";
 import { UsuariosComponent } from "./features/workspace/usuarios/usuarios.component";
+import { ZonaPruebasComponent } from "./features/workspace/zona-pruebas/zona-pruebas.component";
 import { MiEspacioComponent } from "./features/portal/mi-espacio.component";
 
 export const routes: Routes = [
@@ -23,6 +25,7 @@ export const routes: Routes = [
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/convocatorias", component: ImportacionConvocatoriasComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/opositores-aulas", component: ImportacionOpositoresComponent, canActivate: [adminRoleGuard] },
+  { path: "admin/importaciones/colaboradores", component: ImportacionColaboradoresComponent, canActivate: [adminRoleGuard] },
   { path: "admin/procesos", component: ProcesosExplorerComponent, canActivate: [adminGuard] },
   { path: "admin/procesos-selectivos/:procesoId/examenes/:examenId/convocados", component: ConvocadosComponent, canActivate: [adminGuard] },
   { path: "admin/examenes-aula/:examenAulaId/asistencia", component: AsistenciaComponent, canActivate: [adminRoleGuard] },
@@ -32,6 +35,7 @@ export const routes: Routes = [
   { path: "admin/informes", component: InformesComponent, canActivate: [adminGuard] },
   { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminRoleGuard] },
   { path: "admin/usuarios", component: UsuariosComponent, canActivate: [adminRoleGuard] },
+  { path: "admin/zona-pruebas", component: ZonaPruebasComponent, canActivate: [adminRoleGuard] },
   { path: "mi-espacio", component: MiEspacioComponent, canActivate: [collaboratorGuard] },
   { path: "mi-espacio/asignaciones/:asignacionId/llamamiento", component: AsistenciaComponent, canActivate: [collaboratorGuard] },
   { path: "**", redirectTo: "login" },

@@ -21,18 +21,20 @@ import {
 type CatalogKey = "oep" | "acceso" | "vinculacion" | "cuerpos" | "perfiles";
 type SectionKey = CatalogKey | "informes";
 type MasterItem = Oep | TipoAcceso | TipoVinculacion | Cuerpo | PerfilColaboracion;
+export type MasterSortColumn = "col1" | "col2" | "col3";
+export type SortDirection = "asc" | "desc";
 
 interface DeleteTarget {
   catalog: CatalogKey;
   item: MasterItem;
 }
 
-const CATALOGS: Record<CatalogKey, { label: string; singular: string; description: string }> = {
-  oep: { label: "Ofertas de empleo público", singular: "OEP", description: "Años y referencias de las ofertas de empleo público." },
-  acceso: { label: "Tipos de acceso", singular: "tipo de acceso", description: "Modalidades de acceso de los procesos selectivos." },
-  vinculacion: { label: "Tipos de vinculación", singular: "tipo de vinculación", description: "Relaciones jurídicas asociadas a los procesos." },
-  cuerpos: { label: "Cuerpos", singular: "cuerpo", description: "Códigos, grupos y denominaciones de los cuerpos." },
-  perfiles: { label: "Perfiles de colaboración", singular: "perfil de colaboración", description: "Funciones que puede desempeñar el personal colaborador y su importe por hora." },
+const CATALOGS: Record<CatalogKey, { label: string; tabLabel: string; singular: string; description: string }> = {
+  oep: { label: "Ofertas de empleo público", tabLabel: "OEP", singular: "OEP", description: "Años y referencias de las ofertas de empleo público." },
+  acceso: { label: "Tipos de acceso", tabLabel: "Tipos de acceso", singular: "tipo de acceso", description: "Modalidades de acceso de los procesos selectivos." },
+  vinculacion: { label: "Tipos de vinculación", tabLabel: "Tipos de vinculación", singular: "tipo de vinculación", description: "Relaciones jurídicas asociadas a los procesos." },
+  cuerpos: { label: "Cuerpos", tabLabel: "Cuerpos", singular: "cuerpo", description: "Códigos, grupos y denominaciones de los cuerpos." },
+  perfiles: { label: "Perfiles de colaboración", tabLabel: "Perfiles", singular: "perfil de colaboración", description: "Funciones que puede desempeñar el personal colaborador y su importe por hora." },
 };
 
 @Component({
@@ -63,12 +65,19 @@ export class DatosMaestrosComponent implements OnInit {
   readonly deleting = signal(false);
   readonly reportConfigSaving = signal(false);
   readonly formOpen = signal(false);
+  readonly drawerExpanded = signal(false);
   readonly editingId = signal<number | string | null>(null);
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string>>({});
   readonly reportConfigErrors = signal<Record<string, string>>({});
   readonly deleteTarget = signal<DeleteTarget | null>(null);
+
+  /* Ordenación y paginación */
+  readonly sortBy = signal<MasterSortColumn>("col1");
+  readonly sortDirection = signal<SortDirection>("asc");
+  readonly pageSize = signal<20 | 50 | 100>(20);
+  readonly currentPage = signal(1);
 
   readonly form = this.fb.nonNullable.group({
     anio: [new Date().getFullYear()],
@@ -98,10 +107,64 @@ export class DatosMaestrosComponent implements OnInit {
       case "perfiles": return this.perfiles();
     }
   });
+
   readonly filteredItems = computed(() => {
     const query = this.search().trim().toLocaleLowerCase("es");
     if (!query) return this.items();
     return this.items().filter((item) => this.searchableText(item).includes(query));
+  });
+
+  readonly sortedItems = computed(() => {
+    const list = [...this.filteredItems()];
+    const col = this.sortBy();
+    const dir = this.sortDirection() === "asc" ? 1 : -1;
+    const cat = this.activeCatalog();
+
+    return list.sort((a, b) => {
+      let comp = 0;
+      switch (col) {
+        case "col1": {
+          comp = this.itemCode(a).localeCompare(this.itemCode(b), "es", { numeric: true });
+          break;
+        }
+        case "col2": {
+          comp = this.itemDescription(a).localeCompare(this.itemDescription(b), "es", { sensitivity: "base" });
+          break;
+        }
+        case "col3": {
+          if (cat === "perfiles") {
+            const valA = (a as PerfilColaboracion).importeHora ?? 0;
+            const valB = (b as PerfilColaboracion).importeHora ?? 0;
+            comp = valA - valB;
+          } else {
+            comp = this.itemMeta(a).localeCompare(this.itemMeta(b), "es", { numeric: true });
+          }
+          break;
+        }
+      }
+      return comp * dir;
+    });
+  });
+
+  readonly totalItems = computed(() => this.sortedItems().length);
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalItems() / this.pageSize())));
+
+  readonly paginatedItems = computed(() => {
+    const page = Math.min(this.currentPage(), this.totalPages());
+    const size = this.pageSize();
+    const start = (page - 1) * size;
+    return this.sortedItems().slice(start, start + size);
+  });
+
+  readonly startIndex = computed(() => {
+    if (this.totalItems() === 0) return 0;
+    const page = Math.min(this.currentPage(), this.totalPages());
+    return (page - 1) * this.pageSize() + 1;
+  });
+
+  readonly endIndex = computed(() => {
+    const page = Math.min(this.currentPage(), this.totalPages());
+    return Math.min(page * this.pageSize(), this.totalItems());
   });
 
   ngOnInit(): void {
@@ -111,14 +174,18 @@ export class DatosMaestrosComponent implements OnInit {
   selectCatalog(catalog: CatalogKey): void {
     this.activeCatalog.set(catalog);
     this.search.set("");
+    this.currentPage.set(1);
+    this.sortBy.set("col1");
+    this.sortDirection.set("asc");
     this.cancelForm();
     this.clearMessages();
   }
 
   selectSection(section: SectionKey): void {
     this.activeSection.set(section);
-    if (section !== "informes") this.selectCatalog(section);
-    else {
+    if (section !== "informes") {
+      this.selectCatalog(section);
+    } else {
       this.cancelForm();
       this.clearMessages();
     }
@@ -126,6 +193,7 @@ export class DatosMaestrosComponent implements OnInit {
 
   startCreate(): void {
     this.editingId.set(null);
+    this.drawerExpanded.set(false);
     this.form.reset({ anio: new Date().getFullYear(), descripcion: "", bojaRef: "", codigo: "", grupo: "", importeHora: 0 });
     this.fieldErrors.set({});
     this.formOpen.set(true);
@@ -135,6 +203,7 @@ export class DatosMaestrosComponent implements OnInit {
   startEdit(item: MasterItem): void {
     const catalog = this.activeCatalog();
     this.editingId.set(this.itemId(catalog, item));
+    this.drawerExpanded.set(false);
     if (catalog === "oep") {
       const value = item as Oep;
       this.form.reset({ anio: value.anio, descripcion: value.descripcion ?? "", bojaRef: value.bojaRef ?? "", codigo: "", grupo: "" });
@@ -156,8 +225,40 @@ export class DatosMaestrosComponent implements OnInit {
 
   cancelForm(): void {
     this.formOpen.set(false);
+    this.drawerExpanded.set(false);
     this.editingId.set(null);
     this.fieldErrors.set({});
+  }
+
+  toggleDrawerExpand(): void {
+    this.drawerExpanded.update(v => !v);
+  }
+
+  toggleSort(column: MasterSortColumn): void {
+    if (this.sortBy() === column) {
+      this.sortDirection.update(dir => dir === "asc" ? "desc" : "asc");
+    } else {
+      this.sortBy.set(column);
+      this.sortDirection.set("asc");
+    }
+  }
+
+  setPage(page: number): void {
+    const target = Math.max(1, Math.min(page, this.totalPages()));
+    this.currentPage.set(target);
+  }
+
+  setPageSize(size: string | number): void {
+    const parsed = Number(size) as 20 | 50 | 100;
+    if (parsed === 20 || parsed === 50 || parsed === 100) {
+      this.pageSize.set(parsed);
+      this.currentPage.set(1);
+    }
+  }
+
+  onSearchChange(query: string): void {
+    this.search.set(query);
+    this.currentPage.set(1);
   }
 
   save(): void {

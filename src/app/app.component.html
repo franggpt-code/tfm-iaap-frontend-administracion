@@ -138,11 +138,23 @@
                   <span class="nav-label">Usuarios</span>
                 </a>
               </li>
+              <li>
+                <a routerLink="/admin/zona-pruebas" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeMenu()" title="Zona de pruebas">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10 2v7.31"></path>
+                    <path d="M14 2v7.31"></path>
+                    <path d="M8.5 2h7"></path>
+                    <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
+                    <path d="M5.52 16h12.96"></path>
+                  </svg>
+                  <span class="nav-label">Zona de pruebas</span>
+                </a>
+              </li>
             </ul>
           </div>
         }
 
-        @if (isCollaborator()) {
+        @if (isCollaborator() || isAdmin() || isManager()) {
           <div class="nav-group">
             <span class="nav-group-header">Portal</span>
             <ul class="nav-list">

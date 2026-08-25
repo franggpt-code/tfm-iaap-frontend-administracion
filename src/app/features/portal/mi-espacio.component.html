@@ -7,6 +7,7 @@
   @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
   @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
   @if (loading()) { <p class="loading-message">Cargando tu información…</p> }
+  @else if (missingCollaboratorLink()) { <section class="empty-state portal-link-needed"><strong>Tu cuenta no tiene una ficha de colaborador vinculada.</strong><span>Para usar Mi espacio, vincula la ficha correspondiente desde Usuarios y permisos. Esta vinculación no modifica tu perfil de Administrador o Gestor.</span>@if (canManageUsers()) { <a class="button button--primary" routerLink="/admin/usuarios">Vincular ficha de colaborador</a> } @else { <span>Solicita esta vinculación a una persona administradora.</span> }</section> }
   @else if (perfil(); as person) {
     <nav class="portal-tabs" aria-label="Secciones de mi espacio" role="tablist">
       <button type="button" role="tab" [attr.aria-selected]="activeSection() === 'proximas'" [class.is-active]="activeSection() === 'proximas'" (click)="activeSection.set('proximas')">Próximas colaboraciones <span>{{ proximasAsignaciones().length }}</span></button>
