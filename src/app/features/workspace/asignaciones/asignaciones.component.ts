@@ -13,6 +13,8 @@ import {
 type SelectionMode = "proceso" | "fecha";
 type ViewMode = "tabla" | "aulas";
 type QuickExercisePeriod = "proximos" | "anteriores";
+export type AssignmentSortColumn = "ambito" | "colaborador" | "perfil" | "confirmacion" | "horas" | "importe";
+export type SortDirection = "asc" | "desc";
 
 @Component({
   selector: "app-asignaciones",
@@ -38,6 +40,15 @@ export class AsignacionesComponent implements OnInit {
   readonly drawerExpanded = signal(false);
   readonly roomCoverageFilter = signal<"" | "COVERED" | "UNCOVERED">("");
   readonly roomSearch = signal("");
+
+  readonly assignmentSearch = signal("");
+  readonly filtersExpanded = signal(false);
+  readonly profileFilter = signal("");
+  readonly scopeFilter = signal<"" | "GENERAL" | "AULA">("");
+  readonly confirmationFilter = signal<"" | EstadoConfirmacionAsignacion>("");
+  readonly centerFilter = signal("");
+  readonly sortBy = signal<AssignmentSortColumn>("colaborador");
+  readonly sortDirection = signal<SortDirection>("asc");
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly proximosEjercicios = signal<CuadroMandoEjercicio[]>([]);
@@ -70,9 +81,6 @@ export class AsignacionesComponent implements OnInit {
   readonly collaboratorSearchError = signal<string | null>(null);
   readonly selectedDate = signal("");
   readonly availableDatesLoading = signal(true);
-  readonly assignmentSearch = signal("");
-  readonly profileFilter = signal("");
-  readonly scopeFilter = signal<"" | "GENERAL" | "AULA">("");
   readonly selectedAssignmentIds = signal<Set<string>>(new Set());
   readonly bulkHours = signal<number | null>(null);
   readonly bulkUpdating = signal(false);
@@ -127,14 +135,28 @@ export class AsignacionesComponent implements OnInit {
       : this.anterioresEjercicios()
   );
 
+  readonly activeFiltersCount = computed(() =>
+    [
+      this.profileFilter(),
+      this.scopeFilter(),
+      this.confirmationFilter(),
+      this.centerFilter(),
+    ].filter(Boolean).length
+  );
+
   readonly filteredAssignments = computed(() => {
     const query = this.assignmentSearch().trim().toLocaleLowerCase("es");
     const profile = this.profileFilter();
     const scope = this.scopeFilter();
-    return this.asignaciones().filter((item) => {
+    const confirmation = this.confirmationFilter();
+    const center = this.centerFilter();
+
+    const filtered = this.asignaciones().filter((item) => {
       if (profile && item.perfilId !== profile) return false;
       if (scope === "GENERAL" && item.examenAulaId) return false;
       if (scope === "AULA" && !item.examenAulaId) return false;
+      if (confirmation && item.estadoConfirmacion !== confirmation) return false;
+      if (center && (item.centroNombre || "Sin centro") !== center) return false;
       if (!query) return true;
       return [
         item.colaboradorNombre,
@@ -150,6 +172,43 @@ export class AsignacionesComponent implements OnInit {
         .join(" ")
         .toLocaleLowerCase("es")
         .includes(query);
+    });
+
+    const col = this.sortBy();
+    const dir = this.sortDirection() === "asc" ? 1 : -1;
+
+    return filtered.sort((a, b) => {
+      let comp = 0;
+      switch (col) {
+        case "ambito": {
+          const locA = a.examenAulaId ? `${a.centroNombre || ""} ${a.aulaNombre || ""}` : `Ámbito general ${a.subcategoriaGeneral || ""}`;
+          const locB = b.examenAulaId ? `${b.centroNombre || ""} ${b.aulaNombre || ""}` : `Ámbito general ${b.subcategoriaGeneral || ""}`;
+          comp = locA.localeCompare(locB, "es", { sensitivity: "base" });
+          break;
+        }
+        case "colaborador":
+          comp = (a.colaboradorNombre || "").localeCompare(b.colaboradorNombre || "", "es", { sensitivity: "base" });
+          break;
+        case "perfil":
+          comp = (a.perfilDenominacion || "").localeCompare(b.perfilDenominacion || "", "es", { sensitivity: "base" });
+          break;
+        case "confirmacion":
+          comp = a.estadoConfirmacion.localeCompare(b.estadoConfirmacion, "es");
+          break;
+        case "horas": {
+          const hA = a.horasRealizadas ?? -1;
+          const hB = b.horasRealizadas ?? -1;
+          comp = hA - hB;
+          break;
+        }
+        case "importe": {
+          const iA = a.importeTotal ?? -1;
+          const iB = b.importeTotal ?? -1;
+          comp = iA - iB;
+          break;
+        }
+      }
+      return comp * dir;
     });
   });
 
@@ -172,7 +231,7 @@ export class AsignacionesComponent implements OnInit {
       aula,
       assignments: this.asignaciones().filter((item) => item.examenAulaId === aula.id),
       responsibleCount: this.asignaciones().filter(
-        (item) => item.examenAulaId === aula.id && item.perfilCodigo === "RESPONSABLE_DE_AULA"
+        (item) => item.examenAulaId === aula.id && this.isResponsableAula(item.perfilCodigo)
       ).length,
       convocadosCount: this.convocados().filter(
         (item) => item.examenAulaId === aula.id && item.activo
@@ -564,8 +623,27 @@ export class AsignacionesComponent implements OnInit {
   setAssignmentSearch(value: string): void { this.assignmentSearch.set(value); this.clearTableSelection(); }
   setProfileFilter(value: string): void { this.profileFilter.set(value); this.clearTableSelection(); }
   setScopeFilter(value: "" | "GENERAL" | "AULA"): void { this.scopeFilter.set(value); this.clearTableSelection(); }
+  setConfirmationFilter(value: "" | EstadoConfirmacionAsignacion): void { this.confirmationFilter.set(value); this.clearTableSelection(); }
+  setCenterFilter(value: string): void { this.centerFilter.set(value); this.clearTableSelection(); }
+  toggleFilters(): void { this.filtersExpanded.update(v => !v); }
+  resetFilters(): void {
+    this.assignmentSearch.set("");
+    this.profileFilter.set("");
+    this.scopeFilter.set("");
+    this.confirmationFilter.set("");
+    this.centerFilter.set("");
+    this.clearTableSelection();
+  }
   clearAssignmentFilters(): void {
-    this.assignmentSearch.set(""); this.profileFilter.set(""); this.scopeFilter.set(""); this.clearTableSelection();
+    this.resetFilters();
+  }
+  toggleSort(column: AssignmentSortColumn): void {
+    if (this.sortBy() === column) {
+      this.sortDirection.update(dir => dir === "asc" ? "desc" : "asc");
+    } else {
+      this.sortBy.set(column);
+      this.sortDirection.set("asc");
+    }
   }
   cancelBulkSelection(): void { this.clearTableSelection(); this.bulkHours.set(null); }
 
@@ -606,7 +684,7 @@ export class AsignacionesComponent implements OnInit {
     if (!value.colaboradorId) errors["colaboradorId"] = "Selecciona un colaborador.";
     if (!value.perfilId) errors["perfilId"] = "Selecciona un perfil.";
     const profile = this.perfiles().find(item => item.id === value.perfilId);
-    if (value.ambito === "GENERAL" && profile?.codigo === "RESPONSABLE_DE_AULA") errors["ambito"] = "El perfil responsable de aula requiere un aula concreta.";
+    if (value.ambito === "GENERAL" && this.isResponsableAula(profile?.codigo)) errors["ambito"] = "El perfil responsable de aula requiere un aula concreta.";
     if (value.horasRealizadas !== null && value.horasRealizadas < 0) errors["horasRealizadas"] = "Las horas no pueden ser negativas.";
     this.fieldErrors.set(errors); if (Object.keys(errors).length) return;
     const current = this.editing(); const examId = this.selectedExamenId(); if (!examId) return;
@@ -618,6 +696,16 @@ export class AsignacionesComponent implements OnInit {
       next: () => { this.success.set(current ? "La asignación se ha actualizado." : "La persona se ha asignado correctamente."); this.closeForm(); this.loadAssignments(); },
       error: (error: unknown) => this.error.set(apiErrorMessage(error)),
     });
+  }
+
+  isResponsableAula(codigo?: string | null): boolean {
+    if (!codigo) return false;
+    const c = codigo.toUpperCase().trim();
+    return c === "RESPONSABLE_DE_AULA" || c === "RESP_AULA_ADAP_INC" || c === "RESP. AULA ADAP_INC.";
+  }
+
+  confirmationShortLabel(value: EstadoConfirmacionAsignacion): string {
+    return value === "CONFIRMADA" ? "Confirmada" : value === "RECHAZADA" ? "Rechazada" : "Pendiente";
   }
 
   updateConfirmation(item: AsignacionColaborador, estado: EstadoConfirmacionAsignacion): void {

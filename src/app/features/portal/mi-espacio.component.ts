@@ -142,7 +142,8 @@ export class MiEspacioComponent implements OnInit {
   }
 
   isResponsableAula(item: AsignacionColaborador): boolean {
-    return item.perfilCodigo === "RESPONSABLE_DE_AULA" && !!item.examenAulaId;
+    const code = (item.perfilCodigo || "").toUpperCase().trim();
+    return (code === "RESPONSABLE_DE_AULA" || code === "RESP_AULA_ADAP_INC" || code === "RESP. AULA ADAP_INC.") && !!item.examenAulaId;
   }
 
   confirmationLabel(item: AsignacionColaborador): string {
