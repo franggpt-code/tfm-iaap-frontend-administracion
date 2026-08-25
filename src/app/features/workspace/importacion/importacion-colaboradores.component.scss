@@ -1,4 +1,7 @@
 :host { display: block; }
+.template-download { align-items: center; background: #f4f8f5; border: 1px solid #c9dbcf; border-left: 4px solid var(--jda-primary); border-radius: 6px; display: grid; gap: .7rem; grid-template-columns: auto minmax(0, 1fr) auto; margin-bottom: 1rem; padding: .8rem; }
+.template-download > div { display: grid; min-width: 0; }.template-download small { color: var(--jda-text-subtle); line-height: 1.35; }.template-download a { color: var(--jda-primary); font-weight: 700; white-space: nowrap; }
+.template-download__icon { background: #fff; border: 1px solid #b9d1c1; border-radius: 4px; color: var(--jda-primary-dark); font-size: .7rem; font-weight: 800; padding: .45rem .35rem; }
 .excel-upload { background: var(--jda-surface-muted); border: 1px dashed #718279; border-radius: 8px; cursor: pointer; display: grid; gap: .55rem; min-height: 13rem; padding: 1.5rem; }
 .excel-upload:hover, .excel-upload:focus-within, .excel-upload--selected { background: #f2f8f4; border-color: var(--jda-primary); box-shadow: 0 0 0 3px rgb(0 115 62 / 9%); }
 .excel-upload--selected { border-style: solid; }
@@ -20,4 +23,4 @@
 .warnings-panel { margin-top: 1.25rem; }.warnings-panel h3 span { background: #e9efeb; border-radius: 999px; font-size: .8rem; padding: .15rem .5rem; }
 .confirmation-dialog { border: 0; border-radius: 8px; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%); max-width: 34rem; padding: 1.5rem; width: calc(100% - 2rem); }.confirmation-dialog::backdrop { background: rgb(3 55 19 / 55%); }
 .dialog-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
-@media (max-width: 760px) { .metric-groups { grid-template-columns: 1fr; }.dialog-actions { flex-direction: column-reverse; } }
+@media (max-width: 760px) { .metric-groups { grid-template-columns: 1fr; }.dialog-actions { flex-direction: column-reverse; }.template-download { align-items: start; grid-template-columns: auto 1fr; }.template-download a { grid-column: 2; white-space: normal; } }

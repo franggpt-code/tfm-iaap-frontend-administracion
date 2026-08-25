@@ -7,6 +7,7 @@
 
   <section class="form-card" aria-labelledby="file-title">
     <div class="section-heading section-heading--compact"><div><span class="step-badge">1</span><h2 id="file-title">Selecciona el fichero</h2></div><span class="required-note">* Campo obligatorio</span></div>
+    <div class="template-download"><span class="template-download__icon" aria-hidden="true">XLSX</span><div><strong>Plantilla de colaboradores</strong><small>Incluye las cabeceras necesarias y una fila de ejemplo.</small></div><a href="assets/plantillas/outputs/01a0116c-9f8f-7e81-ab9e-3ea6d9352e40/plantilla_colaboradores.xlsx" download="plantilla_colaboradores.xlsx">Descargar plantilla</a></div>
     <label class="excel-upload" [class.excel-upload--selected]="fichero()"><span class="upload-box__tag">Fichero Excel</span><strong>Plantilla de colaboradores</strong><span>Utiliza XLSX, XLS o XLSM con las cabeceras de la plantilla.</span><input type="file" accept=".xlsx,.xls,.xlsm" [disabled]="simulating() || confirming()" (change)="onFile($event)"><span class="file-name">{{ fichero()?.name || "Ningún fichero seleccionado" }}</span></label>
     @if (fileError()) { <p class="field-error" role="alert">{{ fileError() }}</p> }
     <label class="update-choice"><input type="checkbox" [checked]="actualizarExistentes()" [disabled]="simulating() || confirming()" (change)="onActualizarExistentes($event)"><span><strong>Actualizar los colaboradores ya existentes</strong><small>Activado por defecto. Si lo desmarcas, sus fichas se conservan sin cambios.</small></span></label>
