@@ -581,6 +581,28 @@ export class ColaboradoresComponent implements OnInit {
   }
 
   /* Etiquetas y Helpers */
+  maskedDni(dni?: string | null, letra?: string | null): string {
+    if (!dni) return "—";
+    const cleanDni = dni.trim();
+    const cleanLetra = (letra || "").trim();
+    if (cleanDni.length >= 4) {
+      return `***${cleanDni.slice(-4)}*`;
+    }
+    return `****${cleanDni}${cleanLetra ? "*" : ""}`;
+  }
+
+  maskedIban(iban?: string | null): string {
+    if (!iban) return "";
+    const clean = iban.replaceAll(" ", "").trim().toUpperCase();
+    if (clean.length < 8) return "********";
+    const country = clean.substring(0, 2);
+    const last4 = clean.slice(-4);
+    if (clean.length === 24) {
+      return `${country}** **** **** **** **** ${last4}`;
+    }
+    return `${country}****${last4}`;
+  }
+
   estadoLabel(value: EstadoColaborador): string {
     return ESTADOS.find((item) => item.value === value)?.label ?? value;
   }

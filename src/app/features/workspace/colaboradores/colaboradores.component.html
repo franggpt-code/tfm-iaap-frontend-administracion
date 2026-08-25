@@ -291,7 +291,7 @@
                     <span class="collab-avatar-tag" aria-hidden="true">{{ item.nombreCompleto.slice(0, 2).toUpperCase() }}</span>
                     <div>
                       <strong>{{ item.nombreCompleto }}</strong>
-                      <small>{{ item.dni }}{{ item.letra }} · {{ item.sexo === "NO_INFORMA" ? "Sexo no informado" : item.sexo.replaceAll("_", " ") }}</small>
+                      <small>{{ maskedDni(item.dni, item.letra) }} · {{ item.sexo === "NO_INFORMA" ? "Sexo no informado" : item.sexo.replaceAll("_", " ") }}</small>
                     </div>
                   </div>
                 </td>
@@ -300,7 +300,7 @@
                     <a [href]="'mailto:' + item.correoCorporativo" class="contact-email">{{ item.correoCorporativo }}</a>
                     <small>{{ item.telefono || "Sin teléfono" }}</small>
                     @if (item.iban) {
-                      <small class="iban-text">{{ item.iban }}</small>
+                      <small class="iban-text">{{ maskedIban(item.iban) }}</small>
                     }
                   </div>
                 </td>
@@ -867,7 +867,7 @@
     <p class="eyebrow">Confirmación necesaria</p>
     <h2 id="delete-collaborator-title">¿Eliminar este colaborador?</h2>
     @if (deleteTarget(); as item) {
-      <p>Se eliminará la ficha de <strong>{{ item.nombreCompleto }}</strong> ({{ item.dni }}{{ item.letra }}).</p>
+      <p>Se eliminará la ficha de <strong>{{ item.nombreCompleto }}</strong> ({{ maskedDni(item.dni, item.letra) }}).</p>
     }
     <p class="dialog-warning">Si el colaborador cuenta con asignaciones operativas o asistencias, el sistema preservará su integridad.</p>
     <div class="dialog-actions">

@@ -508,27 +508,31 @@
                 <article class="process-person">
                   <span class="person-avatar" aria-hidden="true">{{ item.colaboradorNombre?.charAt(0) }}</span>
                   <div class="process-person__identity">
-                    <strong>{{ item.colaboradorNombre }}</strong>
-                    <small>{{ item.perfilDenominacion }}</small>
-                    @if (item.subcategoriaGeneral) {
-                      <span class="general-category">{{ item.subcategoriaGeneral }}</span>
-                    }
+                    <strong [title]="item.colaboradorNombre">{{ item.colaboradorNombre }}</strong>
+                    <div class="person-subline">
+                      <small>{{ item.perfilDenominacion }}</small>
+                      @if (item.subcategoriaGeneral) {
+                        <span class="general-category">{{ item.subcategoriaGeneral }}</span>
+                      }
+                    </div>
                   </div>
-                  <select
-                    class="confirmation-select confirmation-select--compact"
-                    [class]="'confirmation-select confirmation-select--compact confirmation-select--' + item.estadoConfirmacion.toLowerCase()"
-                    [value]="item.estadoConfirmacion"
-                    [disabled]="confirmationUpdating().has(item.id)"
-                    [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
-                    (change)="updateConfirmation(item, $any($event.target).value)"
-                  >
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="CONFIRMADA">Confirmada</option>
-                    <option value="RECHAZADA">Rechazada</option>
-                  </select>
-                  <button class="button button--link" type="button" (click)="startEdit(item)">
-                    Editar
-                  </button>
+                  <div class="person-actions">
+                    <select
+                      class="status-select"
+                      [class]="'status-select status-select--' + item.estadoConfirmacion.toLowerCase()"
+                      [value]="item.estadoConfirmacion"
+                      [disabled]="confirmationUpdating().has(item.id)"
+                      [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
+                      (change)="updateConfirmation(item, $any($event.target).value)"
+                    >
+                      <option value="CONFIRMADA">● Confirmada</option>
+                      <option value="PENDIENTE">● Pendiente</option>
+                      <option value="RECHAZADA">● Rechazada</option>
+                    </select>
+                    <button class="button button--link person-edit-btn" type="button" (click)="startEdit(item)">
+                      Editar
+                    </button>
+                  </div>
                 </article>
               }
             </div>
@@ -582,29 +586,31 @@
                   <div class="person-row">
                     <span class="person-avatar" aria-hidden="true">{{ item.colaboradorNombre?.charAt(0) }}</span>
                     <div class="person-row__identity">
-                      <strong>{{ item.colaboradorNombre }}</strong>
+                      <strong [title]="item.colaboradorNombre">{{ item.colaboradorNombre }}</strong>
                       <div class="person-row__profile-wrap">
                         <small>{{ item.perfilDenominacion }}</small>
-                        @if (item.perfilCodigo === 'RESPONSABLE_DE_AULA') {
+                        @if (isResponsableAula(item.perfilCodigo)) {
                           <span class="role-badge role-badge--responsible">Responsable</span>
                         }
                       </div>
                     </div>
-                    <select
-                      class="confirmation-select confirmation-select--compact"
-                      [class]="'confirmation-select confirmation-select--compact confirmation-select--' + item.estadoConfirmacion.toLowerCase()"
-                      [value]="item.estadoConfirmacion"
-                      [disabled]="confirmationUpdating().has(item.id)"
-                      [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
-                      (change)="updateConfirmation(item, $any($event.target).value)"
-                    >
-                      <option value="PENDIENTE">Pendiente</option>
-                      <option value="CONFIRMADA">Confirmada</option>
-                      <option value="RECHAZADA">Rechazada</option>
-                    </select>
-                    <button class="button button--link" type="button" (click)="startEdit(item)">
-                      Editar
-                    </button>
+                    <div class="person-actions">
+                      <select
+                        class="status-select"
+                        [class]="'status-select status-select--' + item.estadoConfirmacion.toLowerCase()"
+                        [value]="item.estadoConfirmacion"
+                        [disabled]="confirmationUpdating().has(item.id)"
+                        [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
+                        (change)="updateConfirmation(item, $any($event.target).value)"
+                      >
+                        <option value="CONFIRMADA">● Confirmada</option>
+                        <option value="PENDIENTE">● Pendiente</option>
+                        <option value="RECHAZADA">● Rechazada</option>
+                      </select>
+                      <button class="button button--link person-edit-btn" type="button" (click)="startEdit(item)">
+                        Editar
+                      </button>
+                    </div>
                   </div>
                 } @empty {
                   <div class="room-empty">
@@ -631,55 +637,92 @@
         <!-- =====================================================================
              VISTA 2: VISTA EN TABLA
              ===================================================================== -->
-        <section class="table-filters" aria-labelledby="table-filters-title">
-          <div class="table-filters__heading">
+        <section class="filter-card" aria-labelledby="table-filters-title">
+          <div class="filter-card__heading">
             <div>
               <p class="eyebrow">Vista tabla</p>
-              <h3 id="table-filters-title">Filtros</h3>
+              <h2 id="table-filters-title">Buscar y filtrar asignaciones</h2>
             </div>
-            <button class="button button--link" type="button" (click)="clearAssignmentFilters()">
-              Limpiar filtros
-            </button>
+            <span class="result-count" aria-live="polite">
+              {{ filteredAssignments().length }} {{ filteredAssignments().length === 1 ? "asignación" : "asignaciones" }}
+            </span>
           </div>
-          <div class="table-filters__fields">
-            <div class="field">
-              <label for="table-search-input">Buscar</label>
-              <input
-                id="table-search-input"
-                type="search"
-                placeholder="Persona, DNI, centro, aula o perfil…"
-                [value]="assignmentSearch()"
-                (input)="setAssignmentSearch($any($event.target).value)"
-              >
-            </div>
-            <div class="field">
-              <label for="table-profile-filter">Perfil</label>
-              <select id="table-profile-filter" [value]="profileFilter()" (change)="setProfileFilter($any($event.target).value)">
-                <option value="">Todos los perfiles</option>
-                @for (profile of perfiles(); track profile.id) {
-                  <option [value]="profile.id">{{ profile.denominacion }}</option>
+
+          <div class="filter-card__body">
+            <div class="filter-main-search">
+              <label for="table-search-input" class="visually-hidden">Buscar asignaciones</label>
+              <div class="search-input-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                  id="table-search-input"
+                  type="search"
+                  placeholder="Persona, DNI, centro, aula o perfil…"
+                  [value]="assignmentSearch()"
+                  (input)="setAssignmentSearch($any($event.target).value)"
+                >
+                @if (assignmentSearch()) {
+                  <button class="search-clear" type="button" aria-label="Limpiar búsqueda" (click)="setAssignmentSearch('')">×</button>
                 }
-              </select>
+              </div>
+              <button
+                class="button button--secondary filter-toggle-btn"
+                type="button"
+                (click)="toggleFilters()"
+                [attr.aria-expanded]="filtersExpanded()"
+                aria-controls="assignment-filters"
+              >
+                <svg class="filter-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                {{ filtersExpanded() ? "Ocultar filtros" : activeFiltersCount() ? "Filtros (" + activeFiltersCount() + ")" : "Filtros" }}
+              </button>
             </div>
-            <div class="field">
-              <label for="table-scope-filter">Ámbito</label>
-              <select id="table-scope-filter" [value]="scopeFilter()" (change)="setScopeFilter($any($event.target).value)">
-                <option value="">Todos los ámbitos</option>
-                <option value="GENERAL">Ámbito general</option>
-                <option value="AULA">Aula concreta</option>
-              </select>
-            </div>
-          </div>
-          <div class="table-filters__result">
-            <span><strong>{{ filteredAssignments().length }}</strong> {{ filteredAssignments().length === 1 ? "resultado" : "resultados" }}</span>
-            <button
-              class="button button--link"
-              type="button"
-              [disabled]="!filteredAssignments().length"
-              (click)="toggleFilteredAssignments(!allFilteredSelected())"
-            >
-              {{ allFilteredSelected() ? "Deseleccionar resultados" : "Seleccionar todos los resultados" }}
-            </button>
+
+            @if (filtersExpanded()) {
+              <div id="assignment-filters" class="filters-grid">
+                <div class="field">
+                  <label for="table-profile-filter">Perfil</label>
+                  <select id="table-profile-filter" [value]="profileFilter()" (change)="setProfileFilter($any($event.target).value)">
+                    <option value="">Todos los perfiles</option>
+                    @for (profile of perfiles(); track profile.id) {
+                      <option [value]="profile.id">{{ profile.denominacion }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="table-scope-filter">Ámbito</label>
+                  <select id="table-scope-filter" [value]="scopeFilter()" (change)="setScopeFilter($any($event.target).value)">
+                    <option value="">Todos los ámbitos</option>
+                    <option value="GENERAL">Ámbito general</option>
+                    <option value="AULA">Aula concreta</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="table-confirm-filter">Confirmación</label>
+                  <select id="table-confirm-filter" [value]="confirmationFilter()" (change)="setConfirmationFilter($any($event.target).value)">
+                    <option value="">Todos los estados</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="CONFIRMADA">Confirmada</option>
+                    <option value="RECHAZADA">Rechazada</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="table-center-filter">Centro</label>
+                  <select id="table-center-filter" [value]="centerFilter()" (change)="setCenterFilter($any($event.target).value)">
+                    <option value="">Todos los centros</option>
+                    @for (center of centers(); track center) {
+                      <option [value]="center">{{ center }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="filters-actions">
+                  <button class="button button--link" type="button" (click)="resetFilters()">Restablecer filtros</button>
+                </div>
+              </div>
+            }
           </div>
         </section>
 
@@ -731,12 +774,132 @@
                     (change)="toggleFilteredAssignments($any($event.target).checked)"
                   >
                 </th>
-                <th>Ámbito / Aula</th>
-                <th>Colaborador</th>
-                <th>Perfil</th>
-                <th>Confirmación</th>
-                <th class="number-cell">Horas</th>
-                <th class="number-cell">Importe</th>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'ambito' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('ambito')">
+                    <span>Ámbito / Aula</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'ambito') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'colaborador' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('colaborador')">
+                    <span>Colaborador</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'colaborador') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'perfil' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('perfil')">
+                    <span>Perfil</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'perfil') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="sortable-th"
+                  [attr.aria-sort]="sortBy() === 'confirmacion' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn" (click)="toggleSort('confirmacion')">
+                    <span>Confirmación</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'confirmacion') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="number-cell sortable-th"
+                  [attr.aria-sort]="sortBy() === 'horas' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn th-sort-btn--number" (click)="toggleSort('horas')">
+                    <span>Horas</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'horas') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  class="number-cell sortable-th"
+                  [attr.aria-sort]="sortBy() === 'importe' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
+                >
+                  <button type="button" class="th-sort-btn th-sort-btn--number" (click)="toggleSort('importe')">
+                    <span>Importe</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (sortBy() === 'importe') {
+                        <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="m7 15 5 5 5-5"></path>
+                          <path d="m7 9 5-5 5 5"></path>
+                        </svg>
+                      }
+                    </span>
+                  </button>
+                </th>
                 <th class="actions-cell">Acciones</th>
               </tr>
             </thead>
@@ -760,7 +923,7 @@
                     <small>{{ item.colaboradorDocumento }}</small>
                   </td>
                   <td data-label="Perfil">
-                    <span class="role-badge" [class.role-badge--responsible]="item.perfilCodigo === 'RESPONSABLE_DE_AULA'">
+                    <span class="role-badge" [class.role-badge--responsible]="isResponsableAula(item.perfilCodigo)">
                       {{ item.perfilDenominacion }}
                     </span>
                   </td>
@@ -1116,7 +1279,7 @@
       <p>
         Se retirará a <strong>{{ item.colaboradorNombre }}</strong> de <strong>{{ item.examenAulaId ? item.aulaNombre : "el ámbito general" }}</strong> como {{ item.perfilDenominacion.toLocaleLowerCase("es") }}.
       </p>
-      @if (item.perfilCodigo === "RESPONSABLE_DE_AULA") {
+      @if (isResponsableAula(item.perfilCodigo)) {
         <p class="dialog-warning">
           Si es la única persona responsable del aula, no se podrá eliminar sin asignar previamente otro responsable.
         </p>
