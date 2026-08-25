@@ -1,34 +1,21 @@
 <div class="page-shell">
   <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Usuarios y permisos</span></nav>
   <header class="page-heading">
-    <div><p class="eyebrow">Administración de acceso</p><h1>Usuarios y permisos</h1><p>Asigna a cada usuario un perfil de aplicación y, cuando corresponda, vincúlalo con su ficha de colaborador.</p></div>
+    <div><p class="eyebrow">Administración de acceso</p><div class="title-with-info"><h1>Usuarios y permisos</h1><button class="info-button" type="button" aria-label="Consultar información sobre los perfiles de aplicación" (click)="openProfilesInfo()">i</button></div><p>Asigna a cada usuario un perfil de aplicación y, cuando corresponda, vincúlalo con su ficha de colaborador.</p></div>
     <button class="button button--primary" type="button" (click)="startCreate()">Nuevo usuario</button>
   </header>
 
   @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
   @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
 
-  <section class="permission-guide" aria-labelledby="profiles-title">
-    <h2 id="profiles-title">Perfiles de aplicación</h2>
-    <div class="permission-guide__grid">
-      <article><span class="role-badge role-badge--admin">Administrador</span><p>Acceso completo, incluida la configuración y la gestión de usuarios.</p></article>
-      <article><span class="role-badge role-badge--manager">Gestor de colaboradores</span><p>Colaboradores, asignaciones e informes.</p></article>
-      <article><span class="role-badge role-badge--collaborator">Usuario colaborador</span><p>Datos propios, asignaciones y confirmación o rechazo.</p></article>
-    </div>
-  </section>
-
   <section class="filter-panel" aria-labelledby="users-search-title">
     <div class="filter-panel__header">
-      <div>
-        <p class="eyebrow">Búsqueda</p>
-        <h2 id="users-search-title">Localizar usuarios</h2>
-        <p class="filter-panel__summary">{{ activeFiltersCount() ? activeFiltersCount() + " filtros aplicados" : "Sin filtros avanzados aplicados" }}</p>
-      </div>
+      <label class="filter-panel__search" for="users-search"><span id="users-search-title">Buscar usuarios</span><input id="users-search" type="search" placeholder="Nombre, usuario, correo o perfil" [value]="search()" (input)="search.set($any($event.target).value)"></label>
       <button class="button button--secondary filter-panel__toggle" type="button" (click)="toggleFilters()" [attr.aria-expanded]="filtersExpanded()" aria-controls="user-filters">
-        {{ filtersExpanded() ? "Ocultar filtros" : "Mostrar filtros" }}
+        {{ filtersExpanded() ? "Ocultar filtros" : activeFiltersCount() ? "Filtros (" + activeFiltersCount() + ")" : "Filtros" }}
       </button>
+      <span class="filter-panel__result" aria-live="polite">{{ filteredUsers().length }} {{ filteredUsers().length === 1 ? "usuario" : "usuarios" }}</span>
     </div>
-    <label class="filter-panel__search" for="users-search"><span>Buscar por nombre, usuario, correo o perfil</span><input id="users-search" type="search" placeholder="Escribe un criterio de búsqueda" [value]="search()" (input)="search.set($any($event.target).value)"></label>
     @if (filtersExpanded()) {
       <div id="user-filters" class="filter-panel__options">
         <label><span>Perfil</span><select [value]="roleFilter()" (change)="roleFilter.set($any($event.target).value)"><option value="">Todos</option><option value="ADMIN">Administrador</option><option value="GESTOR">Gestor de colaboradores</option><option value="COLABORADOR">Usuario colaborador</option></select></label>
@@ -38,7 +25,6 @@
         <div class="filter-panel__actions"><button class="button button--link" type="button" (click)="resetFilters()">Restablecer filtros</button></div>
       </div>
     }
-    <p class="filter-panel__result" aria-live="polite">{{ filteredUsers().length }} usuarios encontrados</p>
   </section>
 
   <div class="users-layout" [class.users-layout--editing]="formOpen()">
@@ -75,3 +61,5 @@
     }
   </div>
 </div>
+
+<dialog #profilesDialog class="profiles-dialog" aria-labelledby="profiles-dialog-title"><form method="dialog"><div class="profiles-dialog__header"><div><p class="eyebrow">Información</p><h2 id="profiles-dialog-title">Perfiles de aplicación</h2></div><button class="dialog-close" type="button" aria-label="Cerrar información sobre perfiles" (click)="closeProfilesInfo()">×</button></div><div class="profiles-dialog__items"><article><span class="role-badge role-badge--admin">Administrador</span><p>Acceso completo, incluida la configuración y la gestión de usuarios.</p></article><article><span class="role-badge role-badge--manager">Gestor de colaboradores</span><p>Colaboradores, asignaciones, informes y su espacio personal cuando tenga una ficha vinculada.</p></article><article><span class="role-badge role-badge--collaborator">Usuario colaborador</span><p>Datos propios, asignaciones y confirmación o rechazo de colaboraciones.</p></article></div><div class="dialog-actions"><button class="button button--primary" type="button" (click)="closeProfilesInfo()">Cerrar</button></div></form></dialog>

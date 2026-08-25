@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from "@angular/core";
+import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { finalize, forkJoin } from "rxjs";
@@ -14,6 +14,7 @@ import { AuthService } from "../../../core/auth.service";
   styleUrl: "./usuarios.component.scss",
 })
 export class UsuariosComponent implements OnInit {
+  @ViewChild("profilesDialog") private profilesDialog?: ElementRef<HTMLDialogElement>;
   private readonly api = inject(SicolApiClient);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
@@ -107,6 +108,9 @@ export class UsuariosComponent implements OnInit {
     this.formOpen.set(false);
     this.editing.set(null);
   }
+
+  openProfilesInfo(): void { this.profilesDialog?.nativeElement.showModal(); }
+  closeProfilesInfo(): void { this.profilesDialog?.nativeElement.close(); }
 
   save(): void {
     this.form.markAllAsTouched();
