@@ -15,6 +15,7 @@ import { ColaboradoresComponent } from "./features/workspace/colaboradores/colab
 import { AsignacionesComponent } from "./features/workspace/asignaciones/asignaciones.component";
 import { InformesComponent } from "./features/workspace/informes/informes.component";
 import { UsuariosComponent } from "./features/workspace/usuarios/usuarios.component";
+import { ZonaPruebasComponent } from "./features/workspace/zona-pruebas/zona-pruebas.component";
 import { MiEspacioComponent } from "./features/portal/mi-espacio.component";
 
 export const routes: Routes = [
@@ -34,6 +35,7 @@ export const routes: Routes = [
   { path: "admin/informes", component: InformesComponent, canActivate: [adminGuard] },
   { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminRoleGuard] },
   { path: "admin/usuarios", component: UsuariosComponent, canActivate: [adminRoleGuard] },
+  { path: "admin/zona-pruebas", component: ZonaPruebasComponent, canActivate: [adminRoleGuard] },
   { path: "mi-espacio", component: MiEspacioComponent, canActivate: [collaboratorGuard] },
   { path: "mi-espacio/asignaciones/:asignacionId/llamamiento", component: AsistenciaComponent, canActivate: [collaboratorGuard] },
   { path: "**", redirectTo: "login" },

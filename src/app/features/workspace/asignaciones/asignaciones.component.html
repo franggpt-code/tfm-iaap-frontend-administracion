@@ -1,146 +1,1134 @@
 <div class="page-shell assignments-page">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Asignaciones</span></nav>
-  <header class="page-heading"><div><p class="eyebrow">Organización de personal</p><h1>Asignaciones</h1><p>Organiza el equipo general y el personal de cada aula, controla la cobertura y realiza el seguimiento de confirmaciones.</p></div></header>
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Asignaciones</span>
+  </nav>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
-  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Organización de personal</p>
+      <h1>Asignaciones de Personal</h1>
+    </div>
+  </header>
 
-  <section class="context-card" aria-labelledby="context-title">
-    <div class="context-heading"><div><p class="eyebrow">Paso 1</p><h2 id="context-title">Selecciona el ejercicio</h2><p>Busca por nombre o código SIRHUS y elige después el ejercicio que quieres organizar.</p></div><div class="segmented" role="group" aria-label="Forma de localizar el ejercicio"><button type="button" [class.is-active]="selectionMode() === 'proceso'" [attr.aria-pressed]="selectionMode() === 'proceso'" (click)="setSelectionMode('proceso')">Por proceso y ejercicio</button><button type="button" [class.is-active]="selectionMode() === 'fecha'" [attr.aria-pressed]="selectionMode() === 'fecha'" (click)="setSelectionMode('fecha')">Por día de realización</button></div></div>
-    @if (selectionMode() === "proceso") {
-      <div class="context-selection-grid">
-        <div class="context-fields context-fields--process">
-          <div class="field process-picker">
-            <label for="assignment-process-search">Proceso selectivo</label>
-            <div class="process-combobox" (focusout)="closeProcessResults($event)">
-              <div class="process-combobox__input">
-                <span class="search-icon" aria-hidden="true"></span>
-                <input id="assignment-process-search" type="search" role="combobox" autocomplete="off" maxlength="250" placeholder="Escribe un nombre o código SIRHUS" aria-autocomplete="list" aria-controls="assignment-process-results" [attr.aria-expanded]="processResultsOpen()" [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'assignment-process-option-' + activeProcessIndex() : null" [value]="processQuery()" (focus)="openProcessResults()" (input)="onProcessSearch($any($event.target).value)" (keydown)="onProcessKeydown($event)">
-                @if (selectedProcesoId()) { <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" (click)="clearProcess()">×</button> }
-                @if (processSearchLoading()) { <span class="process-spinner" aria-label="Buscando procesos"></span> }
-              </div>
-              @if (processResultsOpen()) {
-                <div id="assignment-process-results" class="process-results" role="listbox" aria-label="Procesos selectivos">
-                  <div class="process-results__heading"><strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong><span>Selecciona un resultado</span></div>
-                  @if (processSearchError()) { <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p> } @else if (processSearchLoading()) { <p class="process-results__message" role="status">Buscando procesos…</p> } @else if (procesos().length === 0) { <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p> } @else {
-                    <div class="process-results__list">
-                      @for (proceso of procesos(); track proceso.id; let index = $index) { <button type="button" role="option" [id]="'assignment-process-option-' + index" [class.is-active]="activeProcessIndex() === index" [class.is-selected]="selectedProcesoId() === proceso.id" [attr.aria-selected]="selectedProcesoId() === proceso.id" (mouseenter)="activeProcessIndex.set(index)" (click)="selectProcess(proceso)"><span class="process-result__code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</span><span class="process-result__name">{{ proceso.nombre }}</span></button> }
-                    </div>
-                    @if (processTotal() > procesos().length) { <p class="process-results__footer">Mostrando los {{ procesos().length }} primeros resultados. Escribe más texto para precisar la búsqueda.</p> }
-                  }
-                </div>
-              }
-            </div>
-            <small class="field-help">Busca por la denominación oficial o por su código SIRHUS.</small>
-          </div>
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
+    </div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      {{ success() }}
+    </div>
+  }
 
-          <div class="field">
-            <label for="assignment-exam">Ejercicio</label>
-            <select id="assignment-exam" [disabled]="!selectedProcesoId() || examLoading() || contextLoading()" [value]="selectedExamenId()" (change)="selectExam($any($event.target).value)">
-              <option value="">{{ examLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>
-              @for (exam of examenes(); track exam.id) {
-                <option [value]="exam.id">{{ exam.numeroEjercicio }}.º · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option>
-              }
-            </select>
-            @if (!selectedProcesoId()) { <small class="field-help">Selecciona primero un proceso.</small> }
-            @else if (!examLoading() && examenes().length === 0) { <small class="field-help">Este proceso no tiene ejercicios disponibles.</small> }
-          </div>
+  <!-- BARRA COMPACTA DE CONTEXTO SELECCIONADO (Cuando el Paso 1 está colapsado) -->
+  @if (selectedExamenId() && selectionCollapsed()) {
+    <section class="selected-context-bar" aria-label="Ejercicio y proceso seleccionados">
+      <div class="selected-context-summary">
+        <div class="context-item context-item--mode">
+          <span class="context-pill">
+            {{ selectionMode() === 'proceso' ? 'Por Proceso' : 'Por Día' }}
+          </span>
+          <strong class="context-title">{{ processLabel(selectedProcesoId()) }}</strong>
         </div>
 
-        <aside class="upcoming-exercises" aria-labelledby="upcoming-exercises-title">
-          <div class="upcoming-exercises__heading"><div><p class="eyebrow">Acceso rápido</p><h2 id="upcoming-exercises-title">{{ quickExercisePeriod() === "proximos" ? "Próximos ejercicios" : "Ejercicios anteriores" }}</h2></div><span>{{ quickExercises().length }} {{ quickExercisePeriod() === "proximos" ? "más cercanos" : "más recientes" }}</span></div>
-          <div class="quick-exercises-toggle" role="group" aria-label="Periodo de ejercicios"><button type="button" [class.is-active]="quickExercisePeriod() === 'proximos'" [attr.aria-pressed]="quickExercisePeriod() === 'proximos'" (click)="setQuickExercisePeriod('proximos')">Próximos ejercicios</button><button type="button" [class.is-active]="quickExercisePeriod() === 'anteriores'" [attr.aria-pressed]="quickExercisePeriod() === 'anteriores'" (click)="setQuickExercisePeriod('anteriores')">Anteriores ejercicios</button></div>
-          @if (upcomingExercisesLoading()) { <p class="upcoming-exercises__empty" role="status">Cargando ejercicios…</p> } @else if (!quickExercises().length) { <p class="upcoming-exercises__empty">{{ quickExercisePeriod() === "proximos" ? "No hay ejercicios futuros programados." : "No hay ejercicios anteriores disponibles." }}</p> } @else {
-            <div class="upcoming-exercises__list">
-              @for (item of quickExercises(); track item.examenId) { <button class="upcoming-exercise" type="button" [class.is-selected]="selectedExamenId() === item.examenId" [disabled]="!!selectingUpcomingExerciseId() || examLoading() || contextLoading()" [attr.aria-pressed]="selectedExamenId() === item.examenId" [attr.aria-busy]="selectingUpcomingExerciseId() === item.examenId" (click)="selectQuickExercise(item)"><span class="upcoming-exercise__process">{{ item.codigoSirhus || "Proceso sin código" }} · {{ item.procesoNombre }}</span><strong>{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</strong><small>{{ formatDate(item.fechaHora) }} · {{ item.convocados }} {{ item.convocados === 1 ? "persona convocada" : "personas convocadas" }} · {{ item.aulas }} {{ item.aulas === 1 ? "aula" : "aulas" }}</small></button> }
-            </div>
-          }
-        </aside>
-      </div>    } @else {
-      <div class="context-fields context-fields--date">
-        <div class="field">
-          <label for="assignment-date">Día de realización</label>
-          <select id="assignment-date" [disabled]="availableDatesLoading()" [value]="selectedDate()" (change)="onAvailableDateSelected($any($event.target).value)">
-            <option value="">{{ availableDatesLoading() ? "Cargando fechas…" : fechasDisponibles().length ? "Selecciona un día" : "No hay días programados" }}</option>
-            @for (date of fechasDisponibles(); track date) { <option [value]="date">{{ formatAvailableDate(date) }}</option> }
-          </select>
-          <small class="field-help">Solo se muestran días con ejercicios de procesos selectivos programados.</small>
+        <div class="context-separator" aria-hidden="true"></div>
+
+        <div class="context-item context-item--exam">
+          <span class="context-label">Ejercicio</span>
+          <span class="context-value">
+            <strong>{{ selectedExam()?.numeroEjercicio }}.º ejercicio</strong> · {{ selectedExam()?.nombre }}
+            <small class="context-date">({{ formatDate(selectedExam()?.fechaHora) }})</small>
+          </span>
         </div>
-        <div class="field">
-          <label for="assignment-date-exam">Procesos y ejercicios de ese día</label>
-          <select id="assignment-date-exam" [disabled]="!selectedDate() || contextLoading()" [value]="selectedExamenId()" (change)="selectDateContext($any($event.target).value)">
-            <option value="">{{ !selectedDate() ? "Selecciona primero un día" : contextLoading() ? "Buscando…" : contextosFecha().length ? "Selecciona una opción" : "No hay ejercicios para esta fecha" }}</option>
-            @for (context of contextosFecha(); track context.examenId) { <option [value]="context.examenId">{{ formatDate(context.fechaHora) }} · {{ context.codigoSirhus ? context.codigoSirhus + " · " : "" }}{{ context.procesoNombre }} · {{ context.numeroEjercicio }}.º ejercicio</option> }
-          </select>
+
+        <div class="context-separator" aria-hidden="true"></div>
+
+        <div class="context-item context-item--stats">
+          <span class="context-meta-badge">{{ aulas().length }} {{ aulas().length === 1 ? 'aula' : 'aulas' }}</span>
+          <span class="context-meta-badge">{{ asignaciones().length }} {{ asignaciones().length === 1 ? 'asignación' : 'asignaciones' }}</span>
         </div>
       </div>
-    }
-  </section>
 
+      <div class="selected-context-actions">
+        <button
+          type="button"
+          class="button button--secondary change-selection-btn"
+          (click)="expandSelection()"
+          aria-label="Cambiar ejercicio o modo de selección"
+        >
+          <svg class="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Cambiar ejercicio
+        </button>
+        <button class="button button--primary" type="button" (click)="startCreate()">
+          + Nueva asignación
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- =========================================================================
+       PASO 1: SELECCIÓN DEL EJERCICIO
+       ========================================================================= -->
+  @if (!selectionCollapsed()) {
+    <div class="selection-steps-wrapper">
+      @if (selectedExamenId()) {
+        <div class="collapse-helper-bar">
+          <strong>Paso 1: Localización del ejercicio</strong>
+          <button type="button" class="button button--secondary button--compact" (click)="toggleSelectionCollapse()">
+            Ocultar selector ↑
+          </button>
+        </div>
+      }
+
+      <section class="step-card" aria-labelledby="step1-title">
+        <div class="step-heading">
+          <span class="step-number" aria-hidden="true">1</span>
+          <div>
+            <h2 id="step1-title">Localizar ejercicio</h2>
+          </div>
+        </div>
+
+        <!-- 1.1 Tarjetas de Selección de Modo (Proceso vs Fecha) -->
+        <div class="selection-mode-grid">
+          <button
+            type="button"
+            class="mode-card"
+            [class.is-selected]="selectionMode() === 'proceso'"
+            (click)="setSelectionMode('proceso')"
+          >
+            <div class="mode-card__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div class="mode-card__info">
+              <strong>Por proceso selectivo</strong>
+            </div>
+            <div class="mode-card__radio" aria-hidden="true">
+              <span [class.is-checked]="selectionMode() === 'proceso'"></span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="mode-card"
+            [class.is-selected]="selectionMode() === 'fecha'"
+            (click)="setSelectionMode('fecha')"
+          >
+            <div class="mode-card__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <div class="mode-card__info">
+              <strong>Por día de realización</strong>
+            </div>
+            <div class="mode-card__radio" aria-hidden="true">
+              <span [class.is-checked]="selectionMode() === 'fecha'"></span>
+            </div>
+          </button>
+        </div>
+
+        <!-- 1.2 Formulario Principal de Selección según el Modo -->
+        <div class="mode-form-container">
+          @if (selectionMode() === 'proceso') {
+            <div class="process-selection-row">
+              <div class="field process-picker-field">
+                <label for="assignment-process-search">
+                  Proceso selectivo <span class="req-star">*</span>
+                </label>
+                <div class="process-combobox" (focusout)="closeProcessResults($event)">
+                  <div class="process-combobox__input">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input
+                      id="assignment-process-search"
+                      type="search"
+                      role="combobox"
+                      autocomplete="off"
+                      maxlength="250"
+                      placeholder="Buscar por nombre o código SIRHUS…"
+                      aria-autocomplete="list"
+                      aria-controls="assignment-process-results"
+                      [attr.aria-expanded]="processResultsOpen()"
+                      [attr.aria-activedescendant]="processResultsOpen() && activeProcessIndex() >= 0 ? 'assignment-process-option-' + activeProcessIndex() : null"
+                      [value]="processQuery()"
+                      (focus)="openProcessResults()"
+                      (input)="onProcessSearch($any($event.target).value)"
+                      (keydown)="onProcessKeydown($event)"
+                    >
+                    @if (selectedProcesoId()) {
+                      <button class="clear-process" type="button" aria-label="Quitar proceso seleccionado" (click)="clearProcess()">×</button>
+                    }
+                    @if (processSearchLoading()) {
+                      <span class="process-spinner" aria-label="Buscando procesos"></span>
+                    }
+                  </div>
+
+                  @if (processResultsOpen()) {
+                    <div id="assignment-process-results" class="process-results" role="listbox" aria-label="Procesos selectivos">
+                      <div class="process-results__heading">
+                        <strong>{{ processQuery().trim() ? processTotal() + " coincidencias" : "Actualizados recientemente" }}</strong>
+                        <span>Selecciona un resultado</span>
+                      </div>
+                      @if (processSearchError()) {
+                        <p class="process-results__message process-results__message--error" role="alert">{{ processSearchError() }}</p>
+                      } @else if (processSearchLoading()) {
+                        <p class="process-results__message" role="status">Buscando procesos…</p>
+                      } @else if (procesos().length === 0) {
+                        <p class="process-results__message">No hay procesos que coincidan con la búsqueda.</p>
+                      } @else {
+                        <div class="process-results__list">
+                          @for (proceso of procesos(); track proceso.id; let index = $index) {
+                            <button
+                              type="button"
+                              role="option"
+                              [id]="'assignment-process-option-' + index"
+                              [class.is-active]="activeProcessIndex() === index"
+                              [class.is-selected]="selectedProcesoId() === proceso.id"
+                              [attr.aria-selected]="selectedProcesoId() === proceso.id"
+                              (mouseenter)="activeProcessIndex.set(index)"
+                              (click)="selectProcess(proceso)"
+                            >
+                              <span class="process-result__code">{{ proceso.codigoSirhus || "Sin código SIRHUS" }}</span>
+                              <span class="process-result__name">{{ proceso.nombre }}</span>
+                            </button>
+                          }
+                        </div>
+                        @if (processTotal() > procesos().length) {
+                          <p class="process-results__footer">Mostrando los {{ procesos().length }} primeros resultados.</p>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="field exam-picker-field">
+                <label for="assignment-exam">
+                  Ejercicio <span class="req-star">*</span>
+                </label>
+                <select
+                  id="assignment-exam"
+                  [disabled]="!selectedProcesoId() || examLoading() || contextLoading()"
+                  [value]="selectedExamenId()"
+                  (change)="selectExam($any($event.target).value)"
+                >
+                  <option value="">{{ !selectedProcesoId() ? "Selecciona primero un proceso" : examLoading() ? "Cargando ejercicios…" : "Selecciona un ejercicio" }}</option>
+                  @for (exam of examenes(); track exam.id) {
+                    <option [value]="exam.id">{{ exam.numeroEjercicio }}.º ejercicio · {{ exam.nombre }} · {{ formatDate(exam.fechaHora) }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          } @else {
+            <div class="date-selection-row">
+              <div class="field">
+                <label for="assignment-date">Día de celebración <span class="req-star">*</span></label>
+                <select
+                  id="assignment-date"
+                  [disabled]="availableDatesLoading()"
+                  [value]="selectedDate()"
+                  (change)="onAvailableDateSelected($any($event.target).value)"
+                >
+                  <option value="">{{ availableDatesLoading() ? "Cargando fechas…" : fechasDisponibles().length ? "Selecciona un día" : "No hay días programados" }}</option>
+                  @for (date of fechasDisponibles(); track date) {
+                    <option [value]="date">{{ formatAvailableDate(date) }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="assignment-date-exam">Ejercicio de ese día <span class="req-star">*</span></label>
+                <select
+                  id="assignment-date-exam"
+                  [disabled]="!selectedDate() || contextLoading()"
+                  [value]="selectedExamenId()"
+                  (change)="selectDateContext($any($event.target).value)"
+                >
+                  <option value="">{{ !selectedDate() ? "Selecciona primero una fecha" : contextLoading() ? "Buscando ejercicios…" : contextosFecha().length ? "Selecciona una opción" : "No hay ejercicios para esta fecha" }}</option>
+                  @for (context of contextosFecha(); track context.examenId) {
+                    <option [value]="context.examenId">{{ formatDate(context.fechaHora) }} · {{ context.codigoSirhus ? context.codigoSirhus + " · " : "" }}{{ context.procesoNombre }} · {{ context.numeroEjercicio }}.º ejercicio</option>
+                  }
+                </select>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- 1.3 Acceso Rápido Horizontal -->
+        <div class="quick-access-section">
+          <div class="quick-access-header">
+            <span class="quick-access-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              Acceso rápido a ejercicios
+            </span>
+            <div class="quick-access-tabs" role="group" aria-label="Periodo de ejercicios">
+              <button
+                type="button"
+                [class.is-active]="quickExercisePeriod() === 'proximos'"
+                (click)="setQuickExercisePeriod('proximos')"
+              >
+                Próximos ({{ proximosEjercicios().length }})
+              </button>
+              <button
+                type="button"
+                [class.is-active]="quickExercisePeriod() === 'anteriores'"
+                (click)="setQuickExercisePeriod('anteriores')"
+              >
+                Anteriores ({{ anterioresEjercicios().length }})
+              </button>
+            </div>
+          </div>
+
+          @if (upcomingExercisesLoading()) {
+            <p class="quick-access-loading">Cargando ejercicios sugeridos…</p>
+          } @else if (!quickExercises().length) {
+            <p class="quick-access-empty">{{ quickExercisePeriod() === "proximos" ? "No hay ejercicios próximos programados." : "No hay ejercicios anteriores disponibles." }}</p>
+          } @else {
+            <div class="quick-cards-grid">
+              @for (item of quickExercises(); track item.examenId) {
+                <button
+                  class="quick-card"
+                  type="button"
+                  [class.is-selected]="selectedExamenId() === item.examenId"
+                  [disabled]="!!selectingUpcomingExerciseId() || examLoading() || contextLoading()"
+                  (click)="selectQuickExercise(item)"
+                >
+                  <div class="quick-card__top">
+                    <span class="quick-card__code">{{ item.codigoSirhus || "Proceso" }}</span>
+                    <span class="quick-card__date">{{ formatDate(item.fechaHora) }}</span>
+                  </div>
+                  <strong class="quick-card__name">{{ item.numeroEjercicio }}.º · {{ item.examenNombre }}</strong>
+                  <div class="quick-card__meta">
+                    <span>👥 {{ item.convocados }} convocados</span>
+                    <span>🚪 {{ item.aulas }} aulas</span>
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  <!-- =========================================================================
+       CONTENIDO PRINCIPAL DEL EJERCICIO SELECCIONADO
+       ========================================================================= -->
   @if (selectedExamenId()) {
-    <section class="exam-summary" aria-label="Ejercicio seleccionado"><div><span class="summary-icon" aria-hidden="true">{{ selectedExam()?.numeroEjercicio || "E" }}</span><div><p class="eyebrow">Ejercicio activo</p><h2>{{ processLabel(selectedProcesoId()) }}</h2><p>{{ selectedExam()?.nombre }} · {{ formatDate(selectedExam()?.fechaHora) }}</p></div></div><button class="button button--primary" type="button" (click)="startCreate()">Nueva asignación</button></section>
+    @if (contextLoading()) {
+      <p class="loading-message">Cargando personal y aulas del ejercicio…</p>
+    } @else {
+      @if (!aulas().length) {
+        <div class="empty-context empty-context--notice">
+          <strong>No hay aulas registradas para este ejercicio.</strong>
+        </div>
+      }
 
-    @if (contextLoading()) { <p class="loading-message">Cargando aulas y asignaciones…</p> }
-    @else {
-      @if (!aulas().length) { <div class="empty-context empty-context--notice"><strong>No hay aulas cargadas para este ejercicio.</strong><span>Puedes crear asignaciones de ámbito general. Para asignar personal de aula, importa o configura primero las aulas.</span></div> }
-      <section class="coverage-card" [class.coverage-card--complete]="coverage().pending === 0" aria-labelledby="coverage-title">
-        <div class="coverage-main"><div class="coverage-ring" [style.--coverage]="coverage().percentage + '%'" aria-hidden="true"><span>{{ coverage().percentage }}%</span></div><div><p class="eyebrow">Regla de cobertura</p><h2 id="coverage-title">Responsables de aula</h2><p>@if (coverage().pending) { Faltan responsables en <strong>{{ coverage().pending }}</strong> de {{ coverage().total }} aulas. } @else { Todas las aulas disponen al menos de una persona responsable. }</p></div></div>
-        <div class="coverage-stats"><div><strong>{{ coverage().covered }}</strong><span>Aulas cubiertas</span></div><div><strong>{{ coverage().pending }}</strong><span>Pendientes</span></div><div><strong>{{ asignaciones().length }}</strong><span>Asignaciones</span></div></div>
-      </section>
+      <!-- Cuadros de Cobertura y Confirmación -->
+      <div class="dashboards-grid">
+        <section class="coverage-card" [class.coverage-card--complete]="coverage().pending === 0" aria-labelledby="coverage-title">
+          <div class="coverage-main">
+            <div class="coverage-ring" [style.--coverage]="coverage().percentage + '%'" aria-hidden="true">
+              <span>{{ coverage().percentage }}%</span>
+            </div>
+            <div>
+              <p class="eyebrow">Cobertura</p>
+              <h2 id="coverage-title">Responsables de aula</h2>
+              <p>
+                @if (coverage().pending) {
+                  Faltan responsables en <strong>{{ coverage().pending }}</strong> de {{ coverage().total }} aulas.
+                } @else {
+                  Todas las aulas disponen de persona responsable.
+                }
+              </p>
+            </div>
+          </div>
+          <div class="coverage-stats">
+            <div><strong>{{ coverage().covered }}</strong><span>Aulas cubiertas</span></div>
+            <div><strong>{{ coverage().pending }}</strong><span>Pendientes</span></div>
+            <div><strong>{{ asignaciones().length }}</strong><span>Asignaciones</span></div>
+          </div>
+        </section>
 
-      <section class="confirmation-dashboard" aria-labelledby="confirmation-title">
-        <div class="confirmation-dashboard__heading"><div><p class="eyebrow">Seguimiento</p><h2 id="confirmation-title">Confirmación de asistencia</h2></div><p><strong>{{ confirmationSummary().pending }}</strong> {{ confirmationSummary().pending === 1 ? "persona queda" : "personas quedan" }} por confirmar</p></div>
-        <div class="confirmation-metrics"><div><span>Total</span><strong>{{ confirmationSummary().total }}</strong></div><div class="confirmation-metric confirmation-metric--pending"><span>Pendientes</span><strong>{{ confirmationSummary().pending }}</strong></div><div class="confirmation-metric confirmation-metric--confirmed"><span>Confirmadas</span><strong>{{ confirmationSummary().confirmed }}</strong></div><div class="confirmation-metric confirmation-metric--rejected"><span>Rechazadas</span><strong>{{ confirmationSummary().rejected }}</strong></div></div>
-      </section>
+        <section class="confirmation-dashboard" aria-labelledby="confirmation-title">
+          <div class="confirmation-dashboard__heading">
+            <div>
+              <p class="eyebrow">Seguimiento</p>
+              <h2 id="confirmation-title">Confirmación de asistencia</h2>
+            </div>
+            <p><strong>{{ confirmationSummary().pending }}</strong> {{ confirmationSummary().pending === 1 ? "por confirmar" : "por confirmar" }}</p>
+          </div>
+          <div class="confirmation-metrics">
+            <div><span>Total</span><strong>{{ confirmationSummary().total }}</strong></div>
+            <div class="confirmation-metric confirmation-metric--pending"><span>Pendientes</span><strong>{{ confirmationSummary().pending }}</strong></div>
+            <div class="confirmation-metric confirmation-metric--confirmed"><span>Confirmadas</span><strong>{{ confirmationSummary().confirmed }}</strong></div>
+            <div class="confirmation-metric confirmation-metric--rejected"><span>Rechazadas</span><strong>{{ confirmationSummary().rejected }}</strong></div>
+          </div>
+        </section>
+      </div>
 
+      <!-- Aviso de Personas Duplicadas si existen -->
       @if (duplicateCollaborators().length) {
         <section class="duplicate-warning" aria-labelledby="duplicates-title">
           <div class="duplicate-warning__icon" aria-hidden="true">!</div>
-          <div><p class="eyebrow">Revisión recomendada</p><h2 id="duplicates-title">{{ duplicateCollaborators().length }} {{ duplicateCollaborators().length === 1 ? "persona aparece" : "personas aparecen" }} en varias asignaciones</h2><p>Puede ser correcto si desempeñan más de un perfil o trabajan en varios ámbitos. Conviene revisarlo antes de generar informes.</p>
-            <details><summary>Ver personas repetidas</summary><ul>@for (items of duplicateCollaborators(); track items[0].colaboradorId) { <li><strong>{{ items[0].colaboradorNombre }}</strong><span>{{ items.length }} asignaciones · @for (item of items; track item.id; let last = $last) { {{ item.examenAulaId ? item.aulaNombre : (item.subcategoriaGeneral || "Ámbito general") }}{{ last ? "" : " · " }} }</span></li> }</ul></details>
+          <div>
+            <p class="eyebrow">Revisión</p>
+            <h2 id="duplicates-title">{{ duplicateCollaborators().length }} {{ duplicateCollaborators().length === 1 ? "persona figura" : "personas figuran" }} en múltiples asignaciones</h2>
+            <details>
+              <summary>Ver detalle de duplicidades</summary>
+              <ul>
+                @for (items of duplicateCollaborators(); track items[0].colaboradorId) {
+                  <li>
+                    <strong>{{ items[0].colaboradorNombre }}</strong>
+                    <span>{{ items.length }} asignaciones · @for (item of items; track item.id; let last = $last) { {{ item.examenAulaId ? item.aulaNombre : (item.subcategoriaGeneral || "Ámbito general") }}{{ last ? "" : " · " }} }</span>
+                  </li>
+                }
+              </ul>
+            </details>
           </div>
         </section>
       }
 
-      <div class="work-toolbar"><div class="view-tabs" role="tablist" aria-label="Vista de asignaciones"><button type="button" role="tab" [attr.aria-selected]="viewMode() === 'tabla'" [class.is-active]="viewMode() === 'tabla'" (click)="viewMode.set('tabla'); clearAssignmentFilters()">Vista tabla</button><button type="button" role="tab" [attr.aria-selected]="viewMode() === 'aulas'" [class.is-active]="viewMode() === 'aulas'" (click)="viewMode.set('aulas'); clearAssignmentFilters()">Vista por aulas</button></div>@if (viewMode() === "aulas") { <label class="search-field"><span>Buscar en asignaciones</span><input type="search" placeholder="Persona, aula, centro o perfil" [value]="assignmentSearch()" (input)="setAssignmentSearch($any($event.target).value)"></label> }</div>
+      <!-- Barra de Herramientas y Selector de Vistas -->
+      <div class="work-toolbar">
+        <div class="view-tabs" role="tablist" aria-label="Vista de asignaciones">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="viewMode() === 'aulas'"
+            [class.is-active]="viewMode() === 'aulas'"
+            (click)="viewMode.set('aulas')"
+          >
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Vista por aulas
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="viewMode() === 'tabla'"
+            [class.is-active]="viewMode() === 'tabla'"
+            (click)="viewMode.set('tabla'); clearAssignmentFilters()"
+          >
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Vista en tabla
+          </button>
+        </div>
 
-      <div class="assignment-layout" [class.assignment-layout--form]="formOpen()">
-        <section class="assignment-content">
-          @if (viewMode() === "tabla") {
-            <section class="table-filters" aria-labelledby="table-filters-title"><div class="table-filters__heading"><div><p class="eyebrow">Vista tabla</p><h3 id="table-filters-title">Filtrar asignaciones</h3></div><button class="button button--link" type="button" (click)="clearAssignmentFilters()">Limpiar filtros</button></div><div class="table-filters__fields"><label class="search-field"><span>Buscar</span><input type="search" placeholder="Persona, ubicación, centro o perfil" [value]="assignmentSearch()" (input)="setAssignmentSearch($any($event.target).value)"></label><label><span>Perfil</span><select [value]="profileFilter()" (change)="setProfileFilter($any($event.target).value)"><option value="">Todos los perfiles</option>@for (profile of perfiles(); track profile.id) { <option [value]="profile.id">{{ profile.denominacion }}</option> }</select></label><label><span>Ámbito</span><select [value]="scopeFilter()" (change)="setScopeFilter($any($event.target).value)"><option value="">Todos los ámbitos</option><option value="GENERAL">Ámbito general</option><option value="AULA">Aula concreta</option></select></label></div><div class="table-filters__result"><span><strong>{{ filteredAssignments().length }}</strong> {{ filteredAssignments().length === 1 ? "resultado" : "resultados" }}</span><button class="button button--link" type="button" [disabled]="!filteredAssignments().length" (click)="toggleFilteredAssignments(!allFilteredSelected())">{{ allFilteredSelected() ? "Deseleccionar resultados" : "Seleccionar todos los resultados" }}</button></div></section>
-            @if (selectedAssignmentIds().size) { <section class="bulk-hours" aria-label="Acciones para asignaciones seleccionadas"><div><strong>{{ selectedAssignmentIds().size }} {{ selectedAssignmentIds().size === 1 ? "asignación seleccionada" : "asignaciones seleccionadas" }}</strong><span>Las horas se aplicarán a toda la selección, aunque proceda de un filtro.</span></div><label><span>Horas realizadas</span><input type="number" min="0" step="0.25" [value]="bulkHours() ?? ''" (input)="bulkHours.set($any($event.target).value === '' ? null : +$any($event.target).value)"></label><div class="bulk-hours__actions"><button class="button button--secondary" type="button" [disabled]="bulkUpdating()" (click)="cancelBulkSelection()">Cancelar</button><button class="button button--primary" type="button" [disabled]="bulkUpdating() || bulkHours() === null || (bulkHours() ?? -1) < 0" (click)="applyBulkHours()">{{ bulkUpdating() ? "Aplicando…" : "Establecer horas" }}</button></div></section> }
-            <div class="table-wrap"><table class="admin-table assignment-table"><thead><tr><th class="selection-cell"><input type="checkbox" [checked]="allFilteredSelected()" [indeterminate]="someFilteredSelected() && !allFilteredSelected()" [disabled]="!filteredAssignments().length" aria-label="Seleccionar todos los resultados filtrados" (change)="toggleFilteredAssignments($any($event.target).checked)"></th><th>Ámbito</th><th>Colaborador</th><th>Perfil</th><th>Confirmación</th><th>Horas</th><th>Importe</th><th>Acciones</th></tr></thead><tbody>
-              @for (item of filteredAssignments(); track item.id) { <tr [class.is-selected]="selectedAssignmentIds().has(item.id)"><td class="selection-cell" data-label="Seleccionar"><input type="checkbox" [checked]="selectedAssignmentIds().has(item.id)" [attr.aria-label]="'Seleccionar asignación de ' + item.colaboradorNombre" (change)="toggleAssignmentSelection(item.id, $any($event.target).checked)"></td><td data-label="Ámbito"><strong>{{ item.examenAulaId ? item.aulaNombre : (item.subcategoriaGeneral || "Ámbito general") }}</strong><small>{{ item.examenAulaId ? item.centroNombre : "Ámbito general del ejercicio" }}</small></td><td data-label="Colaborador"><strong>{{ item.colaboradorNombre }}</strong><small>{{ item.colaboradorDocumento }}</small></td><td data-label="Perfil"><span class="role-badge" [class.role-badge--responsible]="item.perfilCodigo === 'RESPONSABLE_DE_AULA'">{{ item.perfilDenominacion }}</span></td><td data-label="Confirmación"><select class="confirmation-select" [class]="'confirmation-select confirmation-select--' + item.estadoConfirmacion.toLowerCase()" [value]="item.estadoConfirmacion" [disabled]="confirmationUpdating().has(item.id)" [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre" (change)="updateConfirmation(item, $any($event.target).value)"><option value="PENDIENTE">Pendiente</option><option value="CONFIRMADA">Confirmada</option><option value="RECHAZADA">Rechazada</option></select></td><td data-label="Horas">{{ item.horasRealizadas ?? "—" }}</td><td data-label="Importe">{{ money(item.importeTotal) }}</td><td data-label="Acciones"><div class="row-actions"><button class="button button--link" type="button" (click)="startEdit(item)">Editar</button><button class="button button--link danger-link" type="button" (click)="askDelete(item)">Eliminar</button></div></td></tr> }
-              @empty { <tr><td colspan="8"><div class="empty-state"><strong>No hay asignaciones que mostrar.</strong><span>Modifica los filtros o añade una nueva asignación.</span></div></td></tr> }
-            </tbody></table></div>
+        <div class="work-toolbar__actions">
+          <button class="button button--primary" type="button" (click)="startCreate()">
+            + Nueva asignación
+          </button>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           VISTA 1: VISTA POR AULAS (PREDETERMINADA)
+           ===================================================================== -->
+      @if (viewMode() === "aulas") {
+        <!-- Filtros Rápidos de la Vista por Aulas -->
+        <div class="room-view-filters">
+          <div class="room-search-box">
+            <input
+              type="search"
+              placeholder="Filtrar por aula, centro o colaborador…"
+              [value]="roomSearch()"
+              (input)="roomSearch.set($any($event.target).value)"
+            >
+          </div>
+          <div class="room-coverage-toggle" role="group" aria-label="Filtrar por estado de cobertura">
+            <button
+              type="button"
+              [class.is-active]="roomCoverageFilter() === ''"
+              (click)="roomCoverageFilter.set('')"
+            >
+              Todas ({{ roomGroups().length }})
+            </button>
+            <button
+              type="button"
+              [class.is-active]="roomCoverageFilter() === 'UNCOVERED'"
+              (click)="roomCoverageFilter.set('UNCOVERED')"
+            >
+              Sin responsable ({{ coverage().pending }})
+            </button>
+            <button
+              type="button"
+              [class.is-active]="roomCoverageFilter() === 'COVERED'"
+              (click)="roomCoverageFilter.set('COVERED')"
+            >
+              Cubiertas ({{ coverage().covered }})
+            </button>
+          </div>
+        </div>
+
+        <!-- Bloque de Equipo de Ámbito General -->
+        <section class="process-team" aria-labelledby="process-team-title">
+          <div class="process-team__heading">
+            <div>
+              <p class="eyebrow">Ámbito general</p>
+              <h3 id="process-team-title">Equipo general</h3>
+            </div>
+            <div class="process-team__actions">
+              <span class="process-team__count">{{ processAssignments().length }} {{ processAssignments().length === 1 ? "persona" : "personas" }}</span>
+              <button class="button button--secondary" type="button" (click)="startCreateForScope('GENERAL')">
+                + Asignar a ámbito general
+              </button>
+            </div>
+          </div>
+
+          @if (processAssignments().length) {
+            <div class="process-team__people">
+              @for (item of processAssignments(); track item.id) {
+                <article class="process-person">
+                  <span class="person-avatar" aria-hidden="true">{{ item.colaboradorNombre?.charAt(0) }}</span>
+                  <div class="process-person__identity">
+                    <strong>{{ item.colaboradorNombre }}</strong>
+                    <small>{{ item.perfilDenominacion }}</small>
+                    @if (item.subcategoriaGeneral) {
+                      <span class="general-category">{{ item.subcategoriaGeneral }}</span>
+                    }
+                  </div>
+                  <select
+                    class="confirmation-select confirmation-select--compact"
+                    [class]="'confirmation-select confirmation-select--compact confirmation-select--' + item.estadoConfirmacion.toLowerCase()"
+                    [value]="item.estadoConfirmacion"
+                    [disabled]="confirmationUpdating().has(item.id)"
+                    [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
+                    (change)="updateConfirmation(item, $any($event.target).value)"
+                  >
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="CONFIRMADA">Confirmada</option>
+                    <option value="RECHAZADA">Rechazada</option>
+                  </select>
+                  <button class="button button--link" type="button" (click)="startEdit(item)">
+                    Editar
+                  </button>
+                </article>
+              }
+            </div>
           } @else {
-            <section class="process-team" aria-labelledby="process-team-title">
-              <div class="process-team__heading"><div><p class="eyebrow">Ámbito general</p><h3 id="process-team-title">Equipo general del ejercicio</h3><p>Responsables y personal de apoyo que trabajan para el conjunto del ejercicio, sin depender de un aula concreta.</p></div><div class="process-team__actions"><span class="process-team__count">{{ processAssignments().length }} {{ processAssignments().length === 1 ? "persona" : "personas" }}</span><button class="button button--secondary" type="button" (click)="startCreate()">Añadir persona</button></div></div>
-              @if (processAssignments().length) { <div class="process-team__people">@for (item of processAssignments(); track item.id) { <article class="process-person"><span class="person-avatar" aria-hidden="true">{{ item.colaboradorNombre?.charAt(0) }}</span><span class="process-person__identity"><strong>{{ item.colaboradorNombre }}</strong><small>{{ item.perfilDenominacion }}</small>@if (item.subcategoriaGeneral) { <span class="general-category">{{ item.subcategoriaGeneral }}</span> }</span><select class="confirmation-select confirmation-select--compact" [class]="'confirmation-select confirmation-select--compact confirmation-select--' + item.estadoConfirmacion.toLowerCase()" [value]="item.estadoConfirmacion" [disabled]="confirmationUpdating().has(item.id)" [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre" (change)="updateConfirmation(item, $any($event.target).value)"><option value="PENDIENTE">Pendiente</option><option value="CONFIRMADA">Confirmada</option><option value="RECHAZADA">Rechazada</option></select><button class="button button--link" type="button" (click)="startEdit(item)">Editar</button></article> }</div> }
-              @else { <div class="process-team__empty">Todavía no hay responsables de centro, de datos u otros perfiles generales asignados.</div> }
-            </section>
-            <div class="rooms-grid">@for (group of roomGroups(); track group.aula.id) { <article class="room-card" [class.room-card--uncovered]="group.responsibleCount === 0"><div class="room-card__header"><div class="room-card__title"><p>{{ group.aula.centroNombre }}</p><h3>{{ group.aula.aulaNombre }}</h3></div><div class="room-card__meta"><span class="convoked-count"><strong>{{ group.convocadosCount }}</strong> {{ group.convocadosCount === 1 ? "convocado" : "convocados" }}</span>@if (group.responsibleCount) { <span class="coverage-status coverage-status--ok">Cubierta</span> } @else { <span class="coverage-status coverage-status--warning">Sin responsable</span> }</div></div><div class="room-people">@for (item of group.assignments; track item.id) { <article class="person-row"><span class="person-avatar" aria-hidden="true">{{ item.colaboradorNombre?.charAt(0) }}</span><span class="person-row__identity"><strong>{{ item.colaboradorNombre }}</strong><small>{{ item.perfilDenominacion }}</small></span><select class="confirmation-select confirmation-select--compact" [class]="'confirmation-select confirmation-select--compact confirmation-select--' + item.estadoConfirmacion.toLowerCase()" [value]="item.estadoConfirmacion" [disabled]="confirmationUpdating().has(item.id)" [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre" (change)="updateConfirmation(item, $any($event.target).value)"><option value="PENDIENTE">Pendiente</option><option value="CONFIRMADA">Confirmada</option><option value="RECHAZADA">Rechazada</option></select><button class="button button--link" type="button" (click)="startEdit(item)">Editar</button></article> } @empty { <div class="room-empty">Aún no hay personal de aula asignado.</div> }</div><footer><span>{{ group.assignments.length }} {{ group.assignments.length === 1 ? "persona" : "personas" }} de aula</span><button class="button button--link" type="button" (click)="startCreate(group.aula)">Añadir persona</button></footer></article> }</div>
+            <div class="process-team__empty">
+              <span>No hay personal asignado a nivel general.</span>
+            </div>
           }
         </section>
 
-        @if (formOpen()) { <aside class="assignment-form" aria-labelledby="assignment-form-title"><div class="panel-header"><div><p class="eyebrow">{{ editing() ? "Edición" : "Nueva asignación" }}</p><h2 id="assignment-form-title">{{ editing() ? "Modificar asignación" : "Asignar colaborador" }}</h2></div><button class="panel-close" type="button" aria-label="Cerrar" (click)="closeForm()">×</button></div><form [formGroup]="form" (ngSubmit)="save()" novalidate>
-          <fieldset class="scope-choice"><legend>Ámbito de la asignación *</legend><label [class.is-selected]="form.controls.ambito.value === 'GENERAL'"><input type="radio" name="assignment-scope" value="GENERAL" [checked]="form.controls.ambito.value === 'GENERAL'" (change)="scopeChanged('GENERAL')"><span><strong>Ámbito general</strong><small>Para todo el ejercicio, con ubicación operativa opcional.</small></span></label><label [class.is-selected]="form.controls.ambito.value === 'AULA'"><input type="radio" name="assignment-scope" value="AULA" [checked]="form.controls.ambito.value === 'AULA'" [disabled]="!aulas().length" (change)="scopeChanged('AULA')"><span><strong>Aula concreta</strong><small>Personal destinado a un centro y aula.</small></span></label></fieldset>
-          @if (fieldErrors()["ambito"]) { <span class="field-error">{{ fieldErrors()["ambito"] }}</span> }
-          @if (form.controls.ambito.value === "GENERAL") { <div class="field"><label for="assignment-general-category">Ubicación o subcategoría <span>(opcional)</span></label><input id="assignment-general-category" type="text" maxlength="150" formControlName="subcategoriaGeneral" placeholder="Ej.: Pasillo Edificio 6 o Centro de Datos"><small class="field-help">Se utilizará para organizar la vista y agrupar los próximos informes.</small></div> }
-          @if (form.controls.ambito.value === "AULA") {
-            <div class="field"><label for="assignment-center">Centro *</label><select id="assignment-center" formControlName="centro" (change)="centerChanged($any($event.target).value)"><option value="">Selecciona un centro</option>@for (center of centers(); track center) { <option [value]="center">{{ center }}</option> }</select><small class="field-help">Solo se muestran centros cargados para este ejercicio.</small></div>
-            <div class="field"><label for="assignment-room">Aula *</label><select id="assignment-room" formControlName="examenAulaId" [disabled]="!selectedCenter()" [attr.aria-invalid]="!!fieldErrors()['examenAulaId']"><option value="">{{ selectedCenter() ? "Selecciona un aula" : "Selecciona primero un centro" }}</option>@for (room of availableRooms(); track room.id) { <option [value]="room.id">{{ room.aulaNombre }}</option> }</select><small class="field-help">{{ availableRooms().length }} {{ availableRooms().length === 1 ? "aula disponible" : "aulas disponibles" }} en este centro.</small>@if (fieldErrors()["examenAulaId"]) { <span class="field-error">{{ fieldErrors()["examenAulaId"] }}</span> }</div>
+        <!-- Cabecera de la Sección de Aulas -->
+        <div class="section-title-bar">
+          <h2>Distribución por Aulas ({{ filteredRoomGroups().length }} {{ filteredRoomGroups().length === 1 ? 'aula' : 'aulas' }})</h2>
+        </div>
+
+        <!-- Rejilla de Tarjetas de Aula con Cabecera Prominente -->
+        <div class="rooms-grid">
+          @for (group of filteredRoomGroups(); track group.aula.id) {
+            <div class="room-card" [class.room-card--uncovered]="group.responsibleCount === 0">
+              <!-- CABECERA DESTACADA DEL AULA -->
+              <div class="room-card__header">
+                <div class="room-card__title-group">
+                  <div class="room-badge-wrap">
+                    <span class="room-badge">AULA</span>
+                    <h3 class="room-name">{{ group.aula.aulaNombre }}</h3>
+                  </div>
+                  <p class="room-center">
+                    <svg class="center-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    {{ group.aula.centroNombre || 'Centro principal' }}
+                  </p>
+                </div>
+
+                <div class="room-card__meta-group">
+                  <span class="convoked-count">
+                    <strong>{{ group.convocadosCount }}</strong> {{ group.convocadosCount === 1 ? "convocado" : "convocados" }}
+                  </span>
+                  @if (group.responsibleCount) {
+                    <span class="coverage-status coverage-status--ok">✓ Responsable asignado</span>
+                  } @else {
+                    <span class="coverage-status coverage-status--warning">⚠️ Sin responsable</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Lista de Personas Asignadas al Aula -->
+              <div class="room-people">
+                @for (item of group.assignments; track item.id) {
+                  <div class="person-row">
+                    <span class="person-avatar" aria-hidden="true">{{ item.colaboradorNombre?.charAt(0) }}</span>
+                    <div class="person-row__identity">
+                      <strong>{{ item.colaboradorNombre }}</strong>
+                      <div class="person-row__profile-wrap">
+                        <small>{{ item.perfilDenominacion }}</small>
+                        @if (item.perfilCodigo === 'RESPONSABLE_DE_AULA') {
+                          <span class="role-badge role-badge--responsible">Responsable</span>
+                        }
+                      </div>
+                    </div>
+                    <select
+                      class="confirmation-select confirmation-select--compact"
+                      [class]="'confirmation-select confirmation-select--compact confirmation-select--' + item.estadoConfirmacion.toLowerCase()"
+                      [value]="item.estadoConfirmacion"
+                      [disabled]="confirmationUpdating().has(item.id)"
+                      [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
+                      (change)="updateConfirmation(item, $any($event.target).value)"
+                    >
+                      <option value="PENDIENTE">Pendiente</option>
+                      <option value="CONFIRMADA">Confirmada</option>
+                      <option value="RECHAZADA">Rechazada</option>
+                    </select>
+                    <button class="button button--link" type="button" (click)="startEdit(item)">
+                      Editar
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="room-empty">
+                    <span>Sin personal asignado a esta aula.</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Pie de Tarjeta de Aula -->
+              <div class="room-card__footer">
+                <span>{{ group.assignments.length }} {{ group.assignments.length === 1 ? "persona" : "personas" }}</span>
+                <button class="button button--link add-room-person-btn" type="button" (click)="startCreate(group.aula)">
+                  + Asignar a esta aula
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-state empty-state--wide">
+              <strong>No hay aulas que coincidan con los filtros.</strong>
+            </div>
           }
-          <div class="field collaborator-field"><label for="assignment-person-search">Colaborador *</label><div class="autocomplete-input"><input id="assignment-person-search" type="search" placeholder="Escribe al menos 2 caracteres del nombre o DNI" autocomplete="off" [disabled]="!!editing()" [value]="collaboratorQuery()" role="combobox" aria-autocomplete="list" aria-controls="assignment-person-results" [attr.aria-expanded]="collaboratorResultsOpen()" [attr.aria-invalid]="!!fieldErrors()['colaboradorId']" (input)="searchCollaborators($any($event.target).value)">@if (selectedCollaboratorId() && !editing()) { <button class="autocomplete-clear" type="button" aria-label="Quitar colaborador seleccionado" (click)="clearCollaborator()">×</button> }</div>@if (collaboratorSearchLoading()) { <small class="field-help" role="status">Buscando colaboradores…</small> } @else if (!editing() && collaboratorQuery().trim().length < 2) { <small class="field-help">Busca y selecciona una persona activa.</small> }@if (collaboratorResultsOpen()) { <div id="assignment-person-results" class="autocomplete-results" role="listbox" aria-label="Resultados de colaboradores">@for (person of colaboradores(); track person.id) { <button type="button" role="option" [attr.aria-selected]="selectedCollaboratorId() === person.id" (click)="selectCollaborator(person)"><strong>{{ person.nombreCompleto }}</strong><span>{{ person.dni }}{{ person.letra }}</span></button> } @empty { @if (!collaboratorSearchLoading()) { <p>No hay colaboradores activos que coincidan con la búsqueda.</p> } }</div> }@if (collaboratorSearchError()) { <span class="field-error">{{ collaboratorSearchError() }}</span> }@if (editing()) { <small class="field-help">Para sustituir a la persona, elimina esta asignación y crea otra.</small> }@if (fieldErrors()["colaboradorId"]) { <span class="field-error">{{ fieldErrors()["colaboradorId"] }}</span> }</div>
-          <div class="field"><label for="assignment-role">Perfil *</label><select id="assignment-role" formControlName="perfilId" [attr.aria-invalid]="!!fieldErrors()['perfilId']"><option value="">Selecciona el tipo de responsabilidad</option>@for (profile of perfiles(); track profile.id) { <option [value]="profile.id">{{ profile.denominacion }} · {{ profile.importeHora.toLocaleString("es-ES", { minimumFractionDigits: 2 }) }} €/h</option> }</select>@if (fieldErrors()["perfilId"]) { <span class="field-error">{{ fieldErrors()["perfilId"] }}</span> }</div>
-          <div class="field"><label for="assignment-confirmation">Confirmación de asistencia</label><select id="assignment-confirmation" formControlName="estadoConfirmacion"><option value="PENDIENTE">Pendiente de confirmación</option><option value="CONFIRMADA">Asistencia confirmada</option><option value="RECHAZADA">Asistencia rechazada</option></select><small class="field-help">El administrador puede actualizarla manualmente en cualquier momento.</small></div>
-          <div class="field"><label for="assignment-hours">Horas realizadas</label><input id="assignment-hours" type="number" min="0" step="0.25" formControlName="horasRealizadas" [attr.aria-invalid]="!!fieldErrors()['horasRealizadas']"><small class="field-help">Puede completarse después del ejercicio.</small>@if (fieldErrors()["horasRealizadas"]) { <span class="field-error">{{ fieldErrors()["horasRealizadas"] }}</span> }</div>
-          <div class="rule-note"><strong>Control automático</strong><span>@if (form.controls.ambito.value === "AULA") { El sistema no permite mover ni eliminar a la última persona responsable de un aula. } @else { Los perfiles responsables de aula solo pueden utilizarse en un aula concreta. }</span></div>
-          <div class="form-actions"><button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="saving()">{{ saving() ? "Guardando…" : editing() ? "Guardar cambios" : "Crear asignación" }}</button></div>
-        </form></aside> }
-      </div>
+        </div>
+      } @else {
+        <!-- =====================================================================
+             VISTA 2: VISTA EN TABLA
+             ===================================================================== -->
+        <section class="table-filters" aria-labelledby="table-filters-title">
+          <div class="table-filters__heading">
+            <div>
+              <p class="eyebrow">Vista tabla</p>
+              <h3 id="table-filters-title">Filtros</h3>
+            </div>
+            <button class="button button--link" type="button" (click)="clearAssignmentFilters()">
+              Limpiar filtros
+            </button>
+          </div>
+          <div class="table-filters__fields">
+            <div class="field">
+              <label for="table-search-input">Buscar</label>
+              <input
+                id="table-search-input"
+                type="search"
+                placeholder="Persona, DNI, centro, aula o perfil…"
+                [value]="assignmentSearch()"
+                (input)="setAssignmentSearch($any($event.target).value)"
+              >
+            </div>
+            <div class="field">
+              <label for="table-profile-filter">Perfil</label>
+              <select id="table-profile-filter" [value]="profileFilter()" (change)="setProfileFilter($any($event.target).value)">
+                <option value="">Todos los perfiles</option>
+                @for (profile of perfiles(); track profile.id) {
+                  <option [value]="profile.id">{{ profile.denominacion }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label for="table-scope-filter">Ámbito</label>
+              <select id="table-scope-filter" [value]="scopeFilter()" (change)="setScopeFilter($any($event.target).value)">
+                <option value="">Todos los ámbitos</option>
+                <option value="GENERAL">Ámbito general</option>
+                <option value="AULA">Aula concreta</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-filters__result">
+            <span><strong>{{ filteredAssignments().length }}</strong> {{ filteredAssignments().length === 1 ? "resultado" : "resultados" }}</span>
+            <button
+              class="button button--link"
+              type="button"
+              [disabled]="!filteredAssignments().length"
+              (click)="toggleFilteredAssignments(!allFilteredSelected())"
+            >
+              {{ allFilteredSelected() ? "Deseleccionar resultados" : "Seleccionar todos los resultados" }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Barra de Asignación Masiva de Horas -->
+        @if (selectedAssignmentIds().size) {
+          <section class="bulk-hours" aria-label="Acciones para asignaciones seleccionadas">
+            <div>
+              <strong>{{ selectedAssignmentIds().size }} {{ selectedAssignmentIds().size === 1 ? "asignación seleccionada" : "asignaciones seleccionadas" }}</strong>
+            </div>
+            <div class="field">
+              <label for="bulk-hours-input">Horas realizadas</label>
+              <input
+                id="bulk-hours-input"
+                type="number"
+                min="0"
+                step="0.25"
+                [value]="bulkHours() ?? ''"
+                (input)="bulkHours.set($any($event.target).value === '' ? null : +$any($event.target).value)"
+              >
+            </div>
+            <div class="bulk-hours__actions">
+              <button class="button button--secondary" type="button" [disabled]="bulkUpdating()" (click)="cancelBulkSelection()">
+                Cancelar
+              </button>
+              <button
+                class="button button--primary"
+                type="button"
+                [disabled]="bulkUpdating() || bulkHours() === null || (bulkHours() ?? -1) < 0"
+                (click)="applyBulkHours()"
+              >
+                {{ bulkUpdating() ? "Aplicando…" : "Establecer horas" }}
+              </button>
+            </div>
+          </section>
+        }
+
+        <!-- Tabla de Asignaciones -->
+        <div class="table-wrap">
+          <table class="admin-table assignment-table">
+            <thead>
+              <tr>
+                <th class="selection-cell">
+                  <input
+                    type="checkbox"
+                    [checked]="allFilteredSelected()"
+                    [indeterminate]="someFilteredSelected() && !allFilteredSelected()"
+                    [disabled]="!filteredAssignments().length"
+                    aria-label="Seleccionar todos los resultados filtrados"
+                    (change)="toggleFilteredAssignments($any($event.target).checked)"
+                  >
+                </th>
+                <th>Ámbito / Aula</th>
+                <th>Colaborador</th>
+                <th>Perfil</th>
+                <th>Confirmación</th>
+                <th class="number-cell">Horas</th>
+                <th class="number-cell">Importe</th>
+                <th class="actions-cell">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of filteredAssignments(); track item.id) {
+                <tr [class.is-selected]="selectedAssignmentIds().has(item.id)">
+                  <td class="selection-cell" data-label="Seleccionar">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedAssignmentIds().has(item.id)"
+                      [attr.aria-label]="'Seleccionar asignación de ' + item.colaboradorNombre"
+                      (change)="toggleAssignmentSelection(item.id, $any($event.target).checked)"
+                    >
+                  </td>
+                  <td data-label="Ámbito">
+                    <strong>{{ item.examenAulaId ? item.aulaNombre : (item.subcategoriaGeneral || "Ámbito general") }}</strong>
+                    <small>{{ item.examenAulaId ? item.centroNombre : "Ámbito general" }}</small>
+                  </td>
+                  <td data-label="Colaborador">
+                    <strong>{{ item.colaboradorNombre }}</strong>
+                    <small>{{ item.colaboradorDocumento }}</small>
+                  </td>
+                  <td data-label="Perfil">
+                    <span class="role-badge" [class.role-badge--responsible]="item.perfilCodigo === 'RESPONSABLE_DE_AULA'">
+                      {{ item.perfilDenominacion }}
+                    </span>
+                  </td>
+                  <td data-label="Confirmación">
+                    <select
+                      class="confirmation-select"
+                      [class]="'confirmation-select confirmation-select--' + item.estadoConfirmacion.toLowerCase()"
+                      [value]="item.estadoConfirmacion"
+                      [disabled]="confirmationUpdating().has(item.id)"
+                      [attr.aria-label]="'Confirmación de ' + item.colaboradorNombre"
+                      (change)="updateConfirmation(item, $any($event.target).value)"
+                    >
+                      <option value="PENDIENTE">Pendiente</option>
+                      <option value="CONFIRMADA">Confirmada</option>
+                      <option value="RECHAZADA">Rechazada</option>
+                    </select>
+                  </td>
+                  <td data-label="Horas" class="number-cell">{{ item.horasRealizadas ?? "—" }}</td>
+                  <td data-label="Importe" class="number-cell">{{ money(item.importeTotal) }}</td>
+                  <td data-label="Acciones" class="actions-cell">
+                    <div class="row-actions">
+                      <button class="button button--link" type="button" (click)="startEdit(item)">
+                        Editar
+                      </button>
+                      <button class="button button--link danger-link" type="button" (click)="askDelete(item)">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8">
+                    <div class="empty-state">
+                      <strong>No hay asignaciones que coincidan con los filtros.</strong>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
-  } @else if (!loading()) { <div class="initial-empty"><span class="initial-empty__icon" aria-hidden="true">1</span><strong>Selecciona un proceso y un ejercicio para empezar</strong><p>También puedes localizar todos los ejercicios previstos para un día concreto.</p></div> }
+  } @else if (!loading()) {
+    <div class="initial-empty">
+      <span class="initial-empty__icon" aria-hidden="true">1</span>
+      <strong>Selecciona un proceso y un ejercicio</strong>
+    </div>
+  }
+
+  <!-- =========================================================================
+       PANEL LATERAL DESLIZANTE (SIDE SHEET / DRAWER) - FORMULARIO LIMPIO
+       ========================================================================= -->
+  @if (formOpen()) {
+    <div class="drawer-backdrop" (click)="closeForm()"></div>
+    <aside
+      class="assignment-drawer"
+      [class.is-expanded]="drawerExpanded()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drawer-title"
+    >
+      <header class="drawer-header">
+        <div>
+          <p class="eyebrow">{{ editing() ? "Edición" : "Alta" }}</p>
+          <h2 id="drawer-title">{{ editing() ? "Modificar asignación" : "Asignar colaborador" }}</h2>
+          <small class="drawer-subtitle">
+            {{ selectedExam()?.numeroEjercicio }}.º ejercicio · {{ selectedExam()?.nombre }}
+          </small>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            type="button"
+            class="drawer-icon-btn"
+            [title]="drawerExpanded() ? 'Reducir panel' : 'Expandir panel'"
+            [attr.aria-label]="drawerExpanded() ? 'Reducir panel' : 'Expandir panel'"
+            (click)="toggleDrawerExpand()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @if (drawerExpanded()) {
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              } @else {
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              }
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="drawer-icon-btn"
+            aria-label="Cerrar panel"
+            (click)="closeForm()"
+          >
+            ✕
+          </button>
+        </div>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="drawer-body" novalidate>
+        <!-- Bloque 1: Ámbito y Ubicación -->
+        <div class="drawer-section">
+          <div class="drawer-section__header">
+            <span class="drawer-section__number">1</span>
+            <h3>Ámbito y ubicación</h3>
+          </div>
+
+          <div class="scope-choice-grid">
+            <label class="scope-option-card" [class.is-selected]="form.controls.ambito.value === 'AULA'">
+              <input
+                type="radio"
+                name="assignment-scope"
+                value="AULA"
+                [checked]="form.controls.ambito.value === 'AULA'"
+                [disabled]="!aulas().length"
+                (change)="scopeChanged('AULA')"
+              >
+              <div class="scope-option-content">
+                <strong>Aula concreta</strong>
+              </div>
+            </label>
+
+            <label class="scope-option-card" [class.is-selected]="form.controls.ambito.value === 'GENERAL'">
+              <input
+                type="radio"
+                name="assignment-scope"
+                value="GENERAL"
+                [checked]="form.controls.ambito.value === 'GENERAL'"
+                (change)="scopeChanged('GENERAL')"
+              >
+              <div class="scope-option-content">
+                <strong>Ámbito general</strong>
+              </div>
+            </label>
+          </div>
+          @if (fieldErrors()["ambito"]) {
+            <span class="field-error" role="alert">{{ fieldErrors()["ambito"] }}</span>
+          }
+
+          @if (form.controls.ambito.value === "AULA") {
+            <div class="drawer-form-row">
+              <div class="field">
+                <label for="assignment-center">Centro <span class="req-star">*</span></label>
+                <select id="assignment-center" formControlName="centro" (change)="centerChanged($any($event.target).value)">
+                  <option value="">Selecciona un centro</option>
+                  @for (center of centers(); track center) {
+                    <option [value]="center">{{ center }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="assignment-room">Aula <span class="req-star">*</span></label>
+                <select
+                  id="assignment-room"
+                  formControlName="examenAulaId"
+                  [disabled]="!selectedCenter()"
+                  [attr.aria-invalid]="!!fieldErrors()['examenAulaId']"
+                >
+                  <option value="">{{ selectedCenter() ? "Selecciona un aula" : "Selecciona primero un centro" }}</option>
+                  @for (room of availableRooms(); track room.id) {
+                    <option [value]="room.id">{{ room.aulaNombre }}</option>
+                  }
+                </select>
+                @if (fieldErrors()["examenAulaId"]) {
+                  <span class="field-error" role="alert">{{ fieldErrors()["examenAulaId"] }}</span>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="drawer-form-row--single">
+              <div class="field">
+                <label for="assignment-general-category">Ubicación / Subcategoría <small>(opcional)</small></label>
+                <input
+                  id="assignment-general-category"
+                  type="text"
+                  maxlength="150"
+                  formControlName="subcategoriaGeneral"
+                  placeholder="Ej.: Coordinación General, Centro de Datos, Planta 1…"
+                >
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Bloque 2: Selección de Colaborador -->
+        <div class="drawer-section">
+          <div class="drawer-section__header">
+            <span class="drawer-section__number">2</span>
+            <h3>Persona colaboradora</h3>
+          </div>
+
+          <div class="field collaborator-field-container">
+            <label for="assignment-person-search">
+              Colaborador activo <span class="req-star">*</span>
+            </label>
+            <div class="collaborator-input-wrap">
+              <input
+                id="assignment-person-search"
+                type="search"
+                placeholder="Escribe el nombre o DNI…"
+                autocomplete="off"
+                [disabled]="!!editing()"
+                [value]="collaboratorQuery()"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="assignment-person-results"
+                [attr.aria-expanded]="collaboratorResultsOpen()"
+                [attr.aria-invalid]="!!fieldErrors()['colaboradorId']"
+                (input)="searchCollaborators($any($event.target).value)"
+              >
+              @if (selectedCollaboratorId() && !editing()) {
+                <button class="clear-collab-btn" type="button" aria-label="Quitar colaborador seleccionado" (click)="clearCollaborator()">×</button>
+              }
+
+              @if (collaboratorResultsOpen()) {
+                <div id="assignment-person-results" class="collaborator-dropdown" role="listbox" aria-label="Resultados de colaboradores">
+                  @for (person of colaboradores(); track person.id) {
+                    <button type="button" role="option" [attr.aria-selected]="selectedCollaboratorId() === person.id" (click)="selectCollaborator(person)">
+                      <strong>{{ person.nombreCompleto }}</strong>
+                      <span>{{ person.dni }}{{ person.letra }}</span>
+                    </button>
+                  } @empty {
+                    @if (!collaboratorSearchLoading()) {
+                      <p class="no-collab-msg">No hay colaboradores que coincidan con la búsqueda.</p>
+                    }
+                  }
+                </div>
+              }
+            </div>
+
+            @if (collaboratorSearchLoading()) {
+              <small class="field-help" role="status">Buscando colaboradores activos…</small>
+            }
+
+            @if (collaboratorSearchError()) {
+              <span class="field-error" role="alert">{{ collaboratorSearchError() }}</span>
+            }
+            @if (fieldErrors()["colaboradorId"]) {
+              <span class="field-error" role="alert">{{ fieldErrors()["colaboradorId"] }}</span>
+            }
+          </div>
+        </div>
+
+        <!-- Bloque 3: Perfil y Condiciones -->
+        <div class="drawer-section">
+          <div class="drawer-section__header">
+            <span class="drawer-section__number">3</span>
+            <h3>Perfil y condiciones</h3>
+          </div>
+
+          <div class="drawer-form-row--single">
+            <div class="field">
+              <label for="assignment-role">Perfil <span class="req-star">*</span></label>
+              <select id="assignment-role" formControlName="perfilId" [attr.aria-invalid]="!!fieldErrors()['perfilId']">
+                <option value="">Selecciona el perfil</option>
+                @for (profile of perfiles(); track profile.id) {
+                  <option [value]="profile.id">{{ profile.denominacion }} · {{ profile.importeHora.toLocaleString("es-ES", { minimumFractionDigits: 2 }) }} €/h</option>
+                }
+              </select>
+              @if (fieldErrors()["perfilId"]) {
+                <span class="field-error" role="alert">{{ fieldErrors()["perfilId"] }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="drawer-form-row">
+            <div class="field">
+              <label for="assignment-confirmation">Estado de confirmación</label>
+              <select id="assignment-confirmation" formControlName="estadoConfirmacion">
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="CONFIRMADA">Confirmada</option>
+                <option value="RECHAZADA">Rechazada</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="assignment-hours">Horas realizadas</label>
+              <input
+                id="assignment-hours"
+                type="number"
+                min="0"
+                step="0.25"
+                formControlName="horasRealizadas"
+                placeholder="Ej. 4.5"
+                [attr.aria-invalid]="!!fieldErrors()['horasRealizadas']"
+              >
+              @if (fieldErrors()["horasRealizadas"]) {
+                <span class="field-error" role="alert">{{ fieldErrors()["horasRealizadas"] }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="rule-note-box">
+            <span>
+              @if (form.controls.ambito.value === "AULA") {
+                Cada aula requiere al menos un responsable asignado.
+              } @else {
+                Los responsables de aula deben asignarse a un aula concreta.
+              }
+            </span>
+          </div>
+        </div>
+
+        <!-- Pie fijo del Drawer -->
+        <footer class="drawer-footer">
+          <div class="drawer-footer__left">
+            @if (editing(); as item) {
+              <button
+                type="button"
+                class="button button--danger-outline"
+                [disabled]="saving()"
+                (click)="askDelete(item)"
+              >
+                Eliminar
+              </button>
+            }
+          </div>
+          <div class="drawer-footer__right">
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="saving()"
+              (click)="closeForm()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="button button--primary"
+              [disabled]="saving()"
+            >
+              {{ saving() ? "Guardando…" : editing() ? "Guardar cambios" : "Crear asignación" }}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </aside>
+  }
 </div>
 
-<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-assignment-title"><form method="dialog"><p class="eyebrow">Confirmación necesaria</p><h2 id="delete-assignment-title">¿Eliminar esta asignación?</h2>@if (deleteTarget(); as item) { <p>Se retirará a <strong>{{ item.colaboradorNombre }}</strong> de <strong>{{ item.examenAulaId ? item.aulaNombre : "el ámbito general del ejercicio" }}</strong> como {{ item.perfilDenominacion.toLocaleLowerCase("es") }}.</p>@if (item.perfilCodigo === "RESPONSABLE_DE_AULA") { <p class="dialog-warning">Si es la última persona responsable del aula, el sistema impedirá la operación.</p> } }<div class="dialog-actions"><button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">Cancelar</button><button class="button button--danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">{{ deleting() ? "Eliminando…" : "Eliminar asignación" }}</button></div></form></dialog>
+<!-- Diálogo Modal de Confirmación de Eliminación -->
+<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-assignment-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación</p>
+    <h2 id="delete-assignment-title">¿Eliminar asignación?</h2>
+    @if (deleteTarget(); as item) {
+      <p>
+        Se retirará a <strong>{{ item.colaboradorNombre }}</strong> de <strong>{{ item.examenAulaId ? item.aulaNombre : "el ámbito general" }}</strong> como {{ item.perfilDenominacion.toLocaleLowerCase("es") }}.
+      </p>
+      @if (item.perfilCodigo === "RESPONSABLE_DE_AULA") {
+        <p class="dialog-warning">
+          Si es la única persona responsable del aula, no se podrá eliminar sin asignar previamente otro responsable.
+        </p>
+      }
+    }
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">
+        {{ deleting() ? "Eliminando…" : "Eliminar" }}
+      </button>
+    </div>
+  </form>
+</dialog>
