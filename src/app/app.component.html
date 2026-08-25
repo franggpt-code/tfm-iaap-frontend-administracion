@@ -142,7 +142,7 @@
           </div>
         }
 
-        @if (isCollaborator()) {
+        @if (isCollaborator() || isAdmin() || isManager()) {
           <div class="nav-group">
             <span class="nav-group-header">Portal</span>
             <ul class="nav-list">

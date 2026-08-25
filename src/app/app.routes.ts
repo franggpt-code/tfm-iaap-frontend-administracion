@@ -6,6 +6,7 @@ import { ConvocadosComponent } from "./features/workspace/convocados/convocados.
 import { DatosMaestrosComponent } from "./features/workspace/datos-maestros/datos-maestros.component";
 import { DashboardComponent } from "./features/workspace/dashboard/dashboard.component";
 import { ImportacionOpositoresComponent } from "./features/workspace/importacion/importacion-opositores.component";
+import { ImportacionColaboradoresComponent } from "./features/workspace/importacion/importacion-colaboradores.component";
 import { ImportacionesComponent } from "./features/workspace/importacion/importaciones.component";
 import { ImportacionConvocatoriasComponent } from "./features/workspace/importacion-convocatorias/importacion-convocatorias.component";
 import { ProcesosExplorerComponent } from "./features/workspace/procesos/procesos-explorer.component";
@@ -23,6 +24,7 @@ export const routes: Routes = [
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/convocatorias", component: ImportacionConvocatoriasComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/opositores-aulas", component: ImportacionOpositoresComponent, canActivate: [adminRoleGuard] },
+  { path: "admin/importaciones/colaboradores", component: ImportacionColaboradoresComponent, canActivate: [adminRoleGuard] },
   { path: "admin/procesos", component: ProcesosExplorerComponent, canActivate: [adminGuard] },
   { path: "admin/procesos-selectivos/:procesoId/examenes/:examenId/convocados", component: ConvocadosComponent, canActivate: [adminGuard] },
   { path: "admin/examenes-aula/:examenAulaId/asistencia", component: AsistenciaComponent, canActivate: [adminRoleGuard] },

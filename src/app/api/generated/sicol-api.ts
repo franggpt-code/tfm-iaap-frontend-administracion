@@ -313,7 +313,7 @@ export interface paths {
         put?: never;
         /**
          * Importar colaboradores desde Excel
-         * @description Crea los colaboradores válidos y omite duplicados o filas con errores.
+         * @description Crea colaboradores y, cuando se indique, actualiza las fichas existentes. Cada ficha nueva obtiene un usuario LDAP con perfil de colaborador; los usuarios existentes conservan su acceso y perfil.
          */
         post: operations["confirmarImportacionColaboradoresExcel"];
         delete?: never;
@@ -1625,6 +1625,12 @@ export interface components {
             totalFilas: number;
             filasValidas: number;
             creados: number;
+            actualizados: number;
+            /** @description Colaboradores ya registrados detectados en el fichero. */
+            existentes: number;
+            usuariosCreados: number;
+            /** @description Usuarios ya registrados que han conservado su acceso y perfil. */
+            usuariosExistentes: number;
             omitidos: number;
             avisos: string[];
         };
@@ -3214,7 +3220,10 @@ export interface operations {
     };
     simularImportacionColaboradoresExcel: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Indica si las fichas ya existentes se actualizarán al confirmar. Por defecto, sí. */
+                actualizarExistentes?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3268,7 +3277,10 @@ export interface operations {
     };
     confirmarImportacionColaboradoresExcel: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Actualiza las fichas ya existentes. Por defecto, sí. */
+                actualizarExistentes?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;

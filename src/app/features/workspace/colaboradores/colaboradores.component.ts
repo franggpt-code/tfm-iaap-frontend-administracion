@@ -55,6 +55,7 @@ export class ColaboradoresComponent implements OnInit {
   readonly importDiagnostic = signal<ImportErrorDiagnostic | null>(null);
   readonly importResult = signal<ImportacionColaboradoresResultado | null>(null);
   readonly importBusy = signal(false);
+  readonly actualizarExistentes = signal(true);
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string>>({});
@@ -178,8 +179,9 @@ export class ColaboradoresComponent implements OnInit {
     });
   }
 
-  openImport(): void { this.closeForm(); this.importOpen.set(true); this.importResult.set(null); this.importFileError.set(null); this.importDiagnostic.set(null); this.success.set(null); }
+  openImport(): void { this.closeForm(); this.importOpen.set(true); this.actualizarExistentes.set(true); this.importResult.set(null); this.importFileError.set(null); this.importDiagnostic.set(null); this.success.set(null); }
   closeImport(): void { this.importOpen.set(false); this.selectedFile.set(null); this.importResult.set(null); this.importFileError.set(null); this.importDiagnostic.set(null); this.fileDragging.set(false); }
+  setActualizarExistentes(checked: boolean): void { this.actualizarExistentes.set(checked); this.importResult.set(null); this.importDiagnostic.set(null); }
   selectFile(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.acceptImportFile(input.files?.[0] ?? null);
@@ -211,15 +213,15 @@ export class ColaboradoresComponent implements OnInit {
   simulateImport(): void {
     const file = this.selectedFile(); if (!file) return;
     this.importBusy.set(true); this.error.set(null);
-    this.api.simularImportacionColaboradores(file).pipe(finalize(() => this.importBusy.set(false))).subscribe({
+    this.api.simularImportacionColaboradores(file, this.actualizarExistentes()).pipe(finalize(() => this.importBusy.set(false))).subscribe({
       next: result => this.importResult.set(result), error: (error: unknown) => this.setImportError(error, "Validación de colaboradores"),
     });
   }
   confirmImport(): void {
     const file = this.selectedFile(); const preview = this.importResult(); if (!file || !preview?.filasValidas) return;
     this.importBusy.set(true); this.error.set(null);
-    this.api.confirmarImportacionColaboradores(file).pipe(finalize(() => this.importBusy.set(false))).subscribe({
-      next: result => { this.importResult.set(result); this.success.set(`Importación completada: ${result.creados} colaboradores creados.`); this.search(); },
+    this.api.confirmarImportacionColaboradores(file, this.actualizarExistentes()).pipe(finalize(() => this.importBusy.set(false))).subscribe({
+      next: result => { this.importResult.set(result); this.success.set(`Importación completada: ${result.creados} colaboradores creados y ${result.actualizados} actualizados.`); this.search(); },
       error: (error: unknown) => this.setImportError(error, "Importación de colaboradores"),
     });
   }

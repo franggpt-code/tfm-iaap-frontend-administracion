@@ -1,0 +1,23 @@
+:host { display: block; }
+.excel-upload { background: var(--jda-surface-muted); border: 1px dashed #718279; border-radius: 8px; cursor: pointer; display: grid; gap: .55rem; min-height: 13rem; padding: 1.5rem; }
+.excel-upload:hover, .excel-upload:focus-within, .excel-upload--selected { background: #f2f8f4; border-color: var(--jda-primary); box-shadow: 0 0 0 3px rgb(0 115 62 / 9%); }
+.excel-upload--selected { border-style: solid; }
+.excel-upload input { color: var(--jda-text-subtle); margin-top: auto; max-width: 100%; }
+.excel-upload input::file-selector-button { background: #fff; border: 1px solid var(--jda-primary); border-radius: 4px; color: var(--jda-primary); cursor: pointer; font: inherit; font-weight: 700; margin-right: .6rem; min-height: 36px; padding: .35rem .65rem; }
+.upload-box__tag { color: var(--jda-primary-dark); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
+.file-name, .privacy-note { color: var(--jda-neutral-mid); }
+.file-name { font-size: .875rem; overflow-wrap: anywhere; }
+.privacy-note { margin: 1rem 0 0; }
+.update-choice { align-items: flex-start; background: #f2f8f4; border-left: 4px solid var(--jda-primary); display: flex; gap: .75rem; margin-top: 1rem; padding: 1rem; }
+.update-choice input { margin-top: .25rem; }
+.update-choice small { color: var(--jda-neutral-mid); display: block; margin-top: .2rem; }
+.simulation { margin-top: 2rem; }
+.metric-groups { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.metric-group { background: #fff; border: 1px solid var(--jda-neutral-border); border-radius: 8px; border-top: 3px solid var(--jda-primary); box-shadow: var(--jda-shadow-sm); padding: 1.15rem; }
+.metric-group h3 { margin-bottom: .75rem; }.metric-group p { color: var(--jda-neutral-mid); margin: 0; }
+.metric-group dl { display: grid; gap: .45rem; margin: 0; }.metric-group dl div { align-items: baseline; border-bottom: 1px solid #ecefec; display: flex; gap: .75rem; justify-content: space-between; padding-bottom: .4rem; }.metric-group dl div:last-child { border-bottom: 0; }
+.metric-group dt { color: var(--jda-neutral-mid); }.metric-group dd { font-size: 1.15rem; font-variant-numeric: tabular-nums; font-weight: 800; margin: 0; }
+.warnings-panel { margin-top: 1.25rem; }.warnings-panel h3 span { background: #e9efeb; border-radius: 999px; font-size: .8rem; padding: .15rem .5rem; }
+.confirmation-dialog { border: 0; border-radius: 8px; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%); max-width: 34rem; padding: 1.5rem; width: calc(100% - 2rem); }.confirmation-dialog::backdrop { background: rgb(3 55 19 / 55%); }
+.dialog-actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1.5rem; }
+@media (max-width: 760px) { .metric-groups { grid-template-columns: 1fr; }.dialog-actions { flex-direction: column-reverse; } }
