@@ -2,7 +2,7 @@ import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } fr
 import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { finalize, forkJoin } from "rxjs";
-import { apiErrorMessage } from "../../../api/api-error";
+import { apiErrorMessage, ImportErrorDiagnostic, importErrorDiagnostic } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import {
   Colaborador,
@@ -13,6 +13,7 @@ import {
   PerfilColaboracion,
   SexoColaborador,
 } from "../../../api/sicol.types";
+import { ImportErrorPanelComponent } from "../../../shared/import-error-panel.component";
 
 const ESTADOS: { value: EstadoColaborador; label: string }[] = [
   { value: "PENDIENTE_VALIDACION", label: "Pendiente de validación" },
@@ -23,7 +24,7 @@ const ESTADOS: { value: EstadoColaborador; label: string }[] = [
 
 @Component({
   selector: "app-colaboradores",
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ImportErrorPanelComponent],
   templateUrl: "./colaboradores.component.html",
   styleUrl: "./colaboradores.component.scss",
 })
@@ -51,6 +52,7 @@ export class ColaboradoresComponent implements OnInit {
   readonly selectedFile = signal<File | null>(null);
   readonly fileDragging = signal(false);
   readonly importFileError = signal<string | null>(null);
+  readonly importDiagnostic = signal<ImportErrorDiagnostic | null>(null);
   readonly importResult = signal<ImportacionColaboradoresResultado | null>(null);
   readonly importBusy = signal(false);
   readonly error = signal<string | null>(null);
@@ -176,8 +178,8 @@ export class ColaboradoresComponent implements OnInit {
     });
   }
 
-  openImport(): void { this.closeForm(); this.importOpen.set(true); this.importResult.set(null); this.importFileError.set(null); this.success.set(null); }
-  closeImport(): void { this.importOpen.set(false); this.selectedFile.set(null); this.importResult.set(null); this.importFileError.set(null); this.fileDragging.set(false); }
+  openImport(): void { this.closeForm(); this.importOpen.set(true); this.importResult.set(null); this.importFileError.set(null); this.importDiagnostic.set(null); this.success.set(null); }
+  closeImport(): void { this.importOpen.set(false); this.selectedFile.set(null); this.importResult.set(null); this.importFileError.set(null); this.importDiagnostic.set(null); this.fileDragging.set(false); }
   selectFile(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.acceptImportFile(input.files?.[0] ?? null);
@@ -199,7 +201,7 @@ export class ColaboradoresComponent implements OnInit {
     this.acceptImportFile(event.dataTransfer?.files?.[0] ?? null);
   }
   removeSelectedFile(): void {
-    this.selectedFile.set(null); this.importResult.set(null); this.importFileError.set(null);
+    this.selectedFile.set(null); this.importResult.set(null); this.importFileError.set(null); this.importDiagnostic.set(null);
     if (this.importFileInput) this.importFileInput.nativeElement.value = "";
   }
   fileSize(file: File): string {
@@ -210,7 +212,7 @@ export class ColaboradoresComponent implements OnInit {
     const file = this.selectedFile(); if (!file) return;
     this.importBusy.set(true); this.error.set(null);
     this.api.simularImportacionColaboradores(file).pipe(finalize(() => this.importBusy.set(false))).subscribe({
-      next: result => this.importResult.set(result), error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      next: result => this.importResult.set(result), error: (error: unknown) => this.setImportError(error, "Validación de colaboradores"),
     });
   }
   confirmImport(): void {
@@ -218,13 +220,20 @@ export class ColaboradoresComponent implements OnInit {
     this.importBusy.set(true); this.error.set(null);
     this.api.confirmarImportacionColaboradores(file).pipe(finalize(() => this.importBusy.set(false))).subscribe({
       next: result => { this.importResult.set(result); this.success.set(`Importación completada: ${result.creados} colaboradores creados.`); this.search(); },
-      error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      error: (error: unknown) => this.setImportError(error, "Importación de colaboradores"),
     });
   }
 
   estadoLabel(value: EstadoColaborador): string { return ESTADOS.find(item => item.value === value)?.label ?? value; }
   roleLabel(code: string): string { return this.perfiles().find(item => item.codigo === code)?.denominacion ?? code.replaceAll("_", " "); }
 
+  private setImportError(error: unknown, operation: string): void {
+    const diagnostic = importErrorDiagnostic(error, operation, [
+      { label: "Fichero", value: this.selectedFile()?.name },
+    ]);
+    this.importDiagnostic.set(diagnostic);
+    this.error.set(diagnostic.summary);
+  }
   private acceptImportFile(file: File | null): void {
     this.importResult.set(null); this.importFileError.set(null);
     if (!file) { this.selectedFile.set(null); return; }

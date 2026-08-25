@@ -1,0 +1,15 @@
+.import-error-panel { background: #fff7f6; border: 1px solid #d4403a; border-left: 4px solid #d4403a; border-radius: 6px; color: #262626; margin: 0 0 1rem; padding: 1rem 1.25rem; }
+.import-error-panel__header { align-items: start; display: flex; gap: 1rem; justify-content: space-between; }
+.import-error-panel__header h2 { font-size: 1.2rem; margin: 0; }
+.import-error-panel__trace { background: #fff; border: 1px solid #e4b6b3; border-radius: 4px; color: #7b241c; font-size: .8rem; padding: .25rem .5rem; white-space: nowrap; }
+.import-error-panel__summary { font-weight: 700; margin: .75rem 0 .25rem; }
+.import-error-panel__next { margin: 0; }
+.import-error-panel__details { border-top: 1px solid #e4b6b3; margin-top: 1rem; padding-top: .75rem; }
+.import-error-panel__details summary { cursor: pointer; font-weight: 700; }
+.import-error-panel__details dl { display: grid; gap: .4rem; margin: .75rem 0; }
+.import-error-panel__details dl div { display: grid; gap: .5rem; grid-template-columns: minmax(120px, 180px) 1fr; }
+.import-error-panel__details dt { font-weight: 700; }
+.import-error-panel__details dd { margin: 0; overflow-wrap: anywhere; }
+.import-error-panel__details h3 { font-size: 1rem; margin: 1rem 0 .4rem; }
+.import-error-panel__details ul { margin: 0 0 1rem; padding-left: 1.25rem; }
+@media (max-width: 600px) { .import-error-panel__header { flex-direction: column; } .import-error-panel__details dl div { grid-template-columns: 1fr; gap: .1rem; } }

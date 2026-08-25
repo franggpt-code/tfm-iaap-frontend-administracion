@@ -18,7 +18,7 @@ export class LoginComponent {
 
   readonly appVersion = APP_VERSION;
   readonly submitting = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly error = signal<string | null>(this.auth.consumeSessionExpiredNotice() ? "Tu sesión ha caducado o el servidor se ha reiniciado. Vuelve a identificarte para continuar." : null);
   readonly showPassword = signal(false);
 
   readonly passwordType = computed(() => (this.showPassword() ? "text" : "password"));

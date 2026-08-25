@@ -11,7 +11,9 @@
     </div>
   </header>
 
-  @if (error()) {
+  @if (importDiagnostic(); as diagnostic) {
+    <app-import-error-panel [diagnostic]="diagnostic" />
+  } @else if (error()) {
     <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div>
   }
 

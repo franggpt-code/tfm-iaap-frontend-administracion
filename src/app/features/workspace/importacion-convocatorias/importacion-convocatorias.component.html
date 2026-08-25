@@ -5,7 +5,7 @@
     <div><p class="eyebrow">Datamart de seguimiento</p><h1>Importar convocatorias</h1><p>Revisa primero una simulación del informe `.xls`. No se guardará ningún cambio hasta que confirmes el resultado.</p></div>
   </header>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (importDiagnostic(); as diagnostic) { <app-import-error-panel [diagnostic]="diagnostic" /> } @else if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
   @if (confirmed(); as result) {
     <div class="alert alert--success" role="status"><strong>Importación completada.</strong> Se han procesado {{ result.filasLeidas }} filas. @if (result.importacionId) { Identificador: <code>{{ result.importacionId }}</code>. } <a routerLink="/admin/procesos">Consultar procesos y ejercicios</a></div>
   }

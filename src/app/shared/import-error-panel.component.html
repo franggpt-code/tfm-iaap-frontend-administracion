@@ -1,0 +1,32 @@
+<section class="import-error-panel" role="alert" aria-labelledby="import-error-title">
+  <div class="import-error-panel__header">
+    <div>
+      <p class="eyebrow">Diagnóstico de importación</p>
+      <h2 id="import-error-title">No se ha podido completar la operación</h2>
+    </div>
+    @if (diagnostic().traceId) { <code class="import-error-panel__trace">Ref. {{ diagnostic().traceId }}</code> }
+  </div>
+  <p class="import-error-panel__summary">{{ diagnostic().summary }}</p>
+  <p class="import-error-panel__next">Comprueba el fichero y vuelve a ejecutar la simulación. No se han guardado cambios cuando falla una simulación.</p>
+
+  <details class="import-error-panel__details">
+    <summary>Ver información para diagnóstico</summary>
+    <dl>
+      <div><dt>Operación</dt><dd>{{ diagnostic().operation }}</dd></div>
+      <div><dt>Momento</dt><dd>{{ diagnostic().occurredAt }}</dd></div>
+      @if (diagnostic().status) { <div><dt>Estado HTTP</dt><dd>{{ diagnostic().status }}</dd></div> }
+      @if (diagnostic().code) { <div><dt>Código</dt><dd>{{ diagnostic().code }}</dd></div> }
+      @for (item of diagnostic().context; track item.label) { <div><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div> }
+    </dl>
+    @if (diagnostic().details.length) {
+      <h3>Detalles devueltos por el importador</h3>
+      <ul>
+        @for (detail of diagnostic().details; track $index) {
+          <li><strong>@if (detail.field) { {{ detail.field }}: }</strong> {{ detail.issue }}@if (detail.rejectedValue) { <span> (valor: {{ detail.rejectedValue }})</span> }</li>
+        }
+      </ul>
+    }
+    @if (diagnostic().technicalMessage && diagnostic().technicalMessage !== diagnostic().summary) { <p><strong>Mensaje del servidor:</strong> {{ diagnostic().technicalMessage }}</p> }
+    <button class="button button--secondary" type="button" (click)="copyDiagnostic()">Copiar diagnóstico</button>
+  </details>
+</section>
