@@ -13,15 +13,17 @@
 .filter-panel__actions { align-self: end; }
 .filter-panel__result { color: #3d4b43; font-size: .9rem; font-weight: 700; min-height: 36px; padding: .55rem 0; white-space: nowrap; }
 .users-layout { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
-.users-layout--editing { grid-template-columns: minmax(0, 1fr) minmax(330px, 400px); }
+.users-layout--editing { grid-template-columns: minmax(0, 1fr); }
 .users-table-wrap { min-width: 0; overflow-x: auto; }
 .users-table td small { color: #5a6760; display: block; margin-top: .2rem; }
 .users-table .row-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem .9rem; }
 .users-table .row-actions .button { min-height: 36px; padding-inline: .2rem; }
-.user-form-panel { align-self: start; background: #fff; border: 1px solid var(--jda-neutral-border); border-top: 4px solid var(--jda-primary); border-radius: 6px; padding: 1.25rem; position: sticky; top: 1rem; }
+.user-form-panel { background: #fff; border: 1px solid var(--jda-neutral-border); border-top: 4px solid var(--jda-primary); border-radius: 8px; padding: 1.5rem; }
+.user-form-panel__header { align-items: start; border-bottom: 1px solid var(--jda-neutral-border); display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 1rem; }.user-form-panel__header p:last-child { color: #59665f; margin: .35rem 0 0; }.panel-close { background: transparent; border: 0; color: #536159; cursor: pointer; font-size: 1.8rem; line-height: 1; min-height: 40px; min-width: 40px; }
 .user-form-panel h2 { margin: 0; }
-.user-form-panel form { display: grid; gap: 1rem; }
-.role-choice { border: 0; display: grid; gap: .5rem; margin: 0; padding: 0; }
+.user-form-panel form { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.user-form-panel__wide { grid-column: 1 / -1; }
+.role-choice { border: 0; display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; }
 .role-choice legend { font-weight: 700; margin-bottom: .25rem; }
 .role-choice label, .check-field { align-items: flex-start; border: 1px solid #ccd6d0; border-radius: 4px; cursor: pointer; display: flex; gap: .65rem; padding: .7rem; }
 .role-choice label:has(input:checked) { background: #edf6f1; border-color: var(--jda-primary); }
@@ -31,16 +33,17 @@
 .profiles-dialog { border: 0; border-radius: 8px; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%); max-width: 42rem; padding: 1.5rem; width: calc(100% - 2rem); }.profiles-dialog::backdrop { background: rgb(3 55 19 / 55%); }.profiles-dialog h2 { margin: 0; }.profiles-dialog__header { align-items: start; display: flex; justify-content: space-between; }.dialog-close { background: transparent; border: 0; color: #536159; cursor: pointer; font-size: 1.8rem; line-height: 1; min-height: 36px; min-width: 36px; }.profiles-dialog__items { display: grid; gap: .75rem; margin-top: 1rem; }.profiles-dialog__items article { background: #f4f7f5; border-left: 4px solid var(--jda-primary); padding: .8rem 1rem; }.profiles-dialog__items p { color: #536159; margin: .45rem 0 0; }.dialog-actions { display: flex; justify-content: flex-end; margin-top: 1.25rem; }
 
 @media (max-width: 1000px) {
-  .users-layout--editing { grid-template-columns: 1fr; }
-  .user-form-panel { grid-row: 1; position: static; }
+  .role-choice { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
   .filter-panel__header { align-items: stretch; grid-template-columns: 1fr auto; }
   .filter-panel__result { grid-column: 1 / -1; min-height: 0; padding: 0; }
   .filter-panel__options { grid-template-columns: 1fr 1fr; }
+  .user-form-panel { padding: 1.25rem; }.user-form-panel form { grid-template-columns: 1fr; }.user-form-panel__wide { grid-column: auto; }
 }
 @media (max-width: 480px) {
   .filter-panel__options { grid-template-columns: 1fr; }
   .filter-panel__header { grid-template-columns: 1fr; }.filter-panel__toggle { width: 100%; }.filter-panel__result { grid-column: auto; }
   .users-table .row-actions { align-items: flex-start; flex-direction: column; gap: .25rem; }
+  .user-form-panel { padding: 1rem; }.user-form-panel__header { gap: .5rem; }
 }
