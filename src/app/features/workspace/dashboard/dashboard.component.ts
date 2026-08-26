@@ -32,6 +32,7 @@ export class DashboardComponent implements OnInit {
     const total = this.planificacion()?.totalAsignaciones ?? 0;
     return total ? Math.round(((this.planificacion()?.asignacionesConfirmadas ?? 0) / total) * 100) : 0;
   });
+  readonly ultimosHistoricos = computed(() => (this.resumen()?.anterioresEjercicios ?? []).slice(0, 3));
 
   ngOnInit(): void {
     this.api.getCuadroMandoAdministracion().pipe(finalize(() => this.loading.set(false))).subscribe({

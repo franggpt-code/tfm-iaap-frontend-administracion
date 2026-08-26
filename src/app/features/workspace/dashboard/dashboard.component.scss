@@ -69,6 +69,8 @@
 
 .dashboard-section, .historical-section { display: grid; gap: 1rem; }
 .historical-section { border-top: 1px solid var(--jda-neutral-border); padding-top: 1.5rem; }
+.historical-table-block { display: grid; gap: 1rem; margin-top: 1rem; }
+.section-heading--sub h3 { font-size: 1.15rem; }
 
 .upcoming-table { min-width: 940px; }
 .upcoming-table td:nth-child(n + 3):not(:last-child), .upcoming-table th:nth-child(n + 3):not(:last-child) { text-align: right; }
