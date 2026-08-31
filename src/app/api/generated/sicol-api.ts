@@ -1133,7 +1133,8 @@ export interface paths {
         };
         get: operations["listCentrosByProvincia"];
         put?: never;
-        post?: never;
+        /** Crear un centro reutilizable en una provincia */
+        post: operations["createCentroByProvincia"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1149,11 +1150,48 @@ export interface paths {
         };
         get: operations["listAulasByCentro"];
         put?: never;
-        post?: never;
+        /** Crear un aula reutilizable en un centro */
+        post: operations["createAulaByCentro"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/centros/{centroId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Eliminar un centro sin aulas */
+        delete: operations["deleteCentroById"];
+        options?: never;
+        head?: never;
+        /** Editar un centro reutilizable */
+        patch: operations["patchCentroById"];
+        trace?: never;
+    };
+    "/admin/aulas/{aulaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Eliminar un aula sin uso en ejercicios */
+        delete: operations["deleteAulaById"];
+        options?: never;
+        head?: never;
+        /** Editar un aula reutilizable */
+        patch: operations["patchAulaById"];
         trace?: never;
     };
     "/admin/importaciones/opositores-aulas/simulacion": {
@@ -1737,6 +1775,7 @@ export interface components {
             asignaciones: number;
             asignacionesPendientes: number;
             aulasSinResponsable: number;
+            horasPendientes?: number;
         };
         /** @description Proceso selectivo marco del dominio reorientado. */
         ProcesoSelectivo: {
@@ -2503,11 +2542,19 @@ export interface components {
             nombre: string;
             activo: boolean;
         };
+        CentroCreateUpdate: {
+            nombre: string;
+            activo: boolean;
+        };
         Aula: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             centroId: string;
+            nombre: string;
+            activo: boolean;
+        };
+        AulaCreateUpdate: {
             nombre: string;
             activo: boolean;
         };
@@ -5232,6 +5279,35 @@ export interface operations {
             };
         };
     };
+    createCentroByProvincia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provinciaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CentroCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Centro creado */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Centro"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
     listAulasByCentro: {
         parameters: {
             query?: never;
@@ -5252,6 +5328,137 @@ export interface operations {
                     "application/json": components["schemas"]["Aula"][];
                 };
             };
+        };
+    };
+    createAulaByCentro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                centroId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AulaCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Aula creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aula"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteCentroById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                centroId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Centro eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    patchCentroById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                centroId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CentroCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Centro actualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Centro"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deleteAulaById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aulaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aula eliminada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    patchAulaById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aulaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AulaCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Aula actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aula"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     simularImportacionOpositoresAulas: {

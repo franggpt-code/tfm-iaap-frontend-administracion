@@ -1,11 +1,14 @@
-import { HttpClient, HttpResponse } from "@angular/common/http";
+import { HttpClient, HttpParams, HttpResponse } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { environment } from "../../environments/environment";
 import {
   AsistenciaUpdate,
   Aula,
+  AulaCreateUpdate,
   Centro,
+  CentroCreateUpdate,
+  ExamenAulaCreate,
   ConvocadoExamen,
   Cuerpo,
   CuerpoCreateUpdate,
@@ -144,6 +147,12 @@ export class SicolApiClient {
   listExamenAulas(examenId: string): Observable<ExamenAula[]> {
     return this.http.get<ExamenAula[]>(`${this.adminUrl}/examenes/${examenId}/aulas`);
   }
+  createExamenAula(examenId: string, payload: ExamenAulaCreate): Observable<ExamenAula> {
+    return this.http.post<ExamenAula>(`${this.adminUrl}/examenes/${examenId}/aulas`, payload);
+  }
+  deleteExamenAula(examenAulaId: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/examenes-aula/${examenAulaId}`);
+  }
 
   listCentrosByExamen(examenId: string): Observable<CentroExamen[]> {
     return this.http.get<CentroExamen[]>(`${this.adminUrl}/examenes/${examenId}/centros`);
@@ -177,8 +186,11 @@ export class SicolApiClient {
     return this.http.get<PagosColaboradores>(`${this.adminUrl}/examenes/${examenId}/pagos`);
   }
 
-  exportHojasFirmaPdf(examenId: string): Observable<HttpResponse<Blob>> {
+  exportHojasFirmaPdf(examenId: string, orden?: string): Observable<HttpResponse<Blob>> {
+    let params = new HttpParams();
+    if (orden) params = params.set("orden", orden);
     return this.http.get(`${this.adminUrl}/examenes/${examenId}/hojas-firma.pdf`, {
+      params,
       observe: "response",
       responseType: "blob",
     });
@@ -296,6 +308,29 @@ export class SicolApiClient {
 
   listAulas(centroId: string): Observable<Aula[]> {
     return this.http.get<Aula[]>(`${this.adminUrl}/centros/${centroId}/aulas`);
+  }
+  createCentro(provinciaId: string, payload: CentroCreateUpdate): Observable<Centro> {
+    return this.http.post<Centro>(`${this.adminUrl}/provincias/${provinciaId}/centros`, payload);
+  }
+
+  updateCentro(id: string, payload: CentroCreateUpdate): Observable<Centro> {
+    return this.http.patch<Centro>(`${this.adminUrl}/centros/${id}`, payload);
+  }
+
+  deleteCentro(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/centros/${id}`);
+  }
+
+  createAula(centroId: string, payload: AulaCreateUpdate): Observable<Aula> {
+    return this.http.post<Aula>(`${this.adminUrl}/centros/${centroId}/aulas`, payload);
+  }
+
+  updateAula(id: string, payload: AulaCreateUpdate): Observable<Aula> {
+    return this.http.patch<Aula>(`${this.adminUrl}/aulas/${id}`, payload);
+  }
+
+  deleteAula(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/aulas/${id}`);
   }
 
   listOep(): Observable<Oep[]> {

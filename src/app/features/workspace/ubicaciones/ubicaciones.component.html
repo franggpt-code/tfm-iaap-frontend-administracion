@@ -1,35 +1,546 @@
-<div class="page-shell">
-  <nav class="breadcrumb" aria-label="Migas de pan"><a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Ubicaciones</span></nav>
-  <header class="page-heading"><div><p class="eyebrow">Datos importados</p><h1>Provincias, centros y aulas</h1><p>Consulta la jerarquía de ubicaciones normalizada por el importador. En esta fase no se editan manualmente.</p></div></header>
-  @if (error()) { <div class="alert alert--error" role="alert">{{ error() }}</div> }
+<div class="page-shell locations-page">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Ubicaciones</span>
+  </nav>
 
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Gestión de sedes y espacios</p>
+      <h1>Provincias, centros y aulas</h1>
+      <p class="page-description">
+        Consulta y gestiona la estructura de sedes de examen (provincias, centros y aulas) para la distribución y llamamiento de opositores y colaboradores.
+      </p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <div class="alert-content">
+        <strong>Error en la operación:</strong> {{ error() }}
+      </div>
+      <button class="alert-close-btn" type="button" aria-label="Cerrar aviso" (click)="clearAlerts()">×</button>
+    </div>
+  }
+
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      <div class="alert-content">
+        <strong>Operación completada:</strong> {{ success() }}
+      </div>
+      <button class="alert-close-btn" type="button" aria-label="Cerrar aviso" (click)="clearAlerts()">×</button>
+    </div>
+  }
+
+  <!-- Navegador jerárquico de 3 columnas -->
   <div class="location-browser">
-    <section aria-labelledby="provincias-title">
-      <div class="location-heading"><span>1</span><div><h2 id="provincias-title">Provincia</h2><small>{{ provincias().length }} disponibles</small></div></div>
-      @if (loading()) { <p class="loading-message">Cargando provincias…</p> }
-      <div class="location-list">
-        @for (item of provincias(); track item.id) {
-          <button type="button" [class.is-selected]="provincia()?.id === item.id" [attr.aria-pressed]="provincia()?.id === item.id" (click)="selectProvincia(item)"><span>{{ item.nombre }}</span><small>{{ item.codigo || "—" }}</small></button>
+    <!-- COLUMNA 1: PROVINCIAS -->
+    <section class="location-column" aria-labelledby="provincias-title">
+      <div class="location-heading">
+        <span class="step-badge" aria-hidden="true">1</span>
+        <div class="heading-info">
+          <h2 id="provincias-title">Provincia</h2>
+          <small class="heading-meta">{{ provincias().length }} disponibles</small>
+        </div>
+      </div>
+
+      <div class="column-search">
+        <label for="search-provincia" class="visually-hidden">Buscar provincia</label>
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            id="search-provincia"
+            type="search"
+            placeholder="Buscar provincia…"
+            [value]="searchProvincia()"
+            (input)="searchProvincia.set($any($event.target).value)"
+          >
+          @if (searchProvincia()) {
+            <button class="search-clear-btn" type="button" aria-label="Limpiar búsqueda de provincia" (click)="searchProvincia.set('')">×</button>
+          }
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="column-loading">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Cargando provincias…</p>
+        </div>
+      } @else {
+        <div class="location-list" role="listbox" aria-label="Lista de provincias">
+          @for (item of filteredProvincias(); track item.id) {
+            <button
+              type="button"
+              role="option"
+              class="location-card"
+              [class.is-selected]="provincia()?.id === item.id"
+              [attr.aria-selected]="provincia()?.id === item.id"
+              (click)="selectProvincia(item)"
+            >
+              <div class="location-card__content">
+                <span class="location-card__name">{{ item.nombre }}</span>
+                @if (item.codigo) {
+                  <span class="code-pill">{{ item.codigo }}</span>
+                }
+              </div>
+              <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          } @empty {
+            <div class="empty-column-state">
+              <p>No se encontraron provincias coincidentes.</p>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- COLUMNA 2: CENTROS -->
+    <section class="location-column" aria-labelledby="centros-title">
+      <div class="location-heading">
+        <span class="step-badge" aria-hidden="true">2</span>
+        <div class="heading-info">
+          <h2 id="centros-title">Centro</h2>
+          <small class="heading-meta">
+            @if (provincia()) {
+              <span class="meta-highlight">{{ provincia()?.nombre }}</span> · {{ centrosStats().total }} {{ centrosStats().total === 1 ? 'centro' : 'centros' }} ({{ centrosStats().activos }} activos)
+            } @else {
+              Selecciona una provincia
+            }
+          </small>
+        </div>
+      </div>
+
+      @if (provincia()) {
+        <div class="column-controls">
+          <!-- Búsqueda de centros -->
+          <div class="column-search">
+            <label for="search-centro" class="visually-hidden">Buscar centro</label>
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                id="search-centro"
+                type="search"
+                placeholder="Filtrar centros…"
+                [value]="searchCentro()"
+                (input)="searchCentro.set($any($event.target).value)"
+              >
+              @if (searchCentro()) {
+                <button class="search-clear-btn" type="button" aria-label="Limpiar búsqueda de centro" (click)="searchCentro.set('')">×</button>
+              }
+            </div>
+          </div>
+
+          <!-- Añadir centro rápido -->
+          <div class="location-create-bar">
+            <label class="visually-hidden" for="new-center-name">Nombre del nuevo centro</label>
+            <input
+              id="new-center-name"
+              type="text"
+              class="create-input"
+              [value]="nuevoCentroNombre()"
+              (input)="nuevoCentroNombre.set($any($event.target).value)"
+              placeholder="Añadir nuevo centro…"
+              (keyup.enter)="createCentro()"
+            >
+            <button
+              type="button"
+              class="button button--secondary button--sm create-btn"
+              [disabled]="saving() || !nuevoCentroNombre().trim()"
+              (click)="createCentro()"
+              title="Añadir centro a {{ provincia()?.nombre }}"
+            >
+              <svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Añadir</span>
+            </button>
+          </div>
+        </div>
+
+        @if (loadingCentros()) {
+          <div class="column-loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Cargando centros…</p>
+          </div>
+        } @else {
+          <div class="location-list" role="listbox" aria-label="Lista de centros">
+            @for (item of filteredCentros(); track item.id) {
+              <div
+                class="location-item-row"
+                [class.is-selected]="centro()?.id === item.id"
+                [class.is-inactive]="!item.activo"
+              >
+                <!-- Botón de selección -->
+                <button
+                  type="button"
+                  class="location-item-btn"
+                  [attr.aria-selected]="centro()?.id === item.id"
+                  (click)="selectCentro(item)"
+                >
+                  <div class="item-main-info">
+                    <span class="item-name" [title]="item.nombre">{{ item.nombre }}</span>
+                    <span class="status-chip" [class.status-chip--muted]="!item.activo">
+                      {{ item.activo ? "Activo" : "Inactivo" }}
+                    </span>
+                  </div>
+                  <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+
+                <!-- Barra de acciones -->
+                <div class="item-actions-group" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    class="action-btn action-btn--edit"
+                    title="Editar centro"
+                    [attr.aria-label]="'Editar centro ' + item.nombre"
+                    (click)="openEditCentro(item, $event)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-btn action-btn--toggle"
+                    [class.action-btn--active]="item.activo"
+                    [title]="item.activo ? 'Desactivar centro' : 'Activar centro'"
+                    [attr.aria-label]="(item.activo ? 'Desactivar ' : 'Activar ') + item.nombre"
+                    (click)="toggleCentro(item, $event)"
+                  >
+                    @if (item.activo) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                    }
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-btn action-btn--danger"
+                    title="Eliminar centro"
+                    [attr.aria-label]="'Eliminar centro ' + item.nombre"
+                    (click)="askDeleteCentro(item, $event)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-column-state">
+                <p>{{ searchCentro() ? "No hay centros que coincidan con la búsqueda." : "No hay centros registrados en esta provincia." }}</p>
+              </div>
+            }
+          </div>
         }
-      </div>
+      } @else {
+        <div class="empty-column-state empty-column-state--prompt">
+          <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <p>Selecciona una provincia para explorar y gestionar sus centros.</p>
+        </div>
+      }
     </section>
 
-    <section aria-labelledby="centros-title">
-      <div class="location-heading"><span>2</span><div><h2 id="centros-title">Centro</h2><small>{{ provincia()?.nombre || "Selecciona provincia" }}</small></div></div>
-      <div class="location-list">
-        @for (item of centros(); track item.id) {
-          <button type="button" [class.is-selected]="centro()?.id === item.id" [attr.aria-pressed]="centro()?.id === item.id" (click)="selectCentro(item)"><span>{{ item.nombre }}</span><small>{{ item.activo ? "Activo" : "Inactivo" }}</small></button>
-        } @empty { @if (!loadingChildren()) { <p class="empty-state">{{ provincia() ? "No hay centros en esta provincia." : "Elige una provincia para ver sus centros." }}</p> } }
+    <!-- COLUMNA 3: AULAS -->
+    <section class="location-column" aria-labelledby="aulas-title">
+      <div class="location-heading">
+        <span class="step-badge" aria-hidden="true">3</span>
+        <div class="heading-info">
+          <h2 id="aulas-title">Aula</h2>
+          <small class="heading-meta">
+            @if (centro()) {
+              <span class="meta-highlight">{{ centro()?.nombre }}</span> · {{ aulasStats().total }} {{ aulasStats().total === 1 ? 'aula' : 'aulas' }} ({{ aulasStats().activas }} activas)
+            } @else {
+              Selecciona un centro
+            }
+          </small>
+        </div>
       </div>
-    </section>
 
-    <section aria-labelledby="aulas-title">
-      <div class="location-heading"><span>3</span><div><h2 id="aulas-title">Aula</h2><small>{{ centro()?.nombre || "Selecciona centro" }}</small></div></div>
-      <div class="location-list location-list--aulas">
-        @for (item of aulas(); track item.id) {
-          <div><strong>{{ item.nombre }}</strong><span class="status-chip" [class.status-chip--muted]="!item.activo">{{ item.activo ? "Activa" : "Inactiva" }}</span></div>
-        } @empty { @if (!loadingChildren()) { <p class="empty-state">{{ centro() ? "No hay aulas en este centro." : "Elige un centro para ver sus aulas." }}</p> } }
-      </div>
+      @if (centro()) {
+        <div class="column-controls">
+          <!-- Búsqueda de aulas -->
+          <div class="column-search">
+            <label for="search-aula" class="visually-hidden">Buscar aula</label>
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                id="search-aula"
+                type="search"
+                placeholder="Filtrar aulas…"
+                [value]="searchAula()"
+                (input)="searchAula.set($any($event.target).value)"
+              >
+              @if (searchAula()) {
+                <button class="search-clear-btn" type="button" aria-label="Limpiar búsqueda de aula" (click)="searchAula.set('')">×</button>
+              }
+            </div>
+          </div>
+
+          <!-- Añadir aula rápido -->
+          <div class="location-create-bar">
+            <label class="visually-hidden" for="new-room-name">Nombre de la nueva aula</label>
+            <input
+              id="new-room-name"
+              type="text"
+              class="create-input"
+              [value]="nuevaAulaNombre()"
+              (input)="nuevaAulaNombre.set($any($event.target).value)"
+              placeholder="Añadir nueva aula…"
+              (keyup.enter)="createAula()"
+            >
+            <button
+              type="button"
+              class="button button--secondary button--sm create-btn"
+              [disabled]="saving() || !nuevaAulaNombre().trim()"
+              (click)="createAula()"
+              title="Añadir aula a {{ centro()?.nombre }}"
+            >
+              <svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Añadir</span>
+            </button>
+          </div>
+        </div>
+
+        @if (loadingAulas()) {
+          <div class="column-loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Cargando aulas…</p>
+          </div>
+        } @else {
+          <div class="location-list" role="listbox" aria-label="Lista de aulas">
+            @for (item of filteredAulas(); track item.id) {
+              <div
+                class="location-item-row location-item-row--static"
+                [class.is-inactive]="!item.activo"
+              >
+                <div class="item-main-info item-main-info--padded">
+                  <div class="aula-title-box">
+                    <svg class="aula-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="3" y1="9" x2="21" y2="9"></line>
+                      <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    <strong class="item-name" [title]="item.nombre">{{ item.nombre }}</strong>
+                  </div>
+                  <span class="status-chip" [class.status-chip--muted]="!item.activo">
+                    {{ item.activo ? "Activa" : "Inactiva" }}
+                  </span>
+                </div>
+
+                <!-- Barra de acciones de aula -->
+                <div class="item-actions-group">
+                  <button
+                    type="button"
+                    class="action-btn action-btn--edit"
+                    title="Editar aula"
+                    [attr.aria-label]="'Editar aula ' + item.nombre"
+                    (click)="openEditAula(item, $event)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-btn action-btn--toggle"
+                    [class.action-btn--active]="item.activo"
+                    [title]="item.activo ? 'Desactivar aula' : 'Activar aula'"
+                    [attr.aria-label]="(item.activo ? 'Desactivar ' : 'Activar ') + item.nombre"
+                    (click)="toggleAula(item, $event)"
+                  >
+                    @if (item.activo) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                      </svg>
+                    }
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-btn action-btn--danger"
+                    title="Eliminar aula"
+                    [attr.aria-label]="'Eliminar aula ' + item.nombre"
+                    (click)="askDeleteAula(item, $event)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-column-state">
+                <p>{{ searchAula() ? "No hay aulas que coincidan con la búsqueda." : "No hay aulas registradas en este centro." }}</p>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <div class="empty-column-state empty-column-state--prompt">
+          <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <p>Selecciona un centro para ver y gestionar sus aulas disponibles.</p>
+        </div>
+      }
     </section>
   </div>
 </div>
+
+<!-- Diálogo Modal de Edición de Centro / Aula -->
+<dialog #editDialog class="modal-dialog" aria-labelledby="edit-dialog-title">
+  @if (editingItem(); as item) {
+    <form method="dialog" (submit)="$event.preventDefault(); saveEdit()">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">Edición de espacio</p>
+          <h2 id="edit-dialog-title">Editar {{ item.type === "centro" ? "centro" : "aula" }}</h2>
+        </div>
+        <button class="dialog-close-btn" type="button" aria-label="Cerrar ventana" (click)="closeEdit()">×</button>
+      </div>
+
+      <div class="dialog-body">
+        @if (item.parentName) {
+          <div class="parent-badge-box">
+            <span class="parent-label">{{ item.type === "centro" ? "Provincia:" : "Centro:" }}</span>
+            <strong>{{ item.parentName }}</strong>
+          </div>
+        }
+
+        <div class="field">
+          <label for="edit-item-name">
+            Nombre del {{ item.type === "centro" ? "centro" : "aula" }} <span class="req-star" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="edit-item-name"
+            type="text"
+            required
+            maxlength="255"
+            [value]="item.nombre"
+            (input)="updateEditingNombre($any($event.target).value)"
+            placeholder="Introduce el nombre..."
+          >
+        </div>
+
+        <div class="field-toggle-card">
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              [checked]="item.activo"
+              (change)="updateEditingActivo($any($event.target).checked)"
+            >
+            <span class="toggle-slider" aria-hidden="true"></span>
+            <span class="toggle-label-group">
+              <strong>Espacio activo</strong>
+              <small>{{ item.activo ? "Disponible para asignación de exámenes y turnos" : "Deshabilitado temporalmente" }}</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="button button--secondary" type="button" [disabled]="saving()" (click)="closeEdit()">
+          Cancelar
+        </button>
+        <button class="button button--primary" type="submit" [disabled]="saving() || !item.nombre.trim()" [attr.aria-busy]="saving()">
+          {{ saving() ? "Guardando…" : "Guardar cambios" }}
+        </button>
+      </div>
+    </form>
+  }
+</dialog>
+
+<!-- Diálogo Modal de Confirmación de Eliminación -->
+<dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-dialog-title">
+  <form method="dialog">
+    <p class="eyebrow">Confirmación requerida</p>
+    <h2 id="delete-dialog-title">
+      ¿Eliminar {{ deleteTarget()?.type === "centro" ? "centro" : "aula" }}?
+    </h2>
+
+    @if (deleteTarget(); as target) {
+      <div class="delete-summary-box">
+        <p>Estás a punto de eliminar el siguiente elemento:</p>
+        <div class="delete-item-card">
+          <div class="delete-item-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>{{ target.nombre }}</strong>
+            @if (target.parentName) {
+              <small>{{ target.type === 'centro' ? 'Provincia: ' : 'Centro: ' }}{{ target.parentName }}</small>
+            }
+          </div>
+        </div>
+      </div>
+
+      <p class="delete-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Si este espacio está siendo utilizado en convocatorias, llamamientos o exámenes activos, la operación no se completará para preservar la integridad histórica.</span>
+      </p>
+    }
+
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="button" [disabled]="deleting()" [attr.aria-busy]="deleting()" (click)="confirmDelete()">
+        {{ deleting() ? "Eliminando…" : "Eliminar definitivamente" }}
+      </button>
+    </div>
+  </form>
+</dialog>

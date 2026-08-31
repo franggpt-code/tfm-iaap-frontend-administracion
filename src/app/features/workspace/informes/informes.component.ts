@@ -41,6 +41,11 @@ export interface SignaturePreviewRow {
   profile: string;
 }
 
+export type SignatureSortField = "center" | "location" | "dni" | "name" | "profile";
+export type PaymentSortField = "dni" | "nombreCompleto" | "perfilDenominacion" | "iban" | "horasRealizadas" | "importeTotal";
+export type SortDirection = "asc" | "desc";
+export type FirmaExportSortOrder = "centro" | "aula" | "perfil" | "nombre";
+
 export const REPORT_CATALOG: ReportCatalogItem[] = [
   {
     id: "firmas",
@@ -85,6 +90,12 @@ export class InformesComponent implements OnInit {
   readonly selectionCollapsed = signal(false);
   readonly previewFilter = signal("");
 
+  readonly signatureSortField = signal<SignatureSortField>("center");
+  readonly signatureSortDirection = signal<SortDirection>("asc");
+  readonly paymentSortField = signal<PaymentSortField>("nombreCompleto");
+  readonly paymentSortDirection = signal<SortDirection>("asc");
+  readonly firmaExportSortOrder = signal<FirmaExportSortOrder>("centro");
+
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly examenes = signal<Examen[]>([]);
   readonly upcomingExercises = signal<CuadroMandoEjercicio[]>([]);
@@ -128,9 +139,44 @@ export class InformesComponent implements OnInit {
     this.convocados().filter((item) => item.activo).length
   );
 
-  readonly missingHours = computed(() =>
-    this.asignaciones().filter((item) => item.horasRealizadas == null).length
+  readonly missingOrZeroHours = computed(() =>
+    this.asignaciones().filter(
+      (item) => item.horasRealizadas == null || item.horasRealizadas <= 0
+    ).length
   );
+
+  readonly missingHours = computed(() => this.missingOrZeroHours());
+
+  readonly totalHours = computed(() =>
+    this.asignaciones().reduce((acc, item) => acc + (item.horasRealizadas ?? 0), 0)
+  );
+
+  readonly paymentHoursStatus = computed(() => {
+    const total = this.asignaciones().length;
+    if (total === 0) {
+      return {
+        isReady: false,
+        message: "No hay colaboradores asignados en este ejercicio.",
+      };
+    }
+    const pendingOrZero = this.missingOrZeroHours();
+    if (pendingOrZero === total) {
+      return {
+        isReady: false,
+        message: "Ninguna asignación tiene horas registradas (están vacías o a 0 h).",
+      };
+    }
+    if (pendingOrZero > 0) {
+      return {
+        isReady: false,
+        message: `${pendingOrZero} ${pendingOrZero === 1 ? "asignación tiene" : "asignaciones tienen"} las horas pendientes o a 0 (de ${total} totales).`,
+      };
+    }
+    return {
+      isReady: true,
+      message: `Todas las asignaciones tienen horas calculadas (${total} asignaciones con ${this.totalHours()} h).`,
+    };
+  });
 
   readonly missingIban = computed(() =>
     this.pagos()?.pagos.filter((item) => !item.iban?.trim()).length || 0
@@ -167,40 +213,79 @@ export class InformesComponent implements OnInit {
         }
       }
     }
-    return rows.sort(
-      (left, right) =>
-        left.center.localeCompare(right.center, "es") ||
-        left.location.localeCompare(right.location, "es") ||
-        left.name.localeCompare(right.name, "es")
-    );
+    return rows;
   });
 
   readonly filteredSignatureRows = computed<SignaturePreviewRow[]>(() => {
     const query = this.previewFilter().trim().toLowerCase();
-    const rows = this.signatureRows();
-    if (!query) return rows;
-    return rows.filter(
-      (row) =>
-        row.name.toLowerCase().includes(query) ||
-        row.dni.toLowerCase().includes(query) ||
-        row.center.toLowerCase().includes(query) ||
-        row.location.toLowerCase().includes(query) ||
-        row.profile.toLowerCase().includes(query)
-    );
+    let rows = this.signatureRows();
+    if (query) {
+      rows = rows.filter(
+        (row) =>
+          row.name.toLowerCase().includes(query) ||
+          row.dni.toLowerCase().includes(query) ||
+          row.center.toLowerCase().includes(query) ||
+          row.location.toLowerCase().includes(query) ||
+          row.profile.toLowerCase().includes(query)
+      );
+    }
+    const field = this.signatureSortField();
+    const dir = this.signatureSortDirection() === "asc" ? 1 : -1;
+    return [...rows].sort((left, right) => {
+      const valA = left[field] ?? "";
+      const valB = right[field] ?? "";
+      return valA.localeCompare(valB, "es", { sensitivity: "base" }) * dir;
+    });
   });
 
   readonly filteredPaymentRows = computed(() => {
     const query = this.previewFilter().trim().toLowerCase();
-    const payments = this.pagos()?.pagos || [];
-    if (!query) return payments;
-    return payments.filter(
-      (payment) =>
-        payment.nombreCompleto.toLowerCase().includes(query) ||
-        payment.dni.toLowerCase().includes(query) ||
-        payment.perfilDenominacion.toLowerCase().includes(query) ||
-        (payment.iban && payment.iban.toLowerCase().includes(query))
-    );
+    let payments = this.pagos()?.pagos || [];
+    if (query) {
+      payments = payments.filter(
+        (payment) =>
+          payment.nombreCompleto.toLowerCase().includes(query) ||
+          payment.dni.toLowerCase().includes(query) ||
+          payment.perfilDenominacion.toLowerCase().includes(query) ||
+          (payment.iban && payment.iban.toLowerCase().includes(query))
+      );
+    }
+    const field = this.paymentSortField();
+    const dir = this.paymentSortDirection() === "asc" ? 1 : -1;
+    return [...payments].sort((left, right) => {
+      if (field === "horasRealizadas") {
+        const valA = left.horasRealizadas ?? -1;
+        const valB = right.horasRealizadas ?? -1;
+        return (valA - valB) * dir;
+      }
+      if (field === "importeTotal") {
+        const valA = left.importeTotal ?? -1;
+        const valB = right.importeTotal ?? -1;
+        return (valA - valB) * dir;
+      }
+      const valA = (left[field] as string) || "";
+      const valB = (right[field] as string) || "";
+      return valA.localeCompare(valB, "es", { sensitivity: "base" }) * dir;
+    });
   });
+
+  toggleSignatureSort(field: SignatureSortField): void {
+    if (this.signatureSortField() === field) {
+      this.signatureSortDirection.update((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      this.signatureSortField.set(field);
+      this.signatureSortDirection.set("asc");
+    }
+  }
+
+  togglePaymentSort(field: PaymentSortField): void {
+    if (this.paymentSortField() === field) {
+      this.paymentSortDirection.update((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      this.paymentSortField.set(field);
+      this.paymentSortDirection.set("asc");
+    }
+  }
 
   readonly commonGaps = computed(() => {
     const process = this.selectedProcess();
@@ -419,7 +504,7 @@ export class InformesComponent implements OnInit {
     this.error.set(null);
     const request =
       type === "firmas"
-        ? this.api.exportHojasFirmaPdf(examId)
+        ? this.api.exportHojasFirmaPdf(examId, this.firmaExportSortOrder())
         : this.api.exportPagosPdf(examId);
 
     request.pipe(finalize(() => this.exporting.set(null))).subscribe({

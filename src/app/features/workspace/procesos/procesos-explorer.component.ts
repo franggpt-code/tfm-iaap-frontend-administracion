@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
+import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
 import { FormsModule, NgForm } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { catchError, finalize, forkJoin, map, of } from "rxjs";
@@ -40,7 +40,13 @@ export class ProcesosExplorerComponent implements OnInit {
 
   @ViewChild("deleteExamDialog") private deleteExamDialog?: ElementRef<HTMLDialogElement>;
 
-  readonly canManageProcesos = this.auth.isAdmin;
+  readonly isAdmin = this.auth.isAdmin;
+  readonly isGestor = this.auth.isManager;
+  readonly canCreateProcess = this.auth.isAdmin;
+  readonly canEditProcess = computed(() => this.auth.isAdmin() || this.auth.isManager());
+  readonly canCreateExam = computed(() => this.auth.isAdmin() || this.auth.isManager());
+  readonly canEditExam = computed(() => this.auth.isAdmin() || this.auth.isManager());
+  readonly canDeleteExam = this.auth.isAdmin;
 
   readonly procesos = signal<ProcesoSelectivo[]>([]);
   readonly selected = signal<ProcesoSelectivo | null>(null);
@@ -71,7 +77,7 @@ export class ProcesosExplorerComponent implements OnInit {
   examForm: ExamFormValue = this.emptyExamForm();
 
   ngOnInit(): void {
-    if (!this.canManageProcesos()) {
+    if (!this.canCreateProcess()) {
       this.api.listProcesos().pipe(finalize(() => this.loading.set(false))).subscribe({
         next: (procesos) => this.procesos.set(procesos.content),
         error: (error: unknown) => this.error.set(apiErrorMessage(error)),
@@ -129,7 +135,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openCreateProcess(): void {
-    if (!this.canManageProcesos()) return;
+    if (!this.canCreateProcess()) return;
     this.clearMessages();
     this.processFormMode.set("create");
     this.processForm = this.emptyProcessForm();
@@ -139,7 +145,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openEditProcess(): void {
-    if (!this.canManageProcesos()) return;
+    if (!this.canEditProcess()) return;
     const proceso = this.selected();
     if (!proceso) return;
     this.clearMessages();
@@ -170,7 +176,9 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   saveProcess(form: NgForm): void {
-    if (!this.canManageProcesos() || form.invalid || this.saving()) return;
+    if (this.processFormMode() === "create" && !this.canCreateProcess()) return;
+    if (this.processFormMode() === "edit" && !this.canEditProcess()) return;
+    if (form.invalid || this.saving()) return;
     const payload: ProcesoSelectivoCreate = {
       nombre: this.processForm.nombre.trim(),
       codigoSirhus: this.optional(this.processForm.codigoSirhus),
@@ -199,7 +207,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openCreateExam(): void {
-    if (!this.canManageProcesos() || !this.selected()) return;
+    if (!this.canCreateExam() || !this.selected()) return;
     this.clearMessages();
     this.examFormMode.set("create");
     this.editingExamId.set(null);
@@ -210,7 +218,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   openEditExam(examen: Examen): void {
-    if (!this.canManageProcesos()) return;
+    if (!this.canEditExam()) return;
     this.clearMessages();
     this.examFormMode.set("edit");
     this.editingExamId.set(examen.id);
@@ -227,7 +235,9 @@ export class ProcesosExplorerComponent implements OnInit {
 
   saveExam(form: NgForm): void {
     const proceso = this.selected();
-    if (!this.canManageProcesos() || !proceso || form.invalid || this.saving()) return;
+    if (!proceso || form.invalid || this.saving()) return;
+    if (this.examFormMode() === "create" && !this.canCreateExam()) return;
+    if (this.examFormMode() === "edit" && !this.canEditExam()) return;
     const payload: ExamenCreate = {
       nombre: this.examForm.nombre.trim(),
       numeroEjercicio: Number(this.examForm.numeroEjercicio),
@@ -252,7 +262,7 @@ export class ProcesosExplorerComponent implements OnInit {
 
   askDeleteCurrentExam(): void {
     const id = this.editingExamId();
-    if (!id || !this.canManageProcesos()) return;
+    if (!id || !this.canDeleteExam()) return;
     const target = this.examenes().find((item) => item.id === id);
     if (target) {
       this.askDeleteExam(target);
@@ -260,7 +270,7 @@ export class ProcesosExplorerComponent implements OnInit {
   }
 
   askDeleteExam(examen: Examen): void {
-    if (!this.canManageProcesos()) return;
+    if (!this.canDeleteExam()) return;
     this.clearMessages();
     this.deleteExamTarget.set(examen);
     this.deleteExamDialog?.nativeElement.showModal();
