@@ -1038,3 +1038,33 @@
   }
 }
 
+.readonly-value-box {
+  background: #f8faf8;
+  border: 1px solid #e1e7e3;
+  border-radius: 6px;
+  color: var(--jda-neutral-dark);
+  font-size: 0.88rem;
+  font-weight: 500;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.oep-readonly-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+
+  .badge--neutral {
+    background: #f2f5f3;
+    border: 1px solid #d4ded7;
+    border-radius: 6px;
+    color: var(--jda-neutral-dark);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+  }
+}
+

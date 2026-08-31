@@ -5,9 +5,10 @@ import { RouterLink } from "@angular/router";
 import { catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, of, startWith, Subject, switchMap } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
+import { AuthService } from "../../../core/auth.service";
 import {
-  AsignacionColaborador, Colaborador, ContextoAsignacion, ConvocadoExamen, CuadroMandoEjercicio, Examen, ExamenAula,
-  EstadoConfirmacionAsignacion, PerfilColaboracion, ProcesoSelectivo,
+  AsignacionColaborador, Aula, Centro, Colaborador, ContextoAsignacion, ConvocadoExamen, CuadroMandoEjercicio, Examen, ExamenAula,
+  EstadoConfirmacionAsignacion, PerfilColaboracion, ProcesoSelectivo, Provincia,
 } from "../../../api/sicol.types";
 
 type SelectionMode = "proceso" | "fecha";
@@ -25,6 +26,7 @@ export type SortDirection = "asc" | "desc";
 export class AsignacionesComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
   private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private collaboratorSearchTimer?: ReturnType<typeof setTimeout>;
   private readonly processSearchTerms = new Subject<string>();
@@ -32,7 +34,12 @@ export class AsignacionesComponent implements OnInit {
   private examSearchRequest = 0;
   private assignmentLoadRequest = 0;
   private upcomingSelectionRequest = 0;
+
   @ViewChild("deleteDialog") private deleteDialog?: ElementRef<HTMLDialogElement>;
+  @ViewChild("deleteAulaDialog") private deleteAulaDialog?: ElementRef<HTMLDialogElement>;
+
+  readonly isAdmin = this.auth.isAdmin;
+  readonly canManageAulas = computed(() => this.auth.isAdmin() || this.auth.isManager());
 
   readonly selectionMode = signal<SelectionMode>("proceso");
   readonly viewMode = signal<ViewMode>("aulas");
@@ -40,6 +47,31 @@ export class AsignacionesComponent implements OnInit {
   readonly drawerExpanded = signal(false);
   readonly roomCoverageFilter = signal<"" | "COVERED" | "UNCOVERED">("");
   readonly roomSearch = signal("");
+
+  // Estado del Panel Lateral de Creación de Aula Extraordinaria/Incidencias
+  readonly createAulaDrawerOpen = signal(false);
+  readonly modalProvincias = signal<Provincia[]>([]);
+  readonly modalCentros = signal<Centro[]>([]);
+  readonly modalCentrosLoading = signal(false);
+  readonly createAulaProvinciaId = signal("");
+  readonly createAulaCentroId = signal("");
+  readonly createAulaIsNewCentro = signal(false);
+  readonly createAulaNuevoCentroNombre = signal("");
+  readonly createAulaNombre = signal("");
+  readonly createAulaSaving = signal(false);
+  readonly createAulaError = signal<string | null>(null);
+
+  // Estado del Panel Lateral de Renombrar Aula
+  readonly renameAulaDrawerOpen = signal(false);
+  readonly renameTargetExamenAula = signal<ExamenAula | null>(null);
+  readonly renameAulaNombre = signal("");
+  readonly renameAulaSaving = signal(false);
+  readonly renameAulaError = signal<string | null>(null);
+
+  // Estado de Eliminación de Aula
+  readonly deleteAulaTarget = signal<ExamenAula | null>(null);
+  readonly deleteAulaSaving = signal(false);
+  readonly deleteAulaError = signal<string | null>(null);
 
   readonly assignmentSearch = signal("");
   readonly filtersExpanded = signal(false);
@@ -83,6 +115,7 @@ export class AsignacionesComponent implements OnInit {
   readonly availableDatesLoading = signal(true);
   readonly selectedAssignmentIds = signal<Set<string>>(new Set());
   readonly bulkHours = signal<number | null>(null);
+  readonly bulkMinutes = signal(0);
   readonly bulkUpdating = signal(false);
   readonly loading = signal(true);
   readonly contextLoading = signal(false);
@@ -513,6 +546,8 @@ export class AsignacionesComponent implements OnInit {
 
   startCreateForScope(scope: "AULA" | "GENERAL", aula?: ExamenAula): void {
     const center = aula?.centroNombre || (scope === "AULA" ? this.centers()[0] || "" : "");
+    this.closeCreateAulaDrawer();
+    this.closeRenameAulaDrawer();
     this.editing.set(null);
     this.fieldErrors.set({});
     this.selectedCenter.set(center);
@@ -533,6 +568,8 @@ export class AsignacionesComponent implements OnInit {
   }
 
   startEdit(item: AsignacionColaborador): void {
+    this.closeCreateAulaDrawer();
+    this.closeRenameAulaDrawer();
     const room = this.aulas().find(aula => aula.id === item.examenAulaId);
     this.editing.set(item); this.fieldErrors.set({});
     this.selectedCenter.set(room?.centroNombre || "");
@@ -645,7 +682,16 @@ export class AsignacionesComponent implements OnInit {
       this.sortDirection.set("asc");
     }
   }
-  cancelBulkSelection(): void { this.clearTableSelection(); this.bulkHours.set(null); }
+  bulkHoursPart(): number { return Math.floor(this.bulkHours() ?? 0); }
+  bulkMinutesPart(): number { return this.bulkHours() === null ? 0 : Math.round(((this.bulkHours() ?? 0) % 1) * 60); }
+  setBulkTime(hours: string, minutes: string): void {
+    if (hours === "" && minutes === "") { this.bulkHours.set(null); this.bulkMinutes.set(0); return; }
+    const h = Math.max(0, Number(hours) || 0);
+    const m = Math.min(59, Math.max(0, Number(minutes) || 0));
+    this.bulkHours.set(h + m / 60);
+    this.bulkMinutes.set(m);
+  }
+  cancelBulkSelection(): void { this.clearTableSelection(); this.bulkHours.set(null); this.bulkMinutes.set(0); }
 
   toggleAssignmentSelection(id: string, selected: boolean): void {
     this.selectedAssignmentIds.update(current => {
@@ -751,7 +797,303 @@ export class AsignacionesComponent implements OnInit {
 
   formatDate(value?: string | null): string { return value ? new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Fecha pendiente"; }
   money(value?: number | null): string { return value == null ? "—" : value.toLocaleString("es-ES", { style: "currency", currency: "EUR" }); }
+  maskDocument(value?: string | null): string {
+    const document = (value ?? "").replace(/\s/g, "");
+    return document.length >= 5 ? `****${document.slice(-5, -1)}*` : "*****";
+  }
+  formatHoursMinutes(value?: number | null): string {
+    if (value == null) return "—";
+    const totalMinutes = Math.round(value * 60);
+    return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
+  }
+  assignmentHours(): number { return Math.floor(this.form.controls.horasRealizadas.value ?? 0); }
+  assignmentMinutes(): number { return Math.round(((this.form.controls.horasRealizadas.value ?? 0) % 1) * 60); }
+  setAssignmentTime(hours: string, minutes: string): void {
+    const h = Math.max(0, Number(hours) || 0);
+    const m = Math.min(59, Math.max(0, Number(minutes) || 0));
+    if (h === 0 && m === 0 && (hours === "" || hours === "0") && (minutes === "" || minutes === "0")) {
+      this.form.controls.horasRealizadas.setValue(null);
+    } else {
+      this.form.controls.horasRealizadas.setValue(h + (m / 60));
+    }
+  }
+  setPresetHours(hours: number, minutes: number = 0): void {
+    this.setAssignmentTime(hours.toString(), minutes.toString());
+  }
+  calculatedTotal(): { hoursFormatted: string; amountFormatted: string | null } | null {
+    const rawHours = this.form.controls.horasRealizadas.value;
+    if (rawHours == null || rawHours <= 0) return null;
+    const h = Math.floor(rawHours);
+    const m = Math.round((rawHours % 1) * 60);
+    const hoursFormatted = m > 0 ? `${h} h ${m} min (${rawHours.toFixed(2)} h)` : `${h} h`;
+
+    const perfilId = this.form.controls.perfilId.value;
+    const profile = this.perfiles().find((p) => p.id === perfilId);
+    const amountFormatted = profile
+      ? (profile.importeHora * rawHours).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
+      : null;
+
+    return { hoursFormatted, amountFormatted };
+  }
   processOptionLabel(proceso: ProcesoSelectivo): string { return `${proceso.codigoSirhus || "Sin código SIRHUS"} · ${proceso.nombre}`; }
+
+  // --- Panel Lateral de Creación de Aula Extraordinaria/Incidencias ---
+  openCreateAulaDrawer(): void {
+    if (!this.selectedExamenId()) return;
+    this.closeForm();
+    this.createAulaError.set(null);
+    this.createAulaNombre.set("");
+    this.createAulaNuevoCentroNombre.set("");
+    this.createAulaIsNewCentro.set(false);
+    this.createAulaCentroId.set("");
+
+    this.api.listProvincias().subscribe({
+      next: (provincias) => {
+        this.modalProvincias.set(provincias);
+        const existingAulaWithProv = this.aulas().find((a) => !!a.provincia);
+        let defaultProv = provincias.find(
+          (p) => p.nombre.toLowerCase() === existingAulaWithProv?.provincia?.toLowerCase()
+        );
+        if (!defaultProv && provincias.length > 0) {
+          defaultProv = provincias[0];
+        }
+        if (defaultProv) {
+          this.createAulaProvinciaId.set(defaultProv.id);
+          this.loadModalCentros(defaultProv.id);
+        }
+      },
+      error: (err) => this.createAulaError.set(apiErrorMessage(err)),
+    });
+
+    this.createAulaDrawerOpen.set(true);
+    this.resetDrawerScroll();
+  }
+
+  onModalProvinciaChange(provinciaId: string): void {
+    this.createAulaProvinciaId.set(provinciaId);
+    this.createAulaCentroId.set("");
+    this.createAulaIsNewCentro.set(false);
+    this.createAulaNuevoCentroNombre.set("");
+    this.loadModalCentros(provinciaId);
+  }
+
+  loadModalCentros(provinciaId: string): void {
+    if (!provinciaId) {
+      this.modalCentros.set([]);
+      return;
+    }
+    this.modalCentrosLoading.set(true);
+    this.api
+      .listCentros(provinciaId)
+      .pipe(finalize(() => this.modalCentrosLoading.set(false)))
+      .subscribe({
+        next: (centros) => {
+          this.modalCentros.set(centros);
+          const existingCenterName = this.centers()[0];
+          const match = centros.find(
+            (c) => c.nombre.toLowerCase() === existingCenterName?.toLowerCase()
+          );
+          if (match) {
+            this.createAulaCentroId.set(match.id);
+          } else if (centros.length > 0) {
+            this.createAulaCentroId.set(centros[0].id);
+          }
+        },
+        error: (err) => this.createAulaError.set(apiErrorMessage(err)),
+      });
+  }
+
+  onModalCentroSelectChange(value: string): void {
+    if (value === "__NEW__") {
+      this.createAulaIsNewCentro.set(true);
+      this.createAulaCentroId.set("");
+    } else {
+      this.createAulaIsNewCentro.set(false);
+      this.createAulaCentroId.set(value);
+    }
+  }
+
+  setAulaNamePreset(preset: string): void {
+    this.createAulaNombre.set(preset);
+  }
+
+  closeCreateAulaDrawer(): void {
+    this.createAulaDrawerOpen.set(false);
+    this.createAulaError.set(null);
+  }
+
+  saveCreateAula(): void {
+    const examId = this.selectedExamenId();
+    if (!examId) {
+      this.createAulaError.set("No hay ningún ejercicio seleccionado.");
+      return;
+    }
+    const aulaNombre = this.createAulaNombre().trim();
+    if (!aulaNombre) {
+      this.createAulaError.set("Debes indicar el nombre del aula.");
+      return;
+    }
+
+    const provinciaId = this.createAulaProvinciaId();
+    const provincia = this.modalProvincias().find((p) => p.id === provinciaId);
+    if (!provinciaId || !provincia) {
+      this.createAulaError.set("Selecciona una provincia.");
+      return;
+    }
+
+    this.createAulaSaving.set(true);
+    this.createAulaError.set(null);
+
+    if (this.createAulaIsNewCentro()) {
+      const nuevoCentroNombre = this.createAulaNuevoCentroNombre().trim();
+      if (!nuevoCentroNombre) {
+        this.createAulaSaving.set(false);
+        this.createAulaError.set("Debes indicar el nombre del nuevo centro.");
+        return;
+      }
+
+      this.api
+        .createCentro(provinciaId, { nombre: nuevoCentroNombre, activo: true })
+        .pipe(
+          switchMap((createdCentro) =>
+            this.api
+              .createAula(createdCentro.id, { nombre: aulaNombre, activo: true })
+              .pipe(
+                switchMap((createdAula) =>
+                  this.api.createExamenAula(examId, {
+                    aulaId: createdAula.id,
+                    aulaNombre: createdAula.nombre,
+                    centroNombre: createdCentro.nombre,
+                    provincia: provincia.nombre,
+                  })
+                )
+              )
+          ),
+          finalize(() => this.createAulaSaving.set(false))
+        )
+        .subscribe({
+          next: () => {
+            this.closeCreateAulaDrawer();
+            this.loadAssignments();
+            this.success.set(`Aula "${aulaNombre}" creada y añadida al ejercicio correctamente.`);
+          },
+          error: (err: unknown) => {
+            this.createAulaError.set(apiErrorMessage(err));
+          },
+        });
+    } else {
+      const centroId = this.createAulaCentroId();
+      const centro = this.modalCentros().find((c) => c.id === centroId);
+      if (!centroId || !centro) {
+        this.createAulaSaving.set(false);
+        this.createAulaError.set("Selecciona un centro.");
+        return;
+      }
+
+      this.api
+        .createAula(centro.id, { nombre: aulaNombre, activo: true })
+        .pipe(
+          switchMap((createdAula) =>
+            this.api.createExamenAula(examId, {
+              aulaId: createdAula.id,
+              aulaNombre: createdAula.nombre,
+              centroNombre: centro.nombre,
+              provincia: provincia.nombre,
+            })
+          ),
+          finalize(() => this.createAulaSaving.set(false))
+        )
+        .subscribe({
+          next: () => {
+            this.closeCreateAulaDrawer();
+            this.loadAssignments();
+            this.success.set(`Aula "${aulaNombre}" creada y añadida al ejercicio correctamente.`);
+          },
+          error: (err: unknown) => {
+            this.createAulaError.set(apiErrorMessage(err));
+          },
+        });
+    }
+  }
+
+  // --- Panel Lateral de Renombrar Aula ---
+  openRenameAulaDrawer(aula: ExamenAula): void {
+    this.closeForm();
+    this.closeCreateAulaDrawer();
+    this.renameTargetExamenAula.set(aula);
+    this.renameAulaNombre.set(aula.aulaNombre || "");
+    this.renameAulaError.set(null);
+    this.renameAulaDrawerOpen.set(true);
+    this.resetDrawerScroll();
+  }
+
+  closeRenameAulaDrawer(): void {
+    this.renameAulaDrawerOpen.set(false);
+    this.renameTargetExamenAula.set(null);
+    this.renameAulaError.set(null);
+  }
+
+  saveRenameAula(): void {
+    const target = this.renameTargetExamenAula();
+    if (!target) return;
+    const newName = this.renameAulaNombre().trim();
+    if (!newName) {
+      this.renameAulaError.set("Debes indicar el nombre del aula.");
+      return;
+    }
+
+    this.renameAulaSaving.set(true);
+    this.renameAulaError.set(null);
+
+    this.api
+      .updateAula(target.aulaId, { nombre: newName, activo: true })
+      .pipe(finalize(() => this.renameAulaSaving.set(false)))
+      .subscribe({
+        next: () => {
+          this.closeRenameAulaDrawer();
+          this.loadAssignments();
+          this.success.set(`Aula renombrada correctamente a "${newName}".`);
+        },
+        error: (err: unknown) => {
+          this.renameAulaError.set(apiErrorMessage(err));
+        },
+      });
+  }
+
+  // --- Eliminación de Aula del Ejercicio ---
+  askDeleteAula(aula: ExamenAula): void {
+    this.deleteAulaTarget.set(aula);
+    this.deleteAulaError.set(null);
+    this.deleteAulaDialog?.nativeElement.showModal();
+  }
+
+  closeDeleteAula(): void {
+    this.deleteAulaDialog?.nativeElement.close();
+    this.deleteAulaTarget.set(null);
+    this.deleteAulaError.set(null);
+  }
+
+  confirmDeleteAula(): void {
+    const target = this.deleteAulaTarget();
+    if (!target) return;
+
+    this.deleteAulaSaving.set(true);
+    this.deleteAulaError.set(null);
+
+    this.api
+      .deleteExamenAula(target.id)
+      .pipe(finalize(() => this.deleteAulaSaving.set(false)))
+      .subscribe({
+        next: () => {
+          this.closeDeleteAula();
+          this.loadAssignments();
+          this.success.set(`Aula "${target.aulaNombre}" eliminada del ejercicio.`);
+        },
+        error: (err: unknown) => {
+          this.deleteAulaError.set(apiErrorMessage(err));
+        },
+      });
+  }
 
   private loadExamenes(procesoId: string, requestedExamenId = ""): void {
     const requestId = ++this.examSearchRequest;

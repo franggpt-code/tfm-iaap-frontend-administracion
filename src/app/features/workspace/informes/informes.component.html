@@ -337,9 +337,9 @@
           <strong>{{ activeConvokedCount() }}</strong>
         </div>
         @if (reportType() === 'pagos') {
-          <div class="metric-card" [class.metric-card--warning]="missingHours()">
+          <div class="metric-card" [class.metric-card--warning]="missingOrZeroHours() > 0 || !asignaciones().length">
             <span>Sin horas registradas</span>
-            <strong>{{ missingHours() }}</strong>
+            <strong>{{ missingOrZeroHours() }}</strong>
           </div>
           <div class="metric-card" [class.metric-card--warning]="missingIban()">
             <span>Sin IBAN</span>
@@ -375,12 +375,12 @@
               <span>El documento PDF reserva casillas en blanco para horas de entrada, salida y firmas manuscritas.</span>
             </li>
           } @else {
-            <li class="readiness-item" [class.is-ready]="!missingHours()" [class.is-missing]="missingHours()">
+            <li class="readiness-item" [class.is-ready]="paymentHoursStatus().isReady" [class.is-missing]="!paymentHoursStatus().isReady">
               <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                @if (!missingHours()) { <polyline points="20 6 9 17 4 12"></polyline> }
+                @if (paymentHoursStatus().isReady) { <polyline points="20 6 9 17 4 12"></polyline> }
                 @else { <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line> }
               </svg>
-              <span>{{ missingHours() ? missingHours() + (missingHours() === 1 ? " asignación todavía no tiene horas registradas." : " asignaciones todavía no tienen horas registradas.") : "Todas las asignaciones tienen horas calculadas." }}</span>
+              <span>{{ paymentHoursStatus().message }}</span>
             </li>
             <li class="readiness-item" [class.is-ready]="!missingIban()" [class.is-missing]="missingIban()">
               <svg class="readiness-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -425,6 +425,20 @@
         </div>
         <div class="preview-actions">
           @if (reportType() === 'firmas') {
+            <div class="export-sort-picker">
+              <label for="firma-sort-select">Ordenar PDF:</label>
+              <select
+                id="firma-sort-select"
+                [value]="firmaExportSortOrder()"
+                (change)="firmaExportSortOrder.set($any($event.target).value)"
+                [disabled]="!signatureRows().length || commonGaps().length || !!exporting()"
+              >
+                <option value="centro">Por Centro</option>
+                <option value="aula">Por Aula o Zona</option>
+                <option value="perfil">Por Perfil</option>
+                <option value="nombre">Por Nombre completo</option>
+              </select>
+            </div>
             <button
               class="button button--primary"
               type="button"
@@ -443,7 +457,7 @@
             <button
               class="button button--primary"
               type="button"
-              [disabled]="!pagos()?.pagos?.length || commonGaps().length || missingHours() || missingIban() || missingReportParameters() || !!exporting()"
+              [disabled]="!paymentHoursStatus().isReady || !pagos()?.pagos?.length || commonGaps().length || missingIban() || missingReportParameters() || !!exporting()"
               [attr.aria-busy]="exporting() === 'pagos'"
               (click)="exportPdf('pagos')"
             >
@@ -464,21 +478,76 @@
           <table class="admin-table report-data-table">
             <thead>
               <tr>
-                <th scope="col">Centro</th>
-                <th scope="col">Aula o zona</th>
-                <th scope="col">DNI</th>
-                <th scope="col">Nombre completo</th>
-                <th scope="col">Perfil asignado</th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="signatureSortField() === 'name' ? (signatureSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="toggleSignatureSort('name')">
+                    <span>Nombre completo</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (signatureSortField() === 'name') {
+                        <svg class="sort-icon is-active" [class.is-desc]="signatureSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="signatureSortField() === 'profile' ? (signatureSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="toggleSignatureSort('profile')">
+                    <span>Perfil asignado</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (signatureSortField() === 'profile') {
+                        <svg class="sort-icon is-active" [class.is-desc]="signatureSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="signatureSortField() === 'center' ? (signatureSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="toggleSignatureSort('center')">
+                    <span>Centro</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (signatureSortField() === 'center') {
+                        <svg class="sort-icon is-active" [class.is-desc]="signatureSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="signatureSortField() === 'location' ? (signatureSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="toggleSignatureSort('location')">
+                    <span>Aula</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (signatureSortField() === 'location') {
+                        <svg class="sort-icon is-active" [class.is-desc]="signatureSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="signatureSortField() === 'dni' ? (signatureSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="toggleSignatureSort('dni')">
+                    <span>DNI</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (signatureSortField() === 'dni') {
+                        <svg class="sort-icon is-active" [class.is-desc]="signatureSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
               @for (person of filteredSignatureRows(); track $index) {
                 <tr>
-                  <td data-label="Centro">{{ person.center }}</td>
-                  <td data-label="Aula o zona">{{ person.location }}</td>
-                  <td data-label="DNI"><span class="masked-id">{{ person.dni }}</span></td>
                   <td data-label="Nombre completo"><strong>{{ person.name }}</strong></td>
-                  <td data-label="Perfil">{{ person.profile }}</td>
+                  <td data-label="Perfil asignado">{{ person.profile }}</td>
+                  <td data-label="Centro">{{ person.center }}</td>
+                  <td data-label="Aula">{{ person.location }}</td>
+                  <td data-label="DNI"><span class="masked-id">{{ person.dni }}</span></td>
                 </tr>
               } @empty {
                 <tr>
@@ -499,12 +568,78 @@
           <table class="admin-table report-data-table payment-table">
             <thead>
               <tr>
-                <th scope="col">DNI</th>
-                <th scope="col">Persona colaboradora</th>
-                <th scope="col">Perfil</th>
-                <th scope="col">IBAN bancario</th>
-                <th scope="col" class="number-cell">Horas</th>
-                <th scope="col" class="number-cell">Importe íntegro</th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="paymentSortField() === 'dni' ? (paymentSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="togglePaymentSort('dni')">
+                    <span>DNI</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (paymentSortField() === 'dni') {
+                        <svg class="sort-icon is-active" [class.is-desc]="paymentSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="paymentSortField() === 'nombreCompleto' ? (paymentSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="togglePaymentSort('nombreCompleto')">
+                    <span>Persona colaboradora</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (paymentSortField() === 'nombreCompleto') {
+                        <svg class="sort-icon is-active" [class.is-desc]="paymentSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="paymentSortField() === 'perfilDenominacion' ? (paymentSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="togglePaymentSort('perfilDenominacion')">
+                    <span>Perfil</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (paymentSortField() === 'perfilDenominacion') {
+                        <svg class="sort-icon is-active" [class.is-desc]="paymentSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="sortable-th" [attr.aria-sort]="paymentSortField() === 'iban' ? (paymentSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn" (click)="togglePaymentSort('iban')">
+                    <span>IBAN bancario</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (paymentSortField() === 'iban') {
+                        <svg class="sort-icon is-active" [class.is-desc]="paymentSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="number-cell sortable-th" [attr.aria-sort]="paymentSortField() === 'horasRealizadas' ? (paymentSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn th-sort-btn--number" (click)="togglePaymentSort('horasRealizadas')">
+                    <span>Horas</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (paymentSortField() === 'horasRealizadas') {
+                        <svg class="sort-icon is-active" [class.is-desc]="paymentSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
+                <th scope="col" class="number-cell sortable-th" [attr.aria-sort]="paymentSortField() === 'importeTotal' ? (paymentSortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'">
+                  <button type="button" class="th-sort-btn th-sort-btn--number" (click)="togglePaymentSort('importeTotal')">
+                    <span>Importe íntegro</span>
+                    <span class="sort-icon-box" aria-hidden="true">
+                      @if (paymentSortField() === 'importeTotal') {
+                        <svg class="sort-icon is-active" [class.is-desc]="paymentSortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                      } @else {
+                        <svg class="sort-icon is-idle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+                      }
+                    </span>
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
