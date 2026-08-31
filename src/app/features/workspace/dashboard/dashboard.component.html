@@ -145,7 +145,26 @@
                   <td data-label="Convocados">{{ item.convocados }}</td>
                   <td data-label="Aulas">{{ item.aulas }}</td>
                   <td data-label="Asignaciones">{{ item.asignaciones }}</td>
-                  <td data-label="Seguimiento"><div class="row-status"><span [class.status-pill--warning]="item.asignacionesPendientes > 0" class="status-pill">{{ item.asignacionesPendientes }} pendientes</span>@if (item.aulasSinResponsable) { <span class="status-pill status-pill--warning">{{ item.aulasSinResponsable }} sin responsable</span> } @else { <span class="status-pill status-pill--success">Aulas cubiertas</span> }</div></td>
+                  <td data-label="Seguimiento">
+                    <div class="row-status">
+                      @if (item.aulas === 0 && item.convocados === 0) {
+                        <span class="status-pill status-pill--danger">Pendiente importar llamamiento</span>
+                      } @else {
+                        @if (item.asignacionesPendientes > 0) {
+                          <span class="status-pill status-pill--warning">{{ item.asignacionesPendientes }} pendientes</span>
+                        } @else if (item.asignaciones > 0) {
+                          <span class="status-pill status-pill--success">Confirmadas</span>
+                        } @else {
+                          <span class="status-pill status-pill--warning">Sin asignaciones</span>
+                        }
+                        @if (item.aulasSinResponsable > 0) {
+                          <span class="status-pill status-pill--warning">{{ item.aulasSinResponsable }} sin responsable</span>
+                        } @else {
+                          <span class="status-pill status-pill--success">Aulas cubiertas</span>
+                        }
+                      }
+                    </div>
+                  </td>
                 </tr>
               } @empty {
                 <tr><td colspan="6" class="table-empty">No hay ejercicios futuros con fecha programada.</td></tr>
@@ -207,15 +226,21 @@
                   <td data-label="Asignaciones">{{ item.asignaciones }}</td>
                   <td data-label="Seguimiento">
                     <div class="row-status">
-                      @if (item.asignacionesPendientes > 0) {
-                        <span class="status-pill status-pill--warning">{{ item.asignacionesPendientes }} pendientes</span>
+                      @if (item.aulas === 0 && item.convocados === 0) {
+                        <span class="status-pill status-pill--danger">Sin llamamiento</span>
+                      } @else if (item.asignaciones === 0) {
+                        <span class="status-pill status-pill--warning">Sin asignaciones</span>
                       } @else {
-                        <span class="status-pill status-pill--success">Confirmadas</span>
-                      }
-                      @if (item.aulasSinResponsable > 0) {
-                        <span class="status-pill status-pill--warning">{{ item.aulasSinResponsable }} sin responsable</span>
-                      } @else {
-                        <span class="status-pill status-pill--success">Aulas cubiertas</span>
+                        @if ((item.horasPendientes ?? 0) > 0) {
+                          <span class="status-pill status-pill--warning">Pendiente horas</span>
+                        } @else {
+                          <span class="status-pill status-pill--success">Horas registradas</span>
+                        }
+                        @if (item.asignacionesPendientes > 0) {
+                          <span class="status-pill status-pill--warning">{{ item.asignacionesPendientes }} pendientes</span>
+                        } @else {
+                          <span class="status-pill status-pill--success">Confirmadas</span>
+                        }
                       }
                     </div>
                   </td>

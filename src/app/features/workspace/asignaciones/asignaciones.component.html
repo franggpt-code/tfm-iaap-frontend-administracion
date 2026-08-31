@@ -65,6 +65,16 @@
           </svg>
           Cambiar ejercicio
         </button>
+        @if (canManageAulas()) {
+          <button
+            type="button"
+            class="button button--secondary"
+            (click)="openCreateAulaDrawer()"
+            title="Crear nueva aula para incidencias o uso extraordinario en este ejercicio"
+          >
+            + Crear aula
+          </button>
+        }
         <button class="button button--primary" type="button" (click)="startCreate()">
           + Nueva asignación
         </button>
@@ -442,6 +452,16 @@
         </div>
 
         <div class="work-toolbar__actions">
+          @if (canManageAulas()) {
+            <button
+              type="button"
+              class="button button--secondary"
+              (click)="openCreateAulaDrawer()"
+              title="Crear nueva aula para incidencias o uso extraordinario en este ejercicio"
+            >
+              + Crear aula
+            </button>
+          }
           <button class="button button--primary" type="button" (click)="startCreate()">
             + Nueva asignación
           </button>
@@ -558,6 +578,32 @@
                   <div class="room-badge-wrap">
                     <span class="room-badge">AULA</span>
                     <h3 class="room-name">{{ group.aula.aulaNombre }}</h3>
+                    @if (canManageAulas() && group.assignments.length === 0) {
+                      <div class="room-admin-actions">
+                        <button
+                          type="button"
+                          class="room-icon-btn"
+                          title="Renombrar aula"
+                          (click)="openRenameAulaDrawer(group.aula)"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          class="room-icon-btn room-icon-btn--danger"
+                          title="Eliminar aula de este ejercicio"
+                          (click)="askDeleteAula(group.aula)"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    }
                   </div>
                   <p class="room-center">
                     <svg class="center-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -615,6 +661,17 @@
                 } @empty {
                   <div class="room-empty">
                     <span>Sin personal asignado a esta aula.</span>
+                    @if (canManageAulas()) {
+                      <div class="room-empty-admin-actions">
+                        <button type="button" class="button button--link button--compact" (click)="openRenameAulaDrawer(group.aula)">
+                          Renombrar
+                        </button>
+                        <span class="action-divider">·</span>
+                        <button type="button" class="button button--link button--link-danger button--compact" (click)="askDeleteAula(group.aula)">
+                          Eliminar
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -732,16 +789,15 @@
             <div>
               <strong>{{ selectedAssignmentIds().size }} {{ selectedAssignmentIds().size === 1 ? "asignación seleccionada" : "asignaciones seleccionadas" }}</strong>
             </div>
-            <div class="field">
-              <label for="bulk-hours-input">Horas realizadas</label>
-              <input
-                id="bulk-hours-input"
-                type="number"
-                min="0"
-                step="0.25"
-                [value]="bulkHours() ?? ''"
-                (input)="bulkHours.set($any($event.target).value === '' ? null : +$any($event.target).value)"
-              >
+            <div class="bulk-hours__time-fields" role="group" aria-label="Horas realizadas">
+              <div class="field">
+                <label for="bulk-hours-input">Horas</label>
+                <input id="bulk-hours-input" type="number" min="0" step="1" [value]="bulkHours() === null ? '' : bulkHoursPart()" (input)="setBulkTime($any($event.target).value, bulkMinutesPart().toString())">
+              </div>
+              <div class="field">
+                <label for="bulk-minutes-input">Minutos</label>
+                <input id="bulk-minutes-input" type="number" min="0" max="59" step="1" [value]="bulkHours() === null ? '' : bulkMinutesPart()" (input)="setBulkTime(bulkHoursPart().toString(), $any($event.target).value)">
+              </div>
             </div>
             <div class="bulk-hours__actions">
               <button class="button button--secondary" type="button" [disabled]="bulkUpdating()" (click)="cancelBulkSelection()">
@@ -920,7 +976,7 @@
                   </td>
                   <td data-label="Colaborador">
                     <strong>{{ item.colaboradorNombre }}</strong>
-                    <small>{{ item.colaboradorDocumento }}</small>
+                    <small>{{ maskDocument(item.colaboradorDocumento) }}</small>
                   </td>
                   <td data-label="Perfil">
                     <span class="role-badge" [class.role-badge--responsible]="isResponsableAula(item.perfilCodigo)">
@@ -941,7 +997,11 @@
                       <option value="RECHAZADA">Rechazada</option>
                     </select>
                   </td>
+                  @if (true) {
+                    <td data-label="Horas" class="number-cell">{{ formatHoursMinutes(item.horasRealizadas) }}</td>
+                  } @else {
                   <td data-label="Horas" class="number-cell">{{ item.horasRealizadas ?? "—" }}</td>
+                  }
                   <td data-label="Importe" class="number-cell">{{ money(item.importeTotal) }}</td>
                   <td data-label="Acciones" class="actions-cell">
                     <div class="row-actions">
@@ -1180,9 +1240,10 @@
             <h3>Perfil y condiciones</h3>
           </div>
 
+          <!-- Fila 1: Perfil -->
           <div class="drawer-form-row--single">
             <div class="field">
-              <label for="assignment-role">Perfil <span class="req-star">*</span></label>
+              <label for="assignment-role">Perfil de colaboración <span class="req-star">*</span></label>
               <select id="assignment-role" formControlName="perfilId" [attr.aria-invalid]="!!fieldErrors()['perfilId']">
                 <option value="">Selecciona el perfil</option>
                 @for (profile of perfiles(); track profile.id) {
@@ -1195,27 +1256,119 @@
             </div>
           </div>
 
-          <div class="drawer-form-row">
+          <!-- Fila 2: Estado de confirmación -->
+          <div class="drawer-form-row--single">
             <div class="field">
               <label for="assignment-confirmation">Estado de confirmación</label>
-              <select id="assignment-confirmation" formControlName="estadoConfirmacion">
-                <option value="PENDIENTE">Pendiente</option>
-                <option value="CONFIRMADA">Confirmada</option>
-                <option value="RECHAZADA">Rechazada</option>
-              </select>
+              <div class="confirmation-selector-grid" role="radiogroup" aria-label="Estado de confirmación">
+                <label class="confirmation-option-card" [class.is-checked]="form.controls.estadoConfirmacion.value === 'PENDIENTE'">
+                  <input type="radio" value="PENDIENTE" formControlName="estadoConfirmacion">
+                  <span class="status-pill status-pill--pending">
+                    <span class="status-dot"></span>
+                    Pendiente
+                  </span>
+                </label>
+                <label class="confirmation-option-card" [class.is-checked]="form.controls.estadoConfirmacion.value === 'CONFIRMADA'">
+                  <input type="radio" value="CONFIRMADA" formControlName="estadoConfirmacion">
+                  <span class="status-pill status-pill--confirmed">
+                    <span class="status-dot"></span>
+                    Confirmada
+                  </span>
+                </label>
+                <label class="confirmation-option-card" [class.is-checked]="form.controls.estadoConfirmacion.value === 'RECHAZADA'">
+                  <input type="radio" value="RECHAZADA" formControlName="estadoConfirmacion">
+                  <span class="status-pill status-pill--rejected">
+                    <span class="status-dot"></span>
+                    Rechazada
+                  </span>
+                </label>
+              </div>
             </div>
+          </div>
 
-            <div class="field">
-              <label for="assignment-hours">Horas realizadas</label>
-              <input
-                id="assignment-hours"
-                type="number"
-                min="0"
-                step="0.25"
-                formControlName="horasRealizadas"
-                placeholder="Ej. 4.5"
-                [attr.aria-invalid]="!!fieldErrors()['horasRealizadas']"
-              >
+          <!-- Fila 3: Horas realizadas (Widget dedicado) -->
+          <div class="drawer-form-row--single">
+            <div class="hours-card">
+              <div class="hours-card__header">
+                <div class="hours-card__title">
+                  <svg class="hours-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <div>
+                    <label class="hours-label">Horas realizadas</label>
+                    <span class="hours-sublabel">Tiempo efectivo de dedicación para la liquidación</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hours-card__body">
+                <div class="hours-inputs-group">
+                  <div class="hour-unit-field">
+                    <label for="assignment-hours" class="unit-label">Horas</label>
+                    <div class="input-with-suffix">
+                      <input
+                        id="assignment-hours"
+                        type="number"
+                        min="0"
+                        step="1"
+                        [value]="assignmentHours()"
+                        (input)="setAssignmentTime($any($event.target).value, assignmentMinutes().toString())"
+                        placeholder="0"
+                        [attr.aria-invalid]="!!fieldErrors()['horasRealizadas']"
+                      >
+                      <span class="unit-suffix">h</span>
+                    </div>
+                  </div>
+
+                  <span class="hours-separator">:</span>
+
+                  <div class="hour-unit-field">
+                    <label for="assignment-minutes" class="unit-label">Minutos</label>
+                    <div class="input-with-suffix">
+                      <input
+                        id="assignment-minutes"
+                        type="number"
+                        min="0"
+                        max="59"
+                        step="1"
+                        [value]="assignmentMinutes()"
+                        (input)="setAssignmentTime(assignmentHours().toString(), $any($event.target).value)"
+                        placeholder="00"
+                      >
+                      <span class="unit-suffix">min</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Botones de selección rápida (Presets comunes) -->
+                <div class="hours-presets" aria-label="Valores frecuentes de horas">
+                  <span class="presets-label">Comunes:</span>
+                  <button type="button" class="preset-chip" [class.is-active]="assignmentHours() === 3 && assignmentMinutes() === 0" (click)="setPresetHours(3, 0)">3h</button>
+                  <button type="button" class="preset-chip" [class.is-active]="assignmentHours() === 4 && assignmentMinutes() === 0" (click)="setPresetHours(4, 0)">4h</button>
+                  <button type="button" class="preset-chip" [class.is-active]="assignmentHours() === 5 && assignmentMinutes() === 0" (click)="setPresetHours(5, 0)">5h</button>
+                  <button type="button" class="preset-chip" [class.is-active]="assignmentHours() === 6 && assignmentMinutes() === 0" (click)="setPresetHours(6, 0)">6h</button>
+                  <button type="button" class="preset-chip" [class.is-active]="assignmentHours() === 6 && assignmentMinutes() === 30" (click)="setPresetHours(6, 30)">6h 30m</button>
+                  <button type="button" class="preset-chip" [class.is-active]="assignmentHours() === 7 && assignmentMinutes() === 0" (click)="setPresetHours(7, 0)">7h</button>
+                </div>
+
+                <!-- Resumen de liquidación en vivo si hay horas -->
+                @if (calculatedTotal(); as calc) {
+                  <div class="hours-summary-badge">
+                    <div class="hours-summary-item">
+                      <span class="summary-key">Dedicación:</span>
+                      <strong>{{ calc.hoursFormatted }}</strong>
+                    </div>
+                    @if (calc.amountFormatted) {
+                      <div class="hours-summary-item">
+                        <span class="summary-key">Liquidación estimada:</span>
+                        <strong class="summary-amount">{{ calc.amountFormatted }}</strong>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
               @if (fieldErrors()["horasRealizadas"]) {
                 <span class="field-error" role="alert">{{ fieldErrors()["horasRealizadas"] }}</span>
               }
@@ -1268,9 +1421,292 @@
       </form>
     </aside>
   }
+
+  <!-- =========================================================================
+       PANEL LATERAL DERECHO (DRAWER) - CREAR AULA EXTRAORDINARIA / INCIDENCIAS
+       ========================================================================= -->
+  @if (createAulaDrawerOpen()) {
+    <div class="drawer-backdrop" (click)="closeCreateAulaDrawer()"></div>
+    <aside
+      class="assignment-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-aula-drawer-title"
+    >
+      <header class="drawer-header">
+        <div>
+          <p class="eyebrow">Espacio extraordinario / Incidencias</p>
+          <h2 id="create-aula-drawer-title">Crear y vincular aula</h2>
+          <small class="drawer-subtitle">
+            {{ selectedExam()?.numeroEjercicio }}.º ejercicio · {{ selectedExam()?.nombre }}
+          </small>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            type="button"
+            class="drawer-icon-btn"
+            aria-label="Cerrar panel"
+            (click)="closeCreateAulaDrawer()"
+          >
+            ✕
+          </button>
+        </div>
+      </header>
+
+      <form class="drawer-body" (submit)="$event.preventDefault(); saveCreateAula()">
+        @if (createAulaError()) {
+          <div class="alert alert--error" role="alert">
+            <strong>Error:</strong> {{ createAulaError() }}
+          </div>
+        }
+
+        <!-- Bloque 1: Ubicación y Centro -->
+        <div class="drawer-section">
+          <div class="drawer-section__header">
+            <span class="drawer-section__number">1</span>
+            <h3>Ubicación y Centro</h3>
+          </div>
+
+          <div class="drawer-form-row--single">
+            <div class="field">
+              <label for="drawer-create-aula-provincia">
+                Provincia <span class="req-star" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="drawer-create-aula-provincia"
+                [value]="createAulaProvinciaId()"
+                (change)="onModalProvinciaChange($any($event.target).value)"
+                required
+              >
+                <option value="">Selecciona provincia</option>
+                @for (prov of modalProvincias(); track prov.id) {
+                  <option [value]="prov.id">{{ prov.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="drawer-form-row--single">
+            <div class="field">
+              <label for="drawer-create-aula-centro">
+                Centro <span class="req-star" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="drawer-create-aula-centro"
+                [disabled]="modalCentrosLoading() || !createAulaProvinciaId()"
+                [value]="createAulaIsNewCentro() ? '__NEW__' : createAulaCentroId()"
+                (change)="onModalCentroSelectChange($any($event.target).value)"
+                required
+              >
+                @if (modalCentrosLoading()) {
+                  <option value="">Cargando centros…</option>
+                } @else {
+                  <option value="">Selecciona un centro de la provincia</option>
+                  @for (c of modalCentros(); track c.id) {
+                    <option [value]="c.id">{{ c.nombre }}</option>
+                  }
+                  <option value="__NEW__">+ Crear nuevo centro en esta provincia…</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          @if (createAulaIsNewCentro()) {
+            <div class="drawer-form-row--single">
+              <div class="field new-center-box">
+                <label for="drawer-create-aula-nuevo-centro">
+                  Nombre del nuevo centro <span class="req-star" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="drawer-create-aula-nuevo-centro"
+                  type="text"
+                  required
+                  maxlength="255"
+                  [value]="createAulaNuevoCentroNombre()"
+                  (input)="createAulaNuevoCentroNombre.set($any($event.target).value)"
+                  placeholder="Ej. IES Fernando de Herrera, Sede Central IAAP..."
+                >
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Bloque 2: Identificación del Aula -->
+        <div class="drawer-section">
+          <div class="drawer-section__header">
+            <span class="drawer-section__number">2</span>
+            <h3>Identificación del Aula</h3>
+          </div>
+
+          <div class="drawer-form-row--single">
+            <div class="field">
+              <label for="drawer-create-aula-nombre">
+                Nombre del aula <span class="req-star" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="drawer-create-aula-nombre"
+                type="text"
+                required
+                maxlength="255"
+                [value]="createAulaNombre()"
+                (input)="createAulaNombre.set($any($event.target).value)"
+                placeholder="Ej. Aula Incidencias, Aula 0, Adaptaciones..."
+              >
+
+              <!-- Presets rápidos para incidencias -->
+              <div class="aula-suggestions" aria-label="Nombres de aula frecuentes">
+                <span class="suggestions-label">Sugerencias:</span>
+                <button type="button" class="suggestion-chip" (click)="setAulaNamePreset('Aula Incidencias')">Aula Incidencias</button>
+                <button type="button" class="suggestion-chip" (click)="setAulaNamePreset('Aula Adaptaciones')">Aula Adaptaciones</button>
+                <button type="button" class="suggestion-chip" (click)="setAulaNamePreset('Aula Reserva')">Aula Reserva</button>
+                <button type="button" class="suggestion-chip" (click)="setAulaNamePreset('Aula 0')">Aula 0</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rule-note-box">
+            <span>
+              Esta aula se creará en el catálogo y se vinculará a este ejercicio con <strong>0 opositores convocados iniciales</strong>, permitiendo asignarle personal responsable y colaboradores para atender incidencias.
+            </span>
+          </div>
+        </div>
+
+        <!-- Pie fijo del Drawer -->
+        <footer class="drawer-footer">
+          <div class="drawer-footer__left">
+            <span class="drawer-footer__info">
+              Se añadirá a la vista de salas
+            </span>
+          </div>
+          <div class="drawer-footer__right">
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="createAulaSaving()"
+              (click)="closeCreateAulaDrawer()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="button button--primary"
+              [disabled]="createAulaSaving() || !createAulaNombre().trim() || !createAulaProvinciaId() || (!createAulaCentroId() && !createAulaNuevoCentroNombre().trim())"
+            >
+              {{ createAulaSaving() ? "Creando y vinculando…" : "Crear y vincular aula" }}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </aside>
+  }
+
+  <!-- =========================================================================
+       PANEL LATERAL DERECHO (DRAWER) - RENOMBRAR AULA
+       ========================================================================= -->
+  @if (renameAulaDrawerOpen()) {
+    <div class="drawer-backdrop" (click)="closeRenameAulaDrawer()"></div>
+    <aside
+      class="assignment-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rename-aula-drawer-title"
+    >
+      <header class="drawer-header">
+        <div>
+          <p class="eyebrow">Modificación de espacio</p>
+          <h2 id="rename-aula-drawer-title">Renombrar aula</h2>
+          <small class="drawer-subtitle">
+            {{ renameTargetExamenAula()?.centroNombre || 'Centro' }} · {{ selectedExam()?.nombre }}
+          </small>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            type="button"
+            class="drawer-icon-btn"
+            aria-label="Cerrar panel"
+            (click)="closeRenameAulaDrawer()"
+          >
+            ✕
+          </button>
+        </div>
+      </header>
+
+      <form class="drawer-body" (submit)="$event.preventDefault(); saveRenameAula()">
+        @if (renameAulaError()) {
+          <div class="alert alert--error" role="alert">
+            <strong>Error:</strong> {{ renameAulaError() }}
+          </div>
+        }
+
+        <div class="drawer-section">
+          <div class="drawer-section__header">
+            <span class="drawer-section__number">1</span>
+            <h3>Nombre del Aula</h3>
+          </div>
+
+          <div class="drawer-form-row--single">
+            <div class="field">
+              <label for="drawer-rename-aula-nombre">
+                Nombre o denominación <span class="req-star" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="drawer-rename-aula-nombre"
+                type="text"
+                required
+                maxlength="255"
+                [value]="renameAulaNombre()"
+                (input)="renameAulaNombre.set($any($event.target).value)"
+                placeholder="Ej. Aula Incidencias, Aula Adaptaciones, Aula 4..."
+              >
+
+              <!-- Presets rápidos -->
+              <div class="aula-suggestions" aria-label="Nombres de aula frecuentes">
+                <span class="suggestions-label">Sugerencias:</span>
+                <button type="button" class="suggestion-chip" (click)="renameAulaNombre.set('Aula Incidencias')">Aula Incidencias</button>
+                <button type="button" class="suggestion-chip" (click)="renameAulaNombre.set('Aula Adaptaciones')">Aula Adaptaciones</button>
+                <button type="button" class="suggestion-chip" (click)="renameAulaNombre.set('Aula Reserva')">Aula Reserva</button>
+                <button type="button" class="suggestion-chip" (click)="renameAulaNombre.set('Aula 0')">Aula 0</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rule-note-box">
+            <span>
+              El nuevo nombre se actualizará en este ejercicio y en la planificación del centro.
+            </span>
+          </div>
+        </div>
+
+        <footer class="drawer-footer">
+          <div class="drawer-footer__left">
+            <span class="drawer-footer__info">
+              Afectará a la vista de salas del ejercicio
+            </span>
+          </div>
+          <div class="drawer-footer__right">
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="renameAulaSaving()"
+              (click)="closeRenameAulaDrawer()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="button button--primary"
+              [disabled]="renameAulaSaving() || !renameAulaNombre().trim() || renameAulaNombre().trim() === renameTargetExamenAula()?.aulaNombre"
+            >
+              {{ renameAulaSaving() ? "Guardando…" : "Guardar nombre" }}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </aside>
+  }
 </div>
 
-<!-- Diálogo Modal de Confirmación de Eliminación -->
+<!-- Diálogo Modal de Confirmación de Eliminación de Asignación -->
 <dialog #deleteDialog class="confirmation-dialog" aria-labelledby="delete-assignment-title">
   <form method="dialog">
     <p class="eyebrow">Confirmación</p>
@@ -1291,6 +1727,35 @@
       </button>
       <button class="button button--danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">
         {{ deleting() ? "Eliminando…" : "Eliminar" }}
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Diálogo Modal de Confirmación de Eliminación de Aula -->
+<dialog #deleteAulaDialog class="confirmation-dialog" aria-labelledby="delete-aula-title">
+  <form method="dialog" (submit)="$event.preventDefault(); confirmDeleteAula()">
+    <p class="eyebrow">Confirmación</p>
+    <h2 id="delete-aula-title">¿Eliminar aula del ejercicio?</h2>
+    @if (deleteAulaError()) {
+      <div class="alert alert--error" role="alert">
+        <strong>Error:</strong> {{ deleteAulaError() }}
+      </div>
+    }
+    @if (deleteAulaTarget(); as item) {
+      <p>
+        Se retirará el aula <strong>{{ item.aulaNombre }}</strong> ({{ item.centroNombre || 'Centro principal' }}) de este ejercicio.
+      </p>
+      <p class="dialog-warning">
+        Esta acción solo es posible para aulas que no tengan personal asignado ni opositores convocados.
+      </p>
+    }
+    <div class="dialog-actions">
+      <button class="button button--secondary" type="button" [disabled]="deleteAulaSaving()" (click)="closeDeleteAula()">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="submit" [disabled]="deleteAulaSaving()">
+        {{ deleteAulaSaving() ? "Eliminando…" : "Eliminar aula" }}
       </button>
     </div>
   </form>
