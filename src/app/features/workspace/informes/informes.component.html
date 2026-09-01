@@ -457,7 +457,7 @@
             <button
               class="button button--primary"
               type="button"
-              [disabled]="!paymentHoursStatus().isReady || !pagos()?.pagos?.length || commonGaps().length || missingIban() || missingReportParameters() || !!exporting()"
+              [disabled]="!pagos()?.pagos?.length || commonGaps().length || missingIban() || missingReportParameters() || !!exporting()"
               [attr.aria-busy]="exporting() === 'pagos'"
               (click)="exportPdf('pagos')"
             >

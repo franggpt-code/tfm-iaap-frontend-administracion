@@ -811,11 +811,7 @@ export class AsignacionesComponent implements OnInit {
   setAssignmentTime(hours: string, minutes: string): void {
     const h = Math.max(0, Number(hours) || 0);
     const m = Math.min(59, Math.max(0, Number(minutes) || 0));
-    if (h === 0 && m === 0 && (hours === "" || hours === "0") && (minutes === "" || minutes === "0")) {
-      this.form.controls.horasRealizadas.setValue(null);
-    } else {
-      this.form.controls.horasRealizadas.setValue(h + (m / 60));
-    }
+    this.form.controls.horasRealizadas.setValue(h + (m / 60));
   }
   setPresetHours(hours: number, minutes: number = 0): void {
     this.setAssignmentTime(hours.toString(), minutes.toString());

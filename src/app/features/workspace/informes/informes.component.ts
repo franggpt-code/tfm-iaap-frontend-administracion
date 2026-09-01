@@ -163,13 +163,13 @@ export class InformesComponent implements OnInit {
     if (pendingOrZero === total) {
       return {
         isReady: false,
-        message: "Ninguna asignación tiene horas registradas (están vacías o a 0 h).",
+        message: "Ninguna asignación tiene horas registradas (están vacías o a 0 h). El PDF se puede generar igualmente.",
       };
     }
     if (pendingOrZero > 0) {
       return {
         isReady: false,
-        message: `${pendingOrZero} ${pendingOrZero === 1 ? "asignación tiene" : "asignaciones tienen"} las horas pendientes o a 0 (de ${total} totales).`,
+        message: `${pendingOrZero} ${pendingOrZero === 1 ? "asignación tiene" : "asignaciones tienen"} las horas pendientes o a 0 (de ${total} totales). El PDF se puede generar igualmente.`,
       };
     }
     return {

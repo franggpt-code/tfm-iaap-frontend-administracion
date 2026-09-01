@@ -639,7 +639,8 @@
       margin: 0;
     }
 
-    input {
+    input,
+    textarea {
       background: #fff;
       border: 1px solid #a9b5ad;
       border-radius: 4px;
@@ -654,6 +655,17 @@
         box-shadow: 0 0 0 3px rgb(0 115 62 / 15%);
         outline: 0;
       }
+    }
+
+    textarea {
+      min-height: 9rem;
+      resize: vertical;
+    }
+
+    .field-hint {
+      color: #526158;
+      font-size: 0.78rem;
+      line-height: 1.4;
     }
   }
 }

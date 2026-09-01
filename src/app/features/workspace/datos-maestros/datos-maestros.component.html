@@ -96,6 +96,36 @@
           }
         </div>
 
+        <div class="field field--wide">
+          <label for="report-signature-date">Texto de fecha de firma <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-signature-date"
+            type="text"
+            maxlength="500"
+            formControlName="textoFechaFirma"
+            placeholder="Sevilla, a fecha de firma electrónica"
+            [attr.aria-invalid]="!!reportConfigErrors()['textoFechaFirma']"
+          >
+          <span class="field-hint">Se mostrará antes de las firmas del informe de pagos.</span>
+          @if (reportConfigErrors()["textoFechaFirma"]) {
+            <span class="field-error">{{ reportConfigErrors()["textoFechaFirma"] }}</span>
+          }
+        </div>
+
+        <div class="field field--wide">
+          <label for="report-certification-text">Texto de certificación <span class="req-star" aria-hidden="true">*</span></label>
+          <textarea
+            id="report-certification-text"
+            rows="7"
+            maxlength="4000"
+            formControlName="textoCertifica"
+            [attr.aria-invalid]="!!reportConfigErrors()['textoCertifica']"
+          ></textarea>
+          <span class="field-hint">Puedes usar [FECHA_EJERCICIO], [EJERCICIO], [CODIGO], [CUERPO_Y_ESPECIALIDAD], [OEP] y [SISTEMA_ACCESO].</span>
+          @if (reportConfigErrors()["textoCertifica"]) {
+            <span class="field-error">{{ reportConfigErrors()["textoCertifica"] }}</span>
+          }
+        </div>
         <div class="report-config__separator" aria-hidden="true"></div>
 
         <div class="field">
