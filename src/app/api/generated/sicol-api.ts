@@ -793,7 +793,7 @@ export interface paths {
         post?: never;
         /**
          * Eliminar una asignación
-         * @description Impide eliminar el último responsable de un aula.
+         * @description Elimina la asignación, incluso cuando se trate de la última persona responsable del aula.
          */
         delete: operations["deleteAsignacionById"];
         options?: never;
@@ -1748,7 +1748,11 @@ export interface components {
             asignacionesConfirmadas: number;
             asignacionesRechazadas: number;
             ejerciciosConHorasPendientes: number;
+            /** @description Exercises with pending registered hours. */
+            ejerciciosConHorasPendientesDetalle: components["schemas"]["CuadroMandoEjercicio"][];
             ejerciciosSinInformesGenerados: number;
+            /** @description Exercises without generated operational reports. */
+            ejerciciosSinInformesGeneradosDetalle: components["schemas"]["CuadroMandoEjercicio"][];
         };
         /** @description Datos acumulados para contextualizar la actividad historica de la aplicacion. */
         CuadroMandoHistorico: {
@@ -2416,6 +2420,10 @@ export interface components {
         ConfiguracionInformes: {
             organismo: string;
             localidadFirma: string;
+            /** @description Fórmula fija mostrada antes de las firmas del informe de pagos. */
+            textoFechaFirma: string;
+            /** @description Plantilla del certificado. Admite [FECHA_EJERCICIO], [EJERCICIO], [CODIGO], [CUERPO_Y_ESPECIALIDAD], [OEP] y [SISTEMA_ACCESO]. */
+            textoCertifica: string;
             nombreCertifica: string;
             cargoCertifica: string;
             nombreVistoBueno: string;
@@ -2424,6 +2432,8 @@ export interface components {
         ConfiguracionInformesUpdate: {
             organismo: string;
             localidadFirma: string;
+            textoFechaFirma: string;
+            textoCertifica: string;
             nombreCertifica: string;
             cargoCertifica: string;
             nombreVistoBueno: string;
@@ -4738,7 +4748,10 @@ export interface operations {
     };
     exportarHojasFirmaPdf: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Criterio de ordenación de las filas del control de firmas (centro, aula, perfil, nombre) */
+                orden?: "centro" | "aula" | "perfil" | "nombre";
+            };
             header?: never;
             path: {
                 /** @description Identificador único del examen. */

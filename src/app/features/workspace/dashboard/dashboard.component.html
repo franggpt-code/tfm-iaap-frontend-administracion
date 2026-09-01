@@ -107,6 +107,9 @@
             <p class="eyebrow">Cierre de ejercicio</p>
             <h3>Horas trabajadas pendientes</h3>
             <p>Ejercicios ya realizados con responsables de aula asignados que aún tienen horas sin registrar.</p>
+            @if (ejerciciosConHorasPendientes().length) {
+              <p class="attention-card__detail"><strong>Procesos:</strong> {{ pendingExercisesLabel(ejerciciosConHorasPendientes()) }}</p>
+            }
           </div>
           <div class="attention-card__action">
             <strong>{{ data.proximaPlanificacion.ejerciciosConHorasPendientes }}</strong>
@@ -118,6 +121,9 @@
             <p class="eyebrow">Documentación</p>
             <h3>Informes pendientes</h3>
             <p>Ejercicios ya realizados sin registro de generación de control de firmas ni informe de pagos.</p>
+            @if (ejerciciosSinInformesGenerados().length) {
+              <p class="attention-card__detail"><strong>Procesos:</strong> {{ pendingExercisesLabel(ejerciciosSinInformesGenerados()) }}</p>
+            }
           </div>
           <div class="attention-card__action">
             <strong>{{ data.proximaPlanificacion.ejerciciosSinInformesGenerados }}</strong>
@@ -195,9 +201,9 @@
       <div class="historical-table-block">
         <div class="section-heading section-heading--sub">
           <div>
-            <p class="eyebrow">Última actividad</p>
-            <h3 id="historical-table-title">Últimos procesos y ejercicios celebrados</h3>
-            <p>Los 3 últimos ejercicios con fecha anterior registrada y su balance final.</p>
+            <p class="eyebrow">Actividad de procesos activos</p>
+            <h3 id="historical-table-title">Procesos y ejercicios celebrados</h3>
+            <p>Todos los ejercicios ya celebrados de procesos que siguen activos y su balance final.</p>
           </div>
         </div>
         <div class="table-wrap">
