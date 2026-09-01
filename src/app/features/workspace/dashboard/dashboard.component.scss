@@ -63,6 +63,8 @@
 .attention-card--warning { background: #fffaf0; border-left-color: var(--jda-warning); }
 .attention-card h3 { font-size: 1.05rem; margin: 0; }
 .attention-card p:not(.eyebrow) { color: var(--jda-text-subtle); font-size: .9rem; margin: .35rem 0 0; max-width: 31rem; }
+.attention-card__detail { color: var(--jda-text); font-size: .875rem; overflow-wrap: anywhere; }
+.attention-card__detail strong { color: var(--jda-primary-dark); }
 .attention-card__action { align-items: end; display: grid; flex: 0 0 auto; gap: .45rem; justify-items: end; }
 .attention-card__action strong { color: var(--jda-primary-dark); font-family: Montserrat, sans-serif; font-size: 1.75rem; line-height: 1; }
 .attention-card__action a { font-size: .9rem; font-weight: 700; text-align: right; text-decoration-thickness: 1px; text-underline-offset: 3px; }

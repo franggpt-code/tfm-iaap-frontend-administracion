@@ -793,7 +793,7 @@ export interface paths {
         post?: never;
         /**
          * Eliminar una asignación
-         * @description Impide eliminar el último responsable de un aula.
+         * @description Elimina la asignación, incluso cuando se trate de la última persona responsable del aula.
          */
         delete: operations["deleteAsignacionById"];
         options?: never;
@@ -1748,7 +1748,11 @@ export interface components {
             asignacionesConfirmadas: number;
             asignacionesRechazadas: number;
             ejerciciosConHorasPendientes: number;
+            /** @description Exercises with pending registered hours. */
+            ejerciciosConHorasPendientesDetalle: components["schemas"]["CuadroMandoEjercicio"][];
             ejerciciosSinInformesGenerados: number;
+            /** @description Exercises without generated operational reports. */
+            ejerciciosSinInformesGeneradosDetalle: components["schemas"]["CuadroMandoEjercicio"][];
         };
         /** @description Datos acumulados para contextualizar la actividad historica de la aplicacion. */
         CuadroMandoHistorico: {

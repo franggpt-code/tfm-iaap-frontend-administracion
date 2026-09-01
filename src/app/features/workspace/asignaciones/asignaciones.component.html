@@ -284,7 +284,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
               </svg>
-              Acceso rápido a ejercicios
+              Acceso rápido a 3 ejercicios
             </span>
             <div class="quick-access-tabs" role="group" aria-label="Periodo de ejercicios">
               <button
@@ -1715,11 +1715,7 @@
       <p>
         Se retirará a <strong>{{ item.colaboradorNombre }}</strong> de <strong>{{ item.examenAulaId ? item.aulaNombre : "el ámbito general" }}</strong> como {{ item.perfilDenominacion.toLocaleLowerCase("es") }}.
       </p>
-      @if (isResponsableAula(item.perfilCodigo)) {
-        <p class="dialog-warning">
-          Si es la única persona responsable del aula, no se podrá eliminar sin asignar previamente otro responsable.
-        </p>
-      }
+
     }
     <div class="dialog-actions">
       <button class="button button--secondary" type="button" [disabled]="deleting()" (click)="closeDelete()">
