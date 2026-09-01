@@ -4,7 +4,7 @@ import { RouterLink } from "@angular/router";
 import { finalize } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
-import { CuadroMandoAdministracion } from "../../../api/sicol.types";
+import { CuadroMandoAdministracion, CuadroMandoEjercicio } from "../../../api/sicol.types";
 import { AuthService } from "../../../core/auth.service";
 
 @Component({
@@ -32,7 +32,20 @@ export class DashboardComponent implements OnInit {
     const total = this.planificacion()?.totalAsignaciones ?? 0;
     return total ? Math.round(((this.planificacion()?.asignacionesConfirmadas ?? 0) / total) * 100) : 0;
   });
-  readonly ultimosHistoricos = computed(() => (this.resumen()?.anterioresEjercicios ?? []).slice(0, 3));
+  readonly ultimosHistoricos = computed(() => this.resumen()?.anterioresEjercicios ?? []);
+  readonly ejerciciosConHorasPendientes = computed(() =>
+    this.planificacion()?.ejerciciosConHorasPendientesDetalle ?? []
+  );
+  readonly ejerciciosSinInformesGenerados = computed(() =>
+    this.planificacion()?.ejerciciosSinInformesGeneradosDetalle ?? []
+  );
+
+  pendingExercisesLabel(ejercicios: CuadroMandoEjercicio[]): string {
+    return [...new Set(ejercicios.map((item) => {
+      const proceso = item.codigoSirhus?.trim() || item.procesoNombre;
+      return `${proceso} - ejercicio ${item.numeroEjercicio}`;
+    }))].join(" | ");
+  }
 
   ngOnInit(): void {
     this.api.getCuadroMandoAdministracion().pipe(finalize(() => this.loading.set(false))).subscribe({
