@@ -2416,6 +2416,10 @@ export interface components {
         ConfiguracionInformes: {
             organismo: string;
             localidadFirma: string;
+            /** @description Fórmula fija mostrada antes de las firmas del informe de pagos. */
+            textoFechaFirma: string;
+            /** @description Plantilla del certificado. Admite [FECHA_EJERCICIO], [EJERCICIO], [CODIGO], [CUERPO_Y_ESPECIALIDAD], [OEP] y [SISTEMA_ACCESO]. */
+            textoCertifica: string;
             nombreCertifica: string;
             cargoCertifica: string;
             nombreVistoBueno: string;
@@ -2424,6 +2428,8 @@ export interface components {
         ConfiguracionInformesUpdate: {
             organismo: string;
             localidadFirma: string;
+            textoFechaFirma: string;
+            textoCertifica: string;
             nombreCertifica: string;
             cargoCertifica: string;
             nombreVistoBueno: string;
@@ -4738,7 +4744,10 @@ export interface operations {
     };
     exportarHojasFirmaPdf: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Criterio de ordenación de las filas del control de firmas (centro, aula, perfil, nombre) */
+                orden?: "centro" | "aula" | "perfil" | "nombre";
+            };
             header?: never;
             path: {
                 /** @description Identificador único del examen. */

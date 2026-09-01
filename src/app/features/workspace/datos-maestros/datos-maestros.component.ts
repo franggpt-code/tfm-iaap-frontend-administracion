@@ -91,6 +91,8 @@ export class DatosMaestrosComponent implements OnInit {
   readonly reportConfigForm = this.fb.nonNullable.group({
     organismo: [""],
     localidadFirma: [""],
+    textoFechaFirma: [""],
+    textoCertifica: [""],
     nombreCertifica: [""],
     cargoCertifica: [""],
     nombreVistoBueno: [""],
@@ -322,6 +324,8 @@ export class DatosMaestrosComponent implements OnInit {
     const payload: ConfiguracionInformesUpdate = {
       organismo: values.organismo.trim(),
       localidadFirma: values.localidadFirma.trim(),
+      textoFechaFirma: values.textoFechaFirma.trim(),
+      textoCertifica: values.textoCertifica.trim(),
       nombreCertifica: values.nombreCertifica.trim(),
       cargoCertifica: values.cargoCertifica.trim(),
       nombreVistoBueno: values.nombreVistoBueno.trim(),
