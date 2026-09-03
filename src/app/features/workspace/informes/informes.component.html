@@ -645,11 +645,11 @@
             <tbody>
               @for (payment of filteredPaymentRows(); track $index) {
                 <tr>
-                  <td data-label="DNI">{{ payment.dni }}</td>
+                  <td data-label="DNI"><span class="masked-id">{{ maskDni(payment.dni) }}</span></td>
                   <td data-label="Persona colaboradora"><strong>{{ payment.nombreCompleto }}</strong></td>
                   <td data-label="Perfil">{{ payment.perfilDenominacion }}</td>
-                  <td data-label="IBAN"><span class="iban">{{ payment.iban || "Pendiente de informar" }}</span></td>
-                  <td data-label="Horas" class="number-cell">{{ payment.horasRealizadas }}</td>
+                  <td data-label="IBAN"><span class="iban">{{ payment.iban ? maskIban(payment.iban) : "Pendiente de informar" }}</span></td>
+                  <td data-label="Horas" class="number-cell">{{ formatHoursMinutes(payment.horasRealizadas) }}</td>
                   <td data-label="Importe íntegro" class="number-cell"><strong>{{ money(payment.importeTotal) }}</strong></td>
                 </tr>
               } @empty {

@@ -922,7 +922,31 @@
 }
 
 .payment-table {
-  min-width: 1000px;
+  min-width: 1040px;
+
+  th:nth-child(1),
+  td:nth-child(1) { width: 10%; }
+
+  th:nth-child(2),
+  td:nth-child(2) { width: 28%; }
+
+  th:nth-child(3),
+  td:nth-child(3) { width: 17%; }
+
+  th:nth-child(4),
+  td:nth-child(4) { width: 21%; }
+
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 8%;
+    white-space: nowrap;
+  }
+
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 16%;
+    white-space: nowrap;
+  }
 }
 
 .masked-id {
@@ -937,7 +961,7 @@
 .iban {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.82rem;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .number-cell {

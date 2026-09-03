@@ -562,8 +562,20 @@ export class InformesComponent implements OnInit {
     this.error.set(null);
   }
 
-  private maskDni(value: string): string {
+  maskDni(value: string): string {
     return value.length <= 4 ? "***" : `***${value.slice(-4)}`;
+  }
+
+  maskIban(value: string): string {
+    const iban = value.replaceAll(" ", "").trim().toUpperCase();
+    if (iban.length <= 4) return "****";
+    return `${iban.slice(0, 2)}** **** **** **** ${iban.slice(-4)}`;
+  }
+
+  formatHoursMinutes(value?: number | null): string {
+    if (value == null) return "-";
+    const totalMinutes = Math.round(value * 60);
+    return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
   }
 
   private downloadFilename(disposition: string | null, type: ReportTypeId): string {
