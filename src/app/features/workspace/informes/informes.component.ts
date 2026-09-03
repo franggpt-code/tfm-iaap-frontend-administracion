@@ -192,6 +192,8 @@ export class InformesComponent implements OnInit {
       config.cargoCertifica,
       config.nombreVistoBueno,
       config.cargoVistoBueno,
+      config.nombreDirectorIaap,
+      config.cargoDirectorIaap,
     ].some(
       (value) =>
         !value?.trim() || value.toLocaleLowerCase("es").includes("pendiente de configurar")

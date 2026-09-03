@@ -188,6 +188,36 @@
           }
         </div>
 
+        <div class="field">
+          <label for="report-director-nombre">Nombre de la persona titular de la Direcci&oacute;n del IAAP <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-director-nombre"
+            type="text"
+            maxlength="255"
+            formControlName="nombreDirectorIaap"
+            placeholder="Nombre y apellidos"
+            [attr.aria-invalid]="!!reportConfigErrors()['nombreDirectorIaap']"
+          >
+          @if (reportConfigErrors()["nombreDirectorIaap"]) {
+            <span class="field-error">{{ reportConfigErrors()["nombreDirectorIaap"] }}</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="report-director-cargo">Cargo de la persona titular de la Direcci&oacute;n del IAAP <span class="req-star" aria-hidden="true">*</span></label>
+          <input
+            id="report-director-cargo"
+            type="text"
+            maxlength="255"
+            formControlName="cargoDirectorIaap"
+            placeholder="Direcci&oacute;n del Instituto Andaluz de Administraci&oacute;n P&uacute;blica"
+            [attr.aria-invalid]="!!reportConfigErrors()['cargoDirectorIaap']"
+          >
+          @if (reportConfigErrors()["cargoDirectorIaap"]) {
+            <span class="field-error">{{ reportConfigErrors()["cargoDirectorIaap"] }}</span>
+          }
+        </div>
+
         <div class="form-actions field--wide">
           <button class="button button--primary" type="submit" [disabled]="reportConfigSaving()" [attr.aria-busy]="reportConfigSaving()">
             {{ reportConfigSaving() ? "Guardando…" : "Guardar parámetros" }}
@@ -267,7 +297,7 @@
                   [attr.aria-sort]="sortBy() === 'col2' ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : 'none'"
                 >
                   <button type="button" class="th-sort-btn" (click)="toggleSort('col2')">
-                    <span>{{ activeCatalog() === "perfiles" ? "Denominación" : "Descripción" }}</span>
+                    <span>{{ activeCatalog() === "perfiles" ? "Denominación" : activeCatalog() === "subcategorias" ? "Ubicación o subcategoría" : "Descripción" }}</span>
                     <span class="sort-icon-box" aria-hidden="true">
                       @if (sortBy() === 'col2') {
                         <svg class="sort-icon is-active" [class.is-desc]="sortDirection() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -492,6 +522,7 @@
                 >
               </div>
             } @else {
+              @if (activeCatalog() !== "subcategorias") {
               <div class="field">
                 <label for="master-codigo">Código <span class="req-star" aria-hidden="true">*</span></label>
                 <input
@@ -506,17 +537,18 @@
                   <span class="field-error">{{ fieldErrors()["codigo"] }}</span>
                 }
               </div>
+              }
 
               <div class="field">
                 <label for="master-descripcion">
-                  {{ activeCatalog() === "perfiles" ? "Denominación" : "Descripción" }} <span class="req-star" aria-hidden="true">*</span>
+                  {{ activeCatalog() === "perfiles" ? "Denominación" : activeCatalog() === "subcategorias" ? "Ubicación o subcategoría" : "Descripción" }} <span class="req-star" aria-hidden="true">*</span>
                 </label>
                 <textarea
                   id="master-descripcion"
                   rows="3"
-                  maxlength="500"
+                  [attr.maxlength]="activeCatalog() === 'subcategorias' ? 150 : 500"
                   formControlName="descripcion"
-                  placeholder="Introduce una descripción clara..."
+                  [placeholder]="activeCatalog() === 'subcategorias' ? 'Ej. Coordinación general' : 'Introduce una descripción clara...'"
                   [attr.aria-invalid]="!!fieldErrors()['descripcion']"
                 ></textarea>
                 @if (fieldErrors()["descripcion"]) {

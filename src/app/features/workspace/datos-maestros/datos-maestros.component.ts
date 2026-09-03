@@ -13,14 +13,16 @@ import {
   TipoAccesoCreateUpdate,
   TipoVinculacion,
   TipoVinculacionCreateUpdate,
+  SubcategoriaAsignacion,
+  SubcategoriaAsignacionCreateUpdate,
   PerfilColaboracion,
   PerfilColaboracionCreateUpdate,
   ConfiguracionInformesUpdate,
 } from "../../../api/sicol.types";
 
-type CatalogKey = "oep" | "acceso" | "vinculacion" | "cuerpos" | "perfiles";
+type CatalogKey = "oep" | "acceso" | "vinculacion" | "cuerpos" | "perfiles" | "subcategorias";
 type SectionKey = CatalogKey | "informes";
-type MasterItem = Oep | TipoAcceso | TipoVinculacion | Cuerpo | PerfilColaboracion;
+type MasterItem = Oep | TipoAcceso | TipoVinculacion | Cuerpo | PerfilColaboracion | SubcategoriaAsignacion;
 export type MasterSortColumn = "col1" | "col2" | "col3";
 export type SortDirection = "asc" | "desc";
 
@@ -35,6 +37,7 @@ const CATALOGS: Record<CatalogKey, { label: string; tabLabel: string; singular: 
   vinculacion: { label: "Tipos de vinculación", tabLabel: "Tipos de vinculación", singular: "tipo de vinculación", description: "Relaciones jurídicas asociadas a los procesos." },
   cuerpos: { label: "Cuerpos", tabLabel: "Cuerpos", singular: "cuerpo", description: "Códigos, grupos y denominaciones de los cuerpos." },
   perfiles: { label: "Perfiles de colaboración", tabLabel: "Perfiles", singular: "perfil de colaboración", description: "Funciones que puede desempeñar el personal colaborador y su importe por hora." },
+  subcategorias: { label: "Ubicaciones y subcategorías", tabLabel: "Ubicaciones", singular: "ubicación o subcategoría", description: "Valores regulados para las asignaciones de ámbito general." },
 };
 
 @Component({
@@ -50,7 +53,7 @@ export class DatosMaestrosComponent implements OnInit {
 
   @ViewChild("deleteDialog") private deleteDialog?: ElementRef<HTMLDialogElement>;
 
-  readonly catalogKeys: CatalogKey[] = ["oep", "acceso", "vinculacion", "cuerpos", "perfiles"];
+  readonly catalogKeys: CatalogKey[] = ["oep", "acceso", "vinculacion", "cuerpos", "perfiles", "subcategorias"];
   readonly catalogs = CATALOGS;
   readonly activeCatalog = signal<CatalogKey>("cuerpos");
   readonly activeSection = signal<SectionKey>("cuerpos");
@@ -59,6 +62,7 @@ export class DatosMaestrosComponent implements OnInit {
   readonly tiposVinculacion = signal<TipoVinculacion[]>([]);
   readonly cuerpos = signal<Cuerpo[]>([]);
   readonly perfiles = signal<PerfilColaboracion[]>([]);
+  readonly subcategorias = signal<SubcategoriaAsignacion[]>([]);
   readonly search = signal("");
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -97,6 +101,8 @@ export class DatosMaestrosComponent implements OnInit {
     cargoCertifica: [""],
     nombreVistoBueno: [""],
     cargoVistoBueno: [""],
+    nombreDirectorIaap: [""],
+    cargoDirectorIaap: [""],
   });
 
   readonly config = computed(() => CATALOGS[this.activeCatalog()]);
@@ -107,6 +113,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": return this.tiposVinculacion();
       case "cuerpos": return this.cuerpos();
       case "perfiles": return this.perfiles();
+      case "subcategorias": return this.subcategorias();
     }
   });
 
@@ -209,6 +216,9 @@ export class DatosMaestrosComponent implements OnInit {
     if (catalog === "oep") {
       const value = item as Oep;
       this.form.reset({ anio: value.anio, descripcion: value.descripcion ?? "", bojaRef: value.bojaRef ?? "", codigo: "", grupo: "" });
+    } else if (catalog === "subcategorias") {
+      const value = item as SubcategoriaAsignacion;
+      this.form.reset({ anio: new Date().getFullYear(), descripcion: value.descripcion, bojaRef: "", codigo: "", grupo: "", importeHora: 0 });
     } else {
       const value = item as TipoAcceso | TipoVinculacion | Cuerpo | PerfilColaboracion;
       this.form.reset({
@@ -330,6 +340,8 @@ export class DatosMaestrosComponent implements OnInit {
       cargoCertifica: values.cargoCertifica.trim(),
       nombreVistoBueno: values.nombreVistoBueno.trim(),
       cargoVistoBueno: values.cargoVistoBueno.trim(),
+      nombreDirectorIaap: values.nombreDirectorIaap.trim(),
+      cargoDirectorIaap: values.cargoDirectorIaap.trim(),
     };
     this.reportConfigSaving.set(true);
     this.error.set(null);
@@ -345,6 +357,7 @@ export class DatosMaestrosComponent implements OnInit {
   }
 
   itemCode(item: MasterItem): string {
+    if ("idSubcategoriaAsignacion" in item) return String(item.idSubcategoriaAsignacion);
     return "codigo" in item ? item.codigo : String((item as Oep).anio);
   }
 
@@ -367,6 +380,7 @@ export class DatosMaestrosComponent implements OnInit {
       vinculacion: this.api.listTiposVinculacion(),
       cuerpos: this.api.listCuerpos(),
       perfiles: this.api.listPerfilesColaboracion(),
+      subcategorias: this.api.listSubcategoriasAsignacion(),
       reportConfiguration: this.api.getConfiguracionInformes(),
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (result) => {
@@ -375,6 +389,7 @@ export class DatosMaestrosComponent implements OnInit {
         this.tiposVinculacion.set(result.vinculacion);
         this.cuerpos.set(result.cuerpos);
         this.perfiles.set(result.perfiles);
+        this.subcategorias.set(result.subcategorias);
         this.reportConfigForm.setValue(result.reportConfiguration);
         if (this.route.snapshot.fragment === "configuracion-informes") {
           this.activeSection.set("informes");
@@ -391,7 +406,7 @@ export class DatosMaestrosComponent implements OnInit {
     if (this.activeCatalog() === "oep") {
       if (!Number.isInteger(values.anio) || values.anio < 1900 || values.anio > 2200) errors["anio"] = "Introduce un año válido.";
     } else {
-      if (!values.codigo.trim()) errors["codigo"] = "Introduce el código.";
+      if (this.activeCatalog() !== "subcategorias" && !values.codigo.trim()) errors["codigo"] = "Introduce un código.";
       if (!values.descripcion.trim()) errors["descripcion"] = "Introduce la descripción.";
       if (this.activeCatalog() === "cuerpos" && !values.grupo.trim()) errors["grupo"] = "Introduce el grupo.";
       if (this.activeCatalog() === "perfiles" && (!Number.isFinite(values.importeHora) || values.importeHora < 0)) errors["importeHora"] = "Introduce un importe igual o superior a 0.";
@@ -406,6 +421,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": return this.api.createTipoVinculacion(this.codePayload());
       case "cuerpos": return this.api.createCuerpo(this.cuerpoPayload());
       case "perfiles": return this.api.createPerfilColaboracion(this.perfilPayload());
+      case "subcategorias": return this.api.createSubcategoriaAsignacion(this.subcategoriaPayload());
     }
   }
 
@@ -416,6 +432,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": return this.api.updateTipoVinculacion(id as number, this.codePayload());
       case "cuerpos": return this.api.updateCuerpo(id as number, this.cuerpoPayload());
       case "perfiles": return this.api.updatePerfilColaboracion(id as string, this.perfilPayload());
+      case "subcategorias": return this.api.updateSubcategoriaAsignacion(id as number, this.subcategoriaPayload());
     }
   }
 
@@ -426,6 +443,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": return this.api.deleteTipoVinculacion(id as number);
       case "cuerpos": return this.api.deleteCuerpo(id as number);
       case "perfiles": return this.api.deletePerfilColaboracion(id as string);
+      case "subcategorias": return this.api.deleteSubcategoriaAsignacion(id as number);
     }
   }
 
@@ -437,6 +455,10 @@ export class DatosMaestrosComponent implements OnInit {
   private codePayload(): TipoAccesoCreateUpdate | TipoVinculacionCreateUpdate {
     const value = this.form.getRawValue();
     return { codigo: value.codigo.trim(), descripcion: value.descripcion.trim() };
+  }
+
+  private subcategoriaPayload(): SubcategoriaAsignacionCreateUpdate {
+    return { descripcion: this.form.getRawValue().descripcion.trim() };
   }
 
   private cuerpoPayload(): CuerpoCreateUpdate {
@@ -456,6 +478,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": return (item as TipoVinculacion).idTipoVinculacion;
       case "cuerpos": return (item as Cuerpo).idCuerpo;
       case "perfiles": return (item as PerfilColaboracion).id;
+      case "subcategorias": return (item as SubcategoriaAsignacion).idSubcategoriaAsignacion;
     }
   }
 
@@ -473,6 +496,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": this.tiposVinculacion.update(update); break;
       case "cuerpos": this.cuerpos.update(update); break;
       case "perfiles": this.perfiles.update(update); break;
+      case "subcategorias": this.subcategorias.update(update); break;
     }
   }
 
@@ -484,6 +508,7 @@ export class DatosMaestrosComponent implements OnInit {
       case "vinculacion": this.tiposVinculacion.update(remove); break;
       case "cuerpos": this.cuerpos.update(remove); break;
       case "perfiles": this.perfiles.update(remove); break;
+      case "subcategorias": this.subcategorias.update(remove); break;
     }
   }
 
