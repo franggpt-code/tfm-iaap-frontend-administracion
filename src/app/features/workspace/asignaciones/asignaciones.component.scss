@@ -2392,3 +2392,26 @@
   }
 }
 
+
+.subcategoria-catalog-action {
+  align-self: flex-start;
+  background: #f4f9f6;
+  border: 1px solid #9fc7ae;
+  border-radius: 4px;
+  color: var(--jda-primary-dark);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+  padding: 0.35rem 0.6rem;
+
+  &:hover:not(:disabled) {
+    background: #e1efe6;
+    border-color: var(--jda-primary);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "tfm-iaap-frontend-administracion",
-  "version": "1.0.13-SNAPSHOT",
+  "version": "1.0.14-SNAPSHOT",
   "license": "EUPL-1.2",
   "scripts": {
     "ng": "ng",

@@ -1164,11 +1164,29 @@
                 <label for="assignment-general-category">Ubicación / Subcategoría <small>(opcional)</small></label>
                 <input
                   id="assignment-general-category"
-                  type="text"
+                  type="search"
                   maxlength="150"
+                  list="assignment-general-category-options"
                   formControlName="subcategoriaGeneral"
-                  placeholder="Ej.: Coordinación General, Centro de Datos, Planta 1…"
+                  placeholder="Busca una ubicación o subcategoría"
+                  (input)="onSubcategoriaChange($any($event.target).value)"
+                  [attr.aria-invalid]="!!fieldErrors()['subcategoriaGeneral']"
                 >
+                <datalist id="assignment-general-category-options">
+                  @for (item of subcategorias(); track item.idSubcategoriaAsignacion) {
+                    <option [value]="item.descripcion"></option>
+                  }
+                </datalist>
+                @if (canAddSubcategoria()) {
+                  <button class="subcategoria-catalog-action" type="button" [disabled]="subcategoriaSaving()" (click)="addSubcategoria()">
+                    {{ subcategoriaSaving() ? "Añadiendo…" : "Añadir a Datos maestros: " + subcategoriaQuery().trim() }}
+                  </button>
+                } @else {
+                  <span class="field-hint">Selecciona un valor del catálogo o escribe uno nuevo para añadirlo.</span>
+                }
+                @if (fieldErrors()["subcategoriaGeneral"]) {
+                  <span class="field-error" role="alert">{{ fieldErrors()["subcategoriaGeneral"] }}</span>
+                }
               </div>
             </div>
           }

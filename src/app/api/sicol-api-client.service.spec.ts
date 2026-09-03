@@ -134,6 +134,8 @@ describe("SicolApiClient", () => {
     const configuration = {
       organismo: "IAAP", localidadFirma: "Sevilla", nombreCertifica: "Persona A", cargoCertifica: "Jefatura",
       nombreVistoBueno: "Persona B", cargoVistoBueno: "Dirección",
+      textoFechaFirma: "Sevilla, a fecha de firma electr\u00f3nica", textoCertifica: "Texto de prueba",
+      nombreDirectorIaap: "Persona Directora", cargoDirectorIaap: "Direcci\u00f3n del IAAP",
     };
     service.updateConfiguracionInformes(configuration).subscribe();
     const update = http.expectOne("/api/sicol/admin/configuracion-informes");

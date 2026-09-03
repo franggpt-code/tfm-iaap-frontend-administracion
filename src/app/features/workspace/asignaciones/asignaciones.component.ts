@@ -8,7 +8,7 @@ import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import { AuthService } from "../../../core/auth.service";
 import {
   AsignacionColaborador, Aula, Centro, Colaborador, ContextoAsignacion, ConvocadoExamen, CuadroMandoEjercicio, Examen, ExamenAula,
-  EstadoConfirmacionAsignacion, PerfilColaboracion, ProcesoSelectivo, Provincia,
+  EstadoConfirmacionAsignacion, PerfilColaboracion, ProcesoSelectivo, Provincia, SubcategoriaAsignacion,
 } from "../../../api/sicol.types";
 
 type SelectionMode = "proceso" | "fecha";
@@ -89,6 +89,9 @@ export class AsignacionesComponent implements OnInit {
   readonly contextosFecha = signal<ContextoAsignacion[]>([]);
   readonly fechasDisponibles = signal<string[]>([]);
   readonly perfiles = signal<PerfilColaboracion[]>([]);
+  readonly subcategorias = signal<SubcategoriaAsignacion[]>([]);
+  readonly subcategoriaQuery = signal("");
+  readonly subcategoriaSaving = signal(false);
   readonly colaboradores = signal<Colaborador[]>([]);
   readonly convocados = signal<ConvocadoExamen[]>([]);
   readonly aulas = signal<ExamenAula[]>([]);
@@ -351,9 +354,9 @@ export class AsignacionesComponent implements OnInit {
       this.activeProcessIndex.set(page.content.length ? 0 : -1);
     });
 
-    forkJoin({ perfiles: this.api.listPerfilesColaboracion(), colaboradores: this.api.listColaboradores({ estado: "ACTIVO", size: 100 }), fechas: this.api.listFechasAsignacion() })
+    forkJoin({ perfiles: this.api.listPerfilesColaboracion(), subcategorias: this.api.listSubcategoriasAsignacion(), colaboradores: this.api.listColaboradores({ estado: "ACTIVO", size: 100 }), fechas: this.api.listFechasAsignacion() })
       .pipe(finalize(() => { this.loading.set(false); this.availableDatesLoading.set(false); })).subscribe({
-        next: ({ perfiles, colaboradores, fechas }) => { this.perfiles.set(perfiles); this.colaboradores.set(colaboradores.content); this.fechasDisponibles.set(fechas); },
+        next: ({ perfiles, subcategorias, colaboradores, fechas }) => { this.perfiles.set(perfiles); this.subcategorias.set(subcategorias); this.colaboradores.set(colaboradores.content); this.fechasDisponibles.set(fechas); },
         error: (error: unknown) => this.error.set(apiErrorMessage(error)),
       });
 
@@ -562,6 +565,7 @@ export class AsignacionesComponent implements OnInit {
       estadoConfirmacion: "PENDIENTE",
       horasRealizadas: null,
     });
+    this.subcategoriaQuery.set("");
     this.formOpen.set(true);
     this.resetDrawerScroll();
     this.success.set(null);
@@ -577,6 +581,7 @@ export class AsignacionesComponent implements OnInit {
     this.collaboratorQuery.set(`${item.colaboradorNombre ?? "Colaborador"} · ${item.colaboradorDocumento ?? ""}`.trim());
     this.collaboratorResultsOpen.set(false); this.collaboratorSearchError.set(null);
     this.form.reset({ ambito: room ? "AULA" : "GENERAL", centro: room?.centroNombre || "", examenAulaId: item.examenAulaId || "", colaboradorId: item.colaboradorId, perfilId: item.perfilId, subcategoriaGeneral: item.subcategoriaGeneral || "", estadoConfirmacion: item.estadoConfirmacion, horasRealizadas: item.horasRealizadas ?? null });
+    this.subcategoriaQuery.set(item.subcategoriaGeneral || "");
     this.ensureCollaboratorOption(item);
     this.formOpen.set(true);
     this.resetDrawerScroll();
@@ -602,7 +607,7 @@ export class AsignacionesComponent implements OnInit {
     if (scope === "GENERAL") {
       this.selectedCenter.set(""); this.form.controls.centro.setValue(""); this.form.controls.examenAulaId.setValue("");
     } else {
-      this.form.controls.subcategoriaGeneral.setValue("");
+      this.form.controls.subcategoriaGeneral.setValue(""); this.subcategoriaQuery.set("");
       const center = this.centers()[0] || "";
       this.form.controls.centro.setValue(center); this.centerChanged(center);
     }
@@ -724,6 +729,34 @@ export class AsignacionesComponent implements OnInit {
     });
   }
 
+  onSubcategoriaChange(value: string): void {
+    this.subcategoriaQuery.set(value);
+  }
+
+  canAddSubcategoria(): boolean {
+    const value = this.subcategoriaQuery().trim();
+    return value.length > 0 && !this.subcategorias().some(item => this.sameSubcategoria(item.descripcion, value));
+  }
+
+  addSubcategoria(): void {
+    const descripcion = this.subcategoriaQuery().trim();
+    if (!descripcion || !this.canAddSubcategoria()) return;
+    this.subcategoriaSaving.set(true);
+    this.error.set(null);
+    this.api.createSubcategoriaAsignacion({ descripcion }).pipe(finalize(() => this.subcategoriaSaving.set(false))).subscribe({
+      next: created => {
+        this.subcategorias.update(items => [...items, created].sort((a, b) => a.descripcion.localeCompare(b.descripcion, "es", { sensitivity: "base" })));
+        this.form.controls.subcategoriaGeneral.setValue(created.descripcion);
+        this.subcategoriaQuery.set(created.descripcion);
+        this.success.set(`La ubicación o subcategoría "${created.descripcion}" se ha añadido a Datos maestros.`);
+      },
+      error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+    });
+  }
+
+  private sameSubcategoria(left: string, right: string): boolean {
+    return left.trim().toLocaleLowerCase("es") === right.trim().toLocaleLowerCase("es");
+  }
   save(): void {
     const value = this.form.getRawValue(); const errors: Record<string, string> = {};
     if (value.ambito === "AULA" && !value.examenAulaId) errors["examenAulaId"] = "Selecciona un aula.";
@@ -731,13 +764,14 @@ export class AsignacionesComponent implements OnInit {
     if (!value.perfilId) errors["perfilId"] = "Selecciona un perfil.";
     const profile = this.perfiles().find(item => item.id === value.perfilId);
     if (value.ambito === "GENERAL" && this.isResponsableAula(profile?.codigo)) errors["ambito"] = "El perfil responsable de aula requiere un aula concreta.";
+    if (value.ambito === "GENERAL" && value.subcategoriaGeneral.trim() && !this.subcategorias().some(item => this.sameSubcategoria(item.descripcion, value.subcategoriaGeneral))) errors["subcategoriaGeneral"] = "Selecciona una ubicación existente o añádela al catálogo.";
     if (value.horasRealizadas !== null && value.horasRealizadas < 0) errors["horasRealizadas"] = "Las horas no pueden ser negativas.";
     this.fieldErrors.set(errors); if (Object.keys(errors).length) return;
     const current = this.editing(); const examId = this.selectedExamenId(); if (!examId) return;
     this.saving.set(true); this.error.set(null);
     const request = current
-      ? this.api.updateAsignacion(current.id, { ambitoGeneral: value.ambito === "GENERAL", examenAulaId: value.ambito === "AULA" ? value.examenAulaId : null, perfilId: value.perfilId, subcategoriaGeneral: value.ambito === "GENERAL" ? value.subcategoriaGeneral : "", estadoConfirmacion: value.estadoConfirmacion, horasRealizadas: value.horasRealizadas })
-      : this.api.createAsignacion(examId, { ambitoGeneral: value.ambito === "GENERAL", examenAulaId: value.ambito === "AULA" ? value.examenAulaId : null, colaboradorId: value.colaboradorId, perfilId: value.perfilId, subcategoriaGeneral: value.ambito === "GENERAL" ? value.subcategoriaGeneral : null, estadoConfirmacion: value.estadoConfirmacion, horasRealizadas: value.horasRealizadas });
+      ? this.api.updateAsignacion(current.id, { ambitoGeneral: value.ambito === "GENERAL", examenAulaId: value.ambito === "AULA" ? value.examenAulaId : null, perfilId: value.perfilId, subcategoriaGeneral: value.ambito === "GENERAL" ? value.subcategoriaGeneral.trim() : "", estadoConfirmacion: value.estadoConfirmacion, horasRealizadas: value.horasRealizadas })
+      : this.api.createAsignacion(examId, { ambitoGeneral: value.ambito === "GENERAL", examenAulaId: value.ambito === "AULA" ? value.examenAulaId : null, colaboradorId: value.colaboradorId, perfilId: value.perfilId, subcategoriaGeneral: value.ambito === "GENERAL" ? value.subcategoriaGeneral.trim() || null : null, estadoConfirmacion: value.estadoConfirmacion, horasRealizadas: value.horasRealizadas });
     request.pipe(finalize(() => this.saving.set(false))).subscribe({
       next: () => { this.success.set(current ? "La asignación se ha actualizado." : "La persona se ha asignado correctamente."); this.closeForm(); this.loadAssignments(); },
       error: (error: unknown) => this.error.set(apiErrorMessage(error)),

@@ -30,6 +30,8 @@ import {
   TipoAccesoCreateUpdate,
   TipoVinculacion,
   TipoVinculacionCreateUpdate,
+  SubcategoriaAsignacion,
+  SubcategoriaAsignacionCreateUpdate,
   Colaborador,
   ColaboradorCreate,
   ColaboradorPatch,
@@ -377,6 +379,21 @@ export class SicolApiClient {
     return this.http.put<TipoVinculacion>(`${this.adminUrl}/tipos-vinculacion/${id}`, payload);
   }
 
+  listSubcategoriasAsignacion(): Observable<SubcategoriaAsignacion[]> {
+    return this.http.get<SubcategoriaAsignacion[]>(`${this.adminUrl}/subcategorias-asignacion`);
+  }
+
+  createSubcategoriaAsignacion(payload: SubcategoriaAsignacionCreateUpdate): Observable<SubcategoriaAsignacion> {
+    return this.http.post<SubcategoriaAsignacion>(`${this.adminUrl}/subcategorias-asignacion`, payload);
+  }
+
+  updateSubcategoriaAsignacion(id: number, payload: SubcategoriaAsignacionCreateUpdate): Observable<SubcategoriaAsignacion> {
+    return this.http.put<SubcategoriaAsignacion>(`${this.adminUrl}/subcategorias-asignacion/${id}`, payload);
+  }
+
+  deleteSubcategoriaAsignacion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/subcategorias-asignacion/${id}`);
+  }
   deleteTipoVinculacion(id: number): Observable<void> {
     return this.http.delete<void>(`${this.adminUrl}/tipos-vinculacion/${id}`);
   }

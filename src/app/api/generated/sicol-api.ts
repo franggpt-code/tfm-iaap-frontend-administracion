@@ -455,6 +455,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/subcategorias-asignacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar ubicaciones y subcategorías generales */
+        get: operations["listSubcategoriasAsignacion"];
+        put?: never;
+        /** Crear ubicación o subcategoría general */
+        post: operations["createSubcategoriaAsignacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/subcategorias-asignacion/{idSubcategoriaAsignacion}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Actualizar ubicación o subcategoría general */
+        put: operations["updateSubcategoriaAsignacion"];
+        post?: never;
+        /** Eliminar ubicación o subcategoría general */
+        delete: operations["deleteSubcategoriaAsignacion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/cuerpos": {
         parameters: {
             query?: never;
@@ -1923,6 +1959,21 @@ export interface components {
             /** @example Funcionario */
             descripcion: string;
         };
+        /** @description Ubicación o subcategoría regulada para asignaciones de ámbito general. */
+        SubcategoriaAsignacion: {
+            /**
+             * Format: int64
+             * @example 1
+             */
+            idSubcategoriaAsignacion: number;
+            /** @example Coordinación general */
+            descripcion: string;
+        };
+        /** @description Datos de alta o actualización de una ubicación o subcategoría general. */
+        SubcategoriaAsignacionCreateUpdate: {
+            /** @example Coordinación general */
+            descripcion: string;
+        };
         /** @description Cuerpo asociado al proceso selectivo. */
         Cuerpo: {
             /**
@@ -2428,6 +2479,8 @@ export interface components {
             cargoCertifica: string;
             nombreVistoBueno: string;
             cargoVistoBueno: string;
+            nombreDirectorIaap: string;
+            cargoDirectorIaap: string;
         };
         ConfiguracionInformesUpdate: {
             organismo: string;
@@ -2438,6 +2491,8 @@ export interface components {
             cargoCertifica: string;
             nombreVistoBueno: string;
             cargoVistoBueno: string;
+            nombreDirectorIaap: string;
+            cargoDirectorIaap: string;
         };
         /** @description Resultado agregado de una carga desde plantilla ODS/XLSX. */
         ImportacionDatosBaseResultado: {
@@ -2801,6 +2856,8 @@ export interface components {
         idTipoAcceso: number;
         /** @description Identificador del tipo de vinculación. */
         idTipoVinculacion: number;
+        /** @description Identificador de la ubicación o subcategoría general. */
+        idSubcategoriaAsignacion: number;
         /** @description Identificador del cuerpo. */
         idCuerpo: number;
         /** @description Identificador único del examen. */
@@ -3810,6 +3867,108 @@ export interface operations {
             };
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listSubcategoriasAsignacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Catálogo de ubicaciones y subcategorías generales */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubcategoriaAsignacion"][];
+                };
+            };
+            500: components["responses"]["InternalError"];
+        };
+    };
+    createSubcategoriaAsignacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubcategoriaAsignacionCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Ubicación o subcategoría creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubcategoriaAsignacion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateSubcategoriaAsignacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la ubicación o subcategoría general. */
+                idSubcategoriaAsignacion: components["parameters"]["idSubcategoriaAsignacion"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubcategoriaAsignacionCreateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Ubicación o subcategoría actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubcategoriaAsignacion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    deleteSubcategoriaAsignacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identificador de la ubicación o subcategoría general. */
+                idSubcategoriaAsignacion: components["parameters"]["idSubcategoriaAsignacion"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ubicación o subcategoría eliminada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
             500: components["responses"]["InternalError"];
         };
     };
