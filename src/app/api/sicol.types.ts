@@ -70,10 +70,20 @@ export type CuadroMandoEjercicio = components["schemas"]["CuadroMandoEjercicio"]
 export type ConfiguracionEnvios = components["schemas"]["ConfiguracionEnvios"];
 export type ConfiguracionEnviosUpdate = components["schemas"]["ConfiguracionEnviosUpdate"];
 export type AdjuntoComunicacion = components["schemas"]["AdjuntoComunicacion"];
+export type AdjuntoComunicacionMetadataUpdate = components["schemas"]["AdjuntoComunicacionMetadataUpdate"];
+export type DestinatarioEnvioComunicacion = components["schemas"]["DestinatarioEnvioComunicacion"];
 export type EjercicioEnvio = components["schemas"]["EjercicioEnvio"];
 export type EnvioComunicacionCreate = components["schemas"]["EnvioComunicacionCreate"];
 export type EnvioComunicacionResultado = components["schemas"]["EnvioComunicacionResultado"];
 export type EnvioComunicacionHistorial = components["schemas"]["EnvioComunicacionHistorial"];
+export type ConsultaAsistenciaPublica = components["schemas"]["ConsultaAsistenciaPublica"];
+export type RespuestaAsistenciaPublica = components["schemas"]["RespuestaAsistenciaPublica"];
+export type ResultadoRespuestaAsistenciaPublica = components["schemas"]["ResultadoRespuestaAsistenciaPublica"];
+export type ConfiguracionSmtp = components["schemas"]["ConfiguracionSmtp"];
+export type ConfiguracionSmtpUpdate = components["schemas"]["ConfiguracionSmtpUpdate"];
+export type PruebaConexionSmtpRequest = components["schemas"]["PruebaConexionSmtpRequest"];
+export type PruebaConexionSmtpResultado = components["schemas"]["PruebaConexionSmtpResultado"];
+
 
 export interface ImportacionArchivos {
   procesoSelectivoId: string;

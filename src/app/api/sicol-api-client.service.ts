@@ -62,10 +62,19 @@ import {
   ConfiguracionEnvios,
   ConfiguracionEnviosUpdate,
   AdjuntoComunicacion,
+  AdjuntoComunicacionMetadataUpdate,
+  DestinatarioEnvioComunicacion,
   EjercicioEnvio,
   EnvioComunicacionCreate,
   EnvioComunicacionResultado,
   EnvioComunicacionHistorial,
+  ConsultaAsistenciaPublica,
+  RespuestaAsistenciaPublica,
+  ResultadoRespuestaAsistenciaPublica,
+  ConfiguracionSmtp,
+  ConfiguracionSmtpUpdate,
+  PruebaConexionSmtpRequest,
+  PruebaConexionSmtpResultado,
 } from "./sicol.types";
 
 @Injectable({ providedIn: "root" })
@@ -73,6 +82,7 @@ export class SicolApiClient {
   private readonly http = inject(HttpClient);
   private readonly adminUrl = `${environment.apiBaseUrl}/admin`;
   private readonly portalUrl = `${environment.apiBaseUrl}/portal`;
+  private readonly publicUrl = `${environment.apiBaseUrl}/public`;
 
   listUsuarios(): Observable<UsuarioAdmin[]> {
     return this.http.get<UsuarioAdmin[]>(`${this.adminUrl}/usuarios`);
@@ -220,6 +230,18 @@ export class SicolApiClient {
     return this.http.put<ConfiguracionInformes>(`${this.adminUrl}/configuracion-informes`, payload);
   }
 
+  getConfiguracionSmtp(): Observable<ConfiguracionSmtp> {
+    return this.http.get<ConfiguracionSmtp>(`${this.adminUrl}/configuracion-smtp`);
+  }
+
+  updateConfiguracionSmtp(payload: ConfiguracionSmtpUpdate): Observable<ConfiguracionSmtp> {
+    return this.http.put<ConfiguracionSmtp>(`${this.adminUrl}/configuracion-smtp`, payload);
+  }
+
+  probarConexionSmtp(payload: PruebaConexionSmtpRequest): Observable<PruebaConexionSmtpResultado> {
+    return this.http.post<PruebaConexionSmtpResultado>(`${this.adminUrl}/configuracion-smtp/test`, payload);
+  }
+
   listEjerciciosParaEnvios(): Observable<EjercicioEnvio[]> {
     return this.http.get<EjercicioEnvio[]>(`${this.adminUrl}/envios/comunicaciones/ejercicios`);
   }
@@ -236,10 +258,26 @@ export class SicolApiClient {
     return this.http.get<AdjuntoComunicacion[]>(`${this.adminUrl}/envios/comunicaciones/adjuntos`);
   }
 
-  createAdjuntoComunicacion(fichero: File): Observable<AdjuntoComunicacion> {
+  createAdjuntoComunicacion(fichero: File, titulo?: string, descripcion?: string): Observable<AdjuntoComunicacion> {
     const body = new FormData();
     body.append("fichero", fichero, fichero.name);
+    if (titulo && titulo.trim()) {
+      body.append("titulo", titulo.trim());
+    }
+    if (descripcion && descripcion.trim()) {
+      body.append("descripcion", descripcion.trim());
+    }
     return this.http.post<AdjuntoComunicacion>(`${this.adminUrl}/envios/comunicaciones/adjuntos`, body);
+  }
+
+  updateAdjuntoMetadata(id: string, payload: AdjuntoComunicacionMetadataUpdate): Observable<AdjuntoComunicacion> {
+    return this.http.put<AdjuntoComunicacion>(`${this.adminUrl}/envios/comunicaciones/adjuntos/${id}`, payload);
+  }
+
+  replaceAdjuntoFile(id: string, fichero: File): Observable<AdjuntoComunicacion> {
+    const body = new FormData();
+    body.append("fichero", fichero, fichero.name);
+    return this.http.put<AdjuntoComunicacion>(`${this.adminUrl}/envios/comunicaciones/adjuntos/${id}/fichero`, body);
   }
 
   deleteAdjuntoComunicacion(id: string): Observable<void> {
@@ -254,8 +292,22 @@ export class SicolApiClient {
     return this.http.get<EnvioComunicacionHistorial[]>(`${this.adminUrl}/envios/comunicaciones/historial`);
   }
 
+  listDestinatariosEnvio(envioId: string): Observable<DestinatarioEnvioComunicacion[]> {
+    return this.http.get<DestinatarioEnvioComunicacion[]>(`${this.adminUrl}/envios/comunicaciones/${envioId}/destinatarios`);
+  }
+
   crearEnvioComunicacion(payload: EnvioComunicacionCreate): Observable<EnvioComunicacionResultado> {
     return this.http.post<EnvioComunicacionResultado>(`${this.adminUrl}/envios/comunicaciones`, payload);
+  }
+
+  consultarAsistenciaPublica(token: string): Observable<ConsultaAsistenciaPublica> {
+    return this.http.get<ConsultaAsistenciaPublica>(`${this.publicUrl}/asistencia/consulta`, {
+      params: { token },
+    });
+  }
+
+  responderAsistenciaPublica(payload: RespuestaAsistenciaPublica): Observable<ResultadoRespuestaAsistenciaPublica> {
+    return this.http.post<ResultadoRespuestaAsistenciaPublica>(`${this.publicUrl}/asistencia/responder`, payload);
   }
 
   deleteAsignacion(id: string): Observable<void> {

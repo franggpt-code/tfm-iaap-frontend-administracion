@@ -1,7 +1,7 @@
 import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterLink } from "@angular/router";
-import { finalize, forkJoin, Observable } from "rxjs";
+import { finalize, Observable } from "rxjs";
 import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import {
@@ -18,10 +18,14 @@ import {
   PerfilColaboracion,
   PerfilColaboracionCreateUpdate,
   ConfiguracionInformesUpdate,
+  ConfiguracionSmtp,
+  ConfiguracionSmtpUpdate,
+  PruebaConexionSmtpRequest,
+  PruebaConexionSmtpResultado,
 } from "../../../api/sicol.types";
 
 type CatalogKey = "oep" | "acceso" | "vinculacion" | "cuerpos" | "perfiles" | "subcategorias";
-type SectionKey = CatalogKey | "informes";
+type SectionKey = CatalogKey | "informes" | "smtp";
 type MasterItem = Oep | TipoAcceso | TipoVinculacion | Cuerpo | PerfilColaboracion | SubcategoriaAsignacion;
 export type MasterSortColumn = "col1" | "col2" | "col3";
 export type SortDirection = "asc" | "desc";
@@ -56,7 +60,7 @@ export class DatosMaestrosComponent implements OnInit {
   readonly catalogKeys: CatalogKey[] = ["oep", "acceso", "vinculacion", "cuerpos", "perfiles", "subcategorias"];
   readonly catalogs = CATALOGS;
   readonly activeCatalog = signal<CatalogKey>("cuerpos");
-  readonly activeSection = signal<SectionKey>("cuerpos");
+  readonly activeSection = signal<SectionKey | null>(null);
   readonly oep = signal<Oep[]>([]);
   readonly tiposAcceso = signal<TipoAcceso[]>([]);
   readonly tiposVinculacion = signal<TipoVinculacion[]>([]);
@@ -64,10 +68,18 @@ export class DatosMaestrosComponent implements OnInit {
   readonly perfiles = signal<PerfilColaboracion[]>([]);
   readonly subcategorias = signal<SubcategoriaAsignacion[]>([]);
   readonly search = signal("");
-  readonly loading = signal(true);
+  readonly loading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly reportConfigSaving = signal(false);
+  readonly smtpConfigSaving = signal(false);
+  readonly testingSmtp = signal(false);
+  readonly testSmtpResult = signal<PruebaConexionSmtpResultado | null>(null);
+  readonly passwordConfigurada = signal(false);
+  readonly showPasswordField = signal(false);
+  readonly smtpParamsExpanded = signal(false);
+  readonly testRecipient = signal("");
+  readonly copiedEmailNotice = signal(false);
   readonly formOpen = signal(false);
   readonly drawerExpanded = signal(false);
   readonly editingId = signal<number | string | null>(null);
@@ -75,7 +87,11 @@ export class DatosMaestrosComponent implements OnInit {
   readonly success = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string>>({});
   readonly reportConfigErrors = signal<Record<string, string>>({});
+  readonly smtpConfigErrors = signal<Record<string, string>>({});
   readonly deleteTarget = signal<DeleteTarget | null>(null);
+
+  private readonly loadedSections = new Set<SectionKey>();
+  private readonly loadingSections = new Set<SectionKey>();
 
   /* Ordenación y paginación */
   readonly sortBy = signal<MasterSortColumn>("col1");
@@ -103,6 +119,19 @@ export class DatosMaestrosComponent implements OnInit {
     cargoVistoBueno: [""],
     nombreDirectorIaap: [""],
     cargoDirectorIaap: [""],
+  });
+
+  readonly smtpConfigForm = this.fb.nonNullable.group({
+    servidorSmtp: [""],
+    puertoSmtp: [587],
+    usarTls: [true],
+    usuarioSmtp: [""],
+    passwordSmtp: [""],
+    remitenteNombre: [""],
+    remitenteEmail: [""],
+    modoPrueba: [true],
+    emailPrueba: [""],
+    activo: [false],
   });
 
   readonly config = computed(() => CATALOGS[this.activeCatalog()]);
@@ -177,7 +206,14 @@ export class DatosMaestrosComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadCatalogs();
+    const section = this.requestedSection();
+    if (section) {
+      this.selectSection(section);
+      window.setTimeout(() => {
+        const targetId = section === "informes" ? "configuracion-informes" : section === "smtp" ? "configuracion-smtp" : null;
+        if (targetId) document.getElementById(targetId)?.scrollIntoView({ block: "start" });
+      }, 350);
+    }
   }
 
   selectCatalog(catalog: CatalogKey): void {
@@ -192,12 +228,14 @@ export class DatosMaestrosComponent implements OnInit {
 
   selectSection(section: SectionKey): void {
     this.activeSection.set(section);
-    if (section !== "informes") {
+    if (section !== "informes" && section !== "smtp") {
       this.selectCatalog(section);
     } else {
       this.cancelForm();
       this.clearMessages();
+      this.testSmtpResult.set(null);
     }
+    this.loadSection(section);
   }
 
   startCreate(): void {
@@ -356,6 +394,125 @@ export class DatosMaestrosComponent implements OnInit {
     });
   }
 
+  saveSmtpConfiguration(): void {
+    const values = this.smtpConfigForm.getRawValue();
+    const errors: Record<string, string> = {};
+    if (!values.servidorSmtp.trim()) errors["servidorSmtp"] = "El servidor SMTP es obligatorio.";
+    if (!values.puertoSmtp || values.puertoSmtp < 1 || values.puertoSmtp > 65535) errors["puertoSmtp"] = "Introduce un puerto válido (1-65535).";
+    if (!values.remitenteNombre.trim()) errors["remitenteNombre"] = "El nombre del remitente es obligatorio.";
+    if (!values.remitenteEmail.trim()) errors["remitenteEmail"] = "El correo del remitente es obligatorio.";
+    if (values.modoPrueba && !values.emailPrueba.trim()) errors["emailPrueba"] = "Debes indicar un correo de prueba si el modo prueba está activo.";
+
+    this.smtpConfigErrors.set(errors);
+    if (Object.keys(errors).length) {
+      if (errors["servidorSmtp"] || errors["puertoSmtp"] || errors["remitenteNombre"] || errors["remitenteEmail"]) {
+        this.smtpParamsExpanded.set(true);
+      }
+      return;
+    }
+
+    const payload: ConfiguracionSmtpUpdate = {
+      servidorSmtp: values.servidorSmtp.trim(),
+      puertoSmtp: values.puertoSmtp,
+      usarTls: values.usarTls,
+      usuarioSmtp: values.usuarioSmtp.trim() || undefined,
+      passwordSmtp: values.passwordSmtp ? values.passwordSmtp : undefined,
+      remitenteNombre: values.remitenteNombre.trim(),
+      remitenteEmail: values.remitenteEmail.trim(),
+      modoPrueba: values.modoPrueba,
+      emailPrueba: values.emailPrueba.trim() || undefined,
+      activo: values.activo,
+    };
+
+    this.smtpConfigSaving.set(true);
+    this.clearMessages();
+    this.api.updateConfiguracionSmtp(payload)
+      .pipe(finalize(() => this.smtpConfigSaving.set(false)))
+      .subscribe({
+        next: (saved) => {
+          this.success.set("Configuración del servidor de correo (SMTP) guardada correctamente.");
+          this.passwordConfigurada.set(saved.passwordConfigurada);
+          this.smtpConfigForm.patchValue({ passwordSmtp: "" });
+          this.showPasswordField.set(false);
+          this.smtpConfigErrors.set({});
+        },
+        error: (err) => this.error.set(apiErrorMessage(err)),
+      });
+  }
+
+  probarConexionSmtp(): void {
+    const values = this.smtpConfigForm.getRawValue();
+    const recipient = this.testRecipient().trim() || values.emailPrueba.trim() || values.usuarioSmtp.trim() || values.remitenteEmail.trim();
+    if (!recipient) {
+      this.error.set("Debes indicar una dirección de correo para recibir el mensaje de prueba.");
+      return;
+    }
+
+    const payload: PruebaConexionSmtpRequest = {
+      servidorSmtp: values.servidorSmtp.trim(),
+      puertoSmtp: values.puertoSmtp,
+      usarTls: values.usarTls,
+      usuarioSmtp: values.usuarioSmtp.trim() || undefined,
+      passwordSmtp: values.passwordSmtp ? values.passwordSmtp : undefined,
+      remitenteNombre: values.remitenteNombre.trim(),
+      remitenteEmail: values.remitenteEmail.trim(),
+      destinatarioPrueba: recipient,
+    };
+
+    this.testingSmtp.set(true);
+    this.testSmtpResult.set(null);
+    this.clearMessages();
+
+    this.api.probarConexionSmtp(payload)
+      .pipe(finalize(() => this.testingSmtp.set(false)))
+      .subscribe({
+        next: (result) => {
+          this.testSmtpResult.set(result);
+          if (result.exitoso) {
+            this.success.set(result.mensaje);
+          } else {
+            this.error.set(result.mensaje);
+          }
+        },
+        error: (err) => {
+          this.error.set(apiErrorMessage(err));
+          this.testSmtpResult.set({
+            exitoso: false,
+            mensaje: apiErrorMessage(err),
+            fechaHora: new Date().toISOString(),
+          });
+        },
+      });
+  }
+
+  toggleShowPassword(): void {
+    this.showPasswordField.update((v) => !v);
+  }
+
+  toggleSmtpParams(): void {
+    this.smtpParamsExpanded.update((v) => !v);
+  }
+
+  updateTestRecipient(value: string): void {
+    this.testRecipient.set(value);
+  }
+
+  copiarEmailPruebaDestinatario(): void {
+    const email = this.smtpConfigForm.controls.emailPrueba.value?.trim() || "";
+    if (email) {
+      this.testRecipient.set(email);
+      this.copiedEmailNotice.set(true);
+      setTimeout(() => this.copiedEmailNotice.set(false), 2500);
+
+      // Desplazar la vista suavemente hasta el campo de prueba y enfocarlo
+      const inputEl = document.getElementById("smtp-test-destinatario") as HTMLInputElement | null;
+      if (inputEl) {
+        inputEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        inputEl.focus();
+      }
+    }
+  }
+
   itemCode(item: MasterItem): string {
     if ("idSubcategoriaAsignacion" in item) return String(item.idSubcategoriaAsignacion);
     return "codigo" in item ? item.codigo : String((item as Oep).anio);
@@ -372,34 +529,86 @@ export class DatosMaestrosComponent implements OnInit {
     return "Catálogo activo";
   }
 
-  private loadCatalogs(): void {
-    this.loading.set(true);
-    forkJoin({
-      oep: this.api.listOep(),
-      acceso: this.api.listTiposAcceso(),
-      vinculacion: this.api.listTiposVinculacion(),
-      cuerpos: this.api.listCuerpos(),
-      perfiles: this.api.listPerfilesColaboracion(),
-      subcategorias: this.api.listSubcategoriasAsignacion(),
-      reportConfiguration: this.api.getConfiguracionInformes(),
-    }).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (result) => {
-        this.oep.set(result.oep);
-        this.tiposAcceso.set(result.acceso);
-        this.tiposVinculacion.set(result.vinculacion);
-        this.cuerpos.set(result.cuerpos);
-        this.perfiles.set(result.perfiles);
-        this.subcategorias.set(result.subcategorias);
-        this.reportConfigForm.setValue(result.reportConfiguration);
-        if (this.route.snapshot.fragment === "configuracion-informes") {
-          this.activeSection.set("informes");
-          window.setTimeout(() => document.getElementById("configuracion-informes")?.scrollIntoView({ block: "start" }), 350);
-        }
+  private loadSection(section: SectionKey): void {
+    if (this.loadedSections.has(section) || this.loadingSections.has(section)) {
+      this.syncLoadingState();
+      return;
+    }
+
+    switch (section) {
+      case "oep":
+        this.loadSectionData(section, this.api.listOep(), value => this.oep.set(value));
+        break;
+      case "acceso":
+        this.loadSectionData(section, this.api.listTiposAcceso(), value => this.tiposAcceso.set(value));
+        break;
+      case "vinculacion":
+        this.loadSectionData(section, this.api.listTiposVinculacion(), value => this.tiposVinculacion.set(value));
+        break;
+      case "cuerpos":
+        this.loadSectionData(section, this.api.listCuerpos(), value => this.cuerpos.set(value));
+        break;
+      case "perfiles":
+        this.loadSectionData(section, this.api.listPerfilesColaboracion(), value => this.perfiles.set(value));
+        break;
+      case "subcategorias":
+        this.loadSectionData(section, this.api.listSubcategoriasAsignacion(), value => this.subcategorias.set(value));
+        break;
+      case "informes":
+        this.loadSectionData(section, this.api.getConfiguracionInformes(), value => this.reportConfigForm.setValue(value));
+        break;
+      case "smtp":
+        this.loadSectionData(section, this.api.getConfiguracionSmtp(), value => this.applySmtpConfiguration(value));
+        break;
+    }
+  }
+
+  private loadSectionData<T>(section: SectionKey, request: Observable<T>, applyValue: (value: T) => void): void {
+    this.loadingSections.add(section);
+    this.syncLoadingState();
+    request.pipe(finalize(() => {
+      this.loadingSections.delete(section);
+      this.syncLoadingState();
+    })).subscribe({
+      next: value => {
+        applyValue(value);
+        this.loadedSections.add(section);
       },
-      error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      error: (error: unknown) => {
+        if (this.activeSection() === section) this.error.set(apiErrorMessage(error));
+      },
     });
   }
 
+  private applySmtpConfiguration(configuration: ConfiguracionSmtp): void {
+    this.smtpConfigForm.patchValue({
+      servidorSmtp: configuration.servidorSmtp,
+      puertoSmtp: configuration.puertoSmtp,
+      usarTls: configuration.usarTls,
+      usuarioSmtp: configuration.usuarioSmtp ?? "",
+      passwordSmtp: "",
+      remitenteNombre: configuration.remitenteNombre,
+      remitenteEmail: configuration.remitenteEmail,
+      modoPrueba: configuration.modoPrueba,
+      emailPrueba: configuration.emailPrueba ?? "",
+      activo: configuration.activo,
+    });
+    this.passwordConfigurada.set(configuration.passwordConfigurada);
+    this.testRecipient.set(configuration.emailPrueba || configuration.usuarioSmtp || configuration.remitenteEmail || "");
+  }
+
+  private syncLoadingState(): void {
+    const section = this.activeSection();
+    this.loading.set(section !== null && this.loadingSections.has(section));
+  }
+
+  private requestedSection(): SectionKey | null {
+    const section = this.route.snapshot.queryParamMap.get("seccion");
+    if (section && ([...this.catalogKeys, "informes", "smtp"] as string[]).includes(section)) return section as SectionKey;
+    if (this.route.snapshot.fragment === "configuracion-informes") return "informes";
+    if (this.route.snapshot.fragment === "configuracion-smtp") return "smtp";
+    return null;
+  }
   private validateForm(): Record<string, string> {
     const values = this.form.getRawValue();
     const errors: Record<string, string> = {};

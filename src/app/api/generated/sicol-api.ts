@@ -949,8 +949,44 @@ export interface paths {
         };
         /** Consultar los parámetros maestros de informes */
         get: operations["getConfiguracionInformes"];
-        put?: never;
+        /** Actualizar los parámetros maestros de informes */
+        put: operations["updateConfiguracionInformes"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/configuracion-smtp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar los parámetros de configuración del servidor SMTP */
+        get: operations["getConfiguracionSmtp"];
+        /** Actualizar los parámetros de configuración del servidor SMTP */
+        put: operations["updateConfiguracionSmtp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/configuracion-smtp/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Probar conexión con el servidor SMTP y enviar un correo de prueba */
+        post: operations["probarConexionSmtp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1002,7 +1038,7 @@ export interface paths {
         /** Listar adjuntos comunes disponibles */
         get: operations["listAdjuntosComunicaciones"];
         put?: never;
-        /** Cargar un adjunto común */
+        /** Cargar un adjunto común o documento al repositorio */
         post: operations["createAdjuntoComunicacion"];
         delete?: never;
         options?: never;
@@ -1021,10 +1057,30 @@ export interface paths {
         };
         /** Descargar un adjunto común */
         get: operations["downloadAdjuntoComunicacion"];
-        put?: never;
+        /** Actualizar título y metadatos de un adjunto o documento */
+        put: operations["updateAdjuntoComunicacionMetadata"];
         post?: never;
         /** Eliminar un adjunto común */
         delete: operations["deleteAdjuntoComunicacion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones/adjuntos/{adjuntoId}/fichero": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjuntoId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Reemplazar el archivo físico de un documento del repositorio */
+        put: operations["replaceAdjuntoComunicacionFichero"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1047,6 +1103,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/envios/comunicaciones/{envioId}/destinatarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                envioId: string;
+            };
+            cookie?: never;
+        };
+        /** Consultar los destinatarios detallados de un lote de comunicación preparado */
+        get: operations["listDestinatariosEnvioComunicacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/envios/comunicaciones": {
         parameters: {
             query?: never;
@@ -1055,13 +1130,46 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Actualizar los parámetros maestros de informes */
-        put: operations["updateConfiguracionInformes"];
+        put?: never;
         /**
          * Preparar y registrar una comunicación personalizada por asignación
          * @description Crea la traza inmutable del lote y deja cada destinatario en el buzón de salida para su entrega por el canal corporativo configurado.
          */
         post: operations["crearEnvioComunicacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/asistencia/consulta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consulta pública de llamamiento y estado de asistencia por token */
+        get: operations["consultarAsistenciaPublica"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/asistencia/responder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar confirmación o rechazo de asistencia por token */
+        post: operations["responderAsistenciaPublica"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1630,7 +1738,7 @@ export interface components {
             nombreCompleto: string;
             /**
              * Format: email
-             * @example gestor.iaap@juntadeandalucia.es
+             * @example gestor.iaap@example.invalid
              */
             email: string;
             /** @example true */
@@ -1686,7 +1794,7 @@ export interface components {
             iban?: string;
             /**
              * Format: email
-             * @example ana.perez@juntadeandalucia.es
+             * @example ana.perez@example.invalid
              */
             correoCorporativo: string;
             /** @example 600123123 */
@@ -1733,7 +1841,7 @@ export interface components {
             iban: string;
             /**
              * Format: email
-             * @example ana.perez@juntadeandalucia.es
+             * @example ana.perez@example.invalid
              */
             correoCorporativo: string;
             /** @example 600123123 */
@@ -1771,7 +1879,7 @@ export interface components {
             telefono?: string;
             /**
              * Format: email
-             * @example ana.perez@juntadeandalucia.es
+             * @example ana.perez@example.invalid
              */
             correoCorporativo?: string;
             /** @example Cambio de cuenta bancaria comunicado por el colaborador. */
@@ -2428,6 +2536,8 @@ export interface components {
              */
             subcategoriaGeneral?: string | null;
             estadoConfirmacion: components["schemas"]["EstadoConfirmacionAsignacion"];
+            /** @example Motivo sobrevenido de fuerza mayor */
+            motivoRechazo?: string | null;
             /**
              * Format: double
              * @example 5.5
@@ -2604,6 +2714,56 @@ export interface components {
             nombreDirectorIaap: string;
             cargoDirectorIaap: string;
         };
+        ConfiguracionSmtp: {
+            servidorSmtp: string;
+            /** Format: int32 */
+            puertoSmtp: number;
+            usarTls: boolean;
+            usuarioSmtp?: string | null;
+            /** @description Indica si hay una contraseña guardada en el sistema (no se devuelve el valor en claro). */
+            passwordConfigurada: boolean;
+            remitenteNombre: string;
+            remitenteEmail: string;
+            /** @description Si está activo, los envíos se redirigen al email de prueba en lugar de a los destinatarios reales. */
+            modoPrueba: boolean;
+            emailPrueba?: string | null;
+            /** @description Si está activo, el sistema realiza los envíos reales a través del servidor SMTP. */
+            activo: boolean;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        ConfiguracionSmtpUpdate: {
+            servidorSmtp: string;
+            /** Format: int32 */
+            puertoSmtp: number;
+            usarTls: boolean;
+            usuarioSmtp?: string | null;
+            /** @description Si se envía null o vacío, se mantiene la contraseña existente sin modificar. */
+            passwordSmtp?: string | null;
+            remitenteNombre: string;
+            remitenteEmail: string;
+            modoPrueba: boolean;
+            emailPrueba?: string | null;
+            activo: boolean;
+        };
+        PruebaConexionSmtpRequest: {
+            servidorSmtp: string;
+            /** Format: int32 */
+            puertoSmtp: number;
+            usarTls: boolean;
+            usuarioSmtp?: string | null;
+            /** @description Contraseña a probar. Si está vacía, se utilizará la guardada en la base de datos. */
+            passwordSmtp?: string | null;
+            remitenteNombre: string;
+            remitenteEmail: string;
+            destinatarioPrueba: string;
+        };
+        PruebaConexionSmtpResultado: {
+            exitoso: boolean;
+            mensaje: string;
+            /** Format: date-time */
+            fechaHora: string;
+        };
         ConfiguracionEnvios: {
             /** @description Plantilla de asunto. Admite */
             asunto: string;
@@ -2617,12 +2777,20 @@ export interface components {
         AdjuntoComunicacion: {
             /** Format: uuid */
             id: string;
+            titulo: string;
             nombre: string;
+            descripcion?: string;
             tipoContenido: string;
             /** Format: int64 */
             tamanoBytes: number;
             /** Format: date-time */
             creadoAt: string;
+            /** Format: date-time */
+            modificadoAt?: string;
+        };
+        AdjuntoComunicacionMetadataUpdate: {
+            titulo: string;
+            descripcion?: string;
         };
         EjercicioEnvio: {
             /** Format: uuid */
@@ -2660,6 +2828,14 @@ export interface components {
             destinatarios: number;
             /** @example PENDIENTE_ENVIO */
             estado: string;
+            /** Format: int32 */
+            enviadosOk?: number;
+            /** Format: int32 */
+            enviadosError?: number;
+            smtpActivo?: boolean;
+            modoPrueba?: boolean;
+            emailPrueba?: string | null;
+            mensaje?: string;
         };
         EnvioComunicacionHistorial: {
             /** Format: uuid */
@@ -2671,6 +2847,9 @@ export interface components {
             /** Format: int32 */
             ejercicio: number;
             nombreEjercicio?: string;
+            asuntoPlantilla?: string;
+            cuerpoPlantilla?: string;
+            adjuntosNombres?: string;
             /** Format: date-time */
             creadoAt: string;
             creadoPor: string;
@@ -2678,6 +2857,56 @@ export interface components {
             destinatarios: number;
             /** @example PENDIENTE_ENVIO */
             estado: string;
+        };
+        DestinatarioEnvioComunicacion: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            envioId: string;
+            /** Format: uuid */
+            asignacionId: string;
+            nombreDestinatario: string;
+            correoDestinatario: string;
+            asunto: string;
+            cuerpo: string;
+            estado: string;
+            tokenRespuesta?: string | null;
+            motivoRechazo?: string | null;
+            /** Format: date-time */
+            respondidoAt?: string | null;
+        };
+        ConsultaAsistenciaPublica: {
+            token: string;
+            /** Format: uuid */
+            asignacionId: string;
+            nombreColaborador: string;
+            procesoNombre: string;
+            examenNombre: string;
+            numeroEjercicio?: number | null;
+            /** Format: date-time */
+            fechaHora?: string | null;
+            centroNombre?: string | null;
+            aulaNombre?: string | null;
+            perfilDenominacion?: string | null;
+            subcategoriaGeneral?: string | null;
+            /** @example PENDIENTE */
+            estadoActual: string;
+            motivoRechazo?: string | null;
+            /** Format: date-time */
+            respondidoAt?: string | null;
+        };
+        RespuestaAsistenciaPublica: {
+            token: string;
+            /** @enum {string} */
+            decision: "CONFIRMADA" | "RECHAZADA";
+            motivo?: string | null;
+        };
+        ResultadoRespuestaAsistenciaPublica: {
+            mensaje: string;
+            /** @example CONFIRMADA */
+            estado: string;
+            /** Format: date-time */
+            respondidoAt?: string | null;
         };
         /** @description Resultado agregado de una carga desde plantilla ODS/XLSX. */
         ImportacionDatosBaseResultado: {
@@ -3378,7 +3607,7 @@ export interface operations {
                  *       "sexo": "MUJER",
                  *       "iban": "ES6621000418401234567891",
                  *       "telefono": "600123123",
-                 *       "correoCorporativo": "ana.perez@juntadeandalucia.es",
+                 *       "correoCorporativo": "ana.perez@example.invalid",
                  *       "observaciones": "Disponible para tribunales en Sevilla capital.",
                  *       "perteneceCentroDirectivo": true,
                  *       "provincia": "Sevilla",
@@ -5195,6 +5424,105 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    updateConfiguracionInformes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfiguracionInformesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Configuración actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionInformes"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getConfiguracionSmtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configuración SMTP actual */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionSmtp"];
+                };
+            };
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateConfiguracionSmtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfiguracionSmtpUpdate"];
+            };
+        };
+        responses: {
+            /** @description Configuración SMTP actualizada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionSmtp"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    probarConexionSmtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PruebaConexionSmtpRequest"];
+            };
+        };
+        responses: {
+            /** @description Resultado de la prueba de conexión */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PruebaConexionSmtpResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     listEjerciciosParaEnvios: {
         parameters: {
             query?: never;
@@ -5294,6 +5622,8 @@ export interface operations {
                 "multipart/form-data": {
                     /** Format: binary */
                     fichero: string;
+                    titulo?: string;
+                    descripcion?: string;
                 };
             };
         };
@@ -5333,6 +5663,34 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    updateAdjuntoComunicacionMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjuntoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjuntoComunicacionMetadataUpdate"];
+            };
+        };
+        responses: {
+            /** @description Metadatos actualizados. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdjuntoComunicacion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     deleteAdjuntoComunicacion: {
         parameters: {
             query?: never;
@@ -5351,6 +5709,37 @@ export interface operations {
                 };
                 content?: never;
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    replaceAdjuntoComunicacionFichero: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjuntoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Archivo físico reemplazado correctamente. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdjuntoComunicacion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -5374,30 +5763,27 @@ export interface operations {
             };
         };
     };
-    updateConfiguracionInformes: {
+    listDestinatariosEnvioComunicacion: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                envioId: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfiguracionInformesUpdate"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Configuración actualizada */
+            /** @description Lista de destinatarios individuales del lote. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConfiguracionInformes"];
+                    "application/json": components["schemas"]["DestinatarioEnvioComunicacion"][];
                 };
             };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
+            404: components["responses"]["NotFound"];
         };
     };
     crearEnvioComunicacion: {
@@ -5424,6 +5810,58 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    consultarAsistenciaPublica: {
+        parameters: {
+            query: {
+                /** @description Token único de respuesta del destinatario */
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalle del llamamiento y estado actual */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsultaAsistenciaPublica"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    responderAsistenciaPublica: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RespuestaAsistenciaPublica"];
+            };
+        };
+        responses: {
+            /** @description Resultado de la respuesta */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultadoRespuestaAsistenciaPublica"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
         };
     };
     getExamenAulaById: {

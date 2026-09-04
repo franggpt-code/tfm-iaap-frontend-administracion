@@ -1,0 +1,265 @@
+<div class="confirmacion-container">
+  <!-- Cabecera Institucional -->
+  <header class="confirmacion-header">
+    <div class="header-inner">
+      <div class="branding">
+        <span class="junta-mark">
+          <img src="assets/junta-andalucia.ico" alt="Junta de Andalucía" class="jda-logo" />
+        </span>
+        <div class="branding-text">
+          <span class="institution-title">Junta de Andalucía</span>
+          <span class="sub-title">Instituto Andaluz de Administración Pública (IAAP)</span>
+        </div>
+      </div>
+      <div class="header-badge">
+        <span class="portal-tag">SICOL · Colaboraciones</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido Central -->
+  <main class="confirmacion-body">
+    <!-- Estado de Carga -->
+    @if (loading()) {
+      <div class="state-card loading-card">
+        <div class="spinner"></div>
+        <p>Cargando información de su llamamiento...</p>
+      </div>
+    }
+
+    <!-- Mensaje de Error -->
+    @if (!loading() && error()) {
+      <div class="state-card error-card">
+        <div class="status-icon icon-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h2>No ha sido posible acceder al llamamiento</h2>
+        <p class="error-detail">{{ error() }}</p>
+        <p class="help-text">Si cree que se trata de un error, contacte con el equipo de gestión de pruebas del IAAP.</p>
+      </div>
+    }
+
+    <!-- Estado Completado (Éxito de confirmación o renuncia) -->
+    @if (!loading() && resultado()) {
+      <div class="state-card success-card" [class.rejected]="resultado()?.estado === 'RECHAZADA'">
+        @if (resultado()?.estado === 'CONFIRMADA') {
+          <div class="status-icon icon-success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h2>¡Asistencia Confirmada!</h2>
+          <p class="result-message">{{ resultado()?.mensaje }}</p>
+          <div class="confirmation-notice">
+            <p><strong>Su respuesta ha quedado registrada en el sistema oficial SICOL.</strong></p>
+            <p>No es necesario que realice ninguna acción adicional ni inicie sesión en la plataforma. En fechas próximas a la prueba recibirá las instrucciones de acceso y material de colaboración.</p>
+          </div>
+        } @else {
+          <div class="status-icon icon-rejected">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+          </div>
+          <h2>Renuncia Registrada</h2>
+          <p class="result-message">{{ resultado()?.mensaje }}</p>
+          <div class="confirmation-notice notice-rejected">
+            <p>Hemos tomado nota de que no podrá asistir a este llamamiento para proceder a reasignar las funciones.</p>
+            <p>Agradecemos su prontitud al comunicarlo para facilitar la organización de las pruebas.</p>
+          </div>
+        }
+
+        <div class="completed-summary" *ngIf="data()">
+          <h3>Resumen de la convocatoria:</h3>
+          <ul>
+            <li><strong>Colaborador/a:</strong> {{ data()?.nombreColaborador }}</li>
+            <li><strong>Proceso:</strong> {{ data()?.procesoNombre }}</li>
+            <li><strong>Ejercicio:</strong> {{ data()?.examenNombre }}</li>
+            <li><strong>Fecha:</strong> {{ data()?.fechaHora ? (data()?.fechaHora | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</li>
+            <li><strong>Lugar:</strong> {{ data()?.centroNombre }} · {{ data()?.aulaNombre }}</li>
+          </ul>
+        </div>
+      </div>
+    }
+
+    <!-- Vista Principal de Respuesta -->
+    @if (!loading() && !error() && !resultado() && data()) {
+      <div class="content-card">
+        <!-- Saludo y Titular -->
+        <div class="card-intro">
+          <span class="welcome-badge">Convocatoria de Colaboración</span>
+          <h1>Estimada/o {{ data()?.nombreColaborador }}</h1>
+          <p class="intro-desc">
+            Le comunicamos que ha sido seleccionada/o para colaborar en la realización de las pruebas selectivas organizadas por el IAAP.
+          </p>
+        </div>
+
+        <!-- Alerta destacada obligatoriedad -->
+        <div class="alert-requirement">
+          <div class="alert-requirement__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <div class="alert-requirement__content">
+            <strong>Respuesta imprescindible a la mayor brevedad</strong>
+            <p>Por razones de coordinación logística y cumplimiento de ratios en las aulas, necesitamos que <strong>confirme o rechace su asistencia</strong> utilizando los botones que encontrará a continuación. <em>No requiere contraseña ni inicio de sesión.</em></p>
+          </div>
+        </div>
+
+        <!-- Ficha de Datos del Llamamiento -->
+        <section class="details-section">
+          <h2 class="section-title">Datos del llamamiento</h2>
+          <div class="details-grid">
+            <div class="detail-item full-width">
+              <span class="detail-label">Proceso Selectivo</span>
+              <span class="detail-value highlight">{{ data()?.procesoNombre }}</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Ejercicio</span>
+              <span class="detail-value">{{ data()?.examenNombre }}</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Fecha y Hora</span>
+              <span class="detail-value date-val">
+                {{ data()?.fechaHora ? (data()?.fechaHora | date:'EEEE, d \'de\' MMMM \'de\' yyyy · HH:mm\'h\'') : 'Pendiente de confirmación' }}
+              </span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Centro / Sede</span>
+              <span class="detail-value">{{ data()?.centroNombre }}</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Aula / Ubicación</span>
+              <span class="detail-value">{{ data()?.aulaNombre }}</span>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Perfil de Colaboración</span>
+              <span class="detail-value badge-profile">{{ data()?.perfilDenominacion }}</span>
+            </div>
+
+            <div class="detail-item" *ngIf="data()?.subcategoriaGeneral">
+              <span class="detail-label">Subcategoría</span>
+              <span class="detail-value">{{ data()?.subcategoriaGeneral }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Estado actual si ya se había respondido previamente -->
+        @if (data()?.estadoActual !== 'PENDIENTE') {
+          <div class="previous-status-box" [class.is-confirmed]="data()?.estadoActual === 'CONFIRMADA'" [class.is-rejected]="data()?.estadoActual === 'RECHAZADA'">
+            <span class="prev-title">Estado registrado actualmente:</span>
+            <span class="prev-badge">{{ data()?.estadoActual }}</span>
+            <span class="prev-note" *ngIf="data()?.motivoRechazo">(Motivo: {{ data()?.motivoRechazo }})</span>
+            <p class="prev-hint">Puede pulsar a continuación si desea modificar su decisión.</p>
+          </div>
+        }
+
+        <!-- Bloque de Botones de Acción -->
+        @if (!showRechazoForm()) {
+          <div class="decision-actions">
+            <button
+              type="button"
+              class="btn-decision btn-confirm"
+              (click)="confirmarAsistencia()"
+              [disabled]="submitting()">
+              <div class="btn-content">
+                <span class="btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </span>
+                <div class="btn-labels">
+                  <span class="btn-main-label">SÍ, CONFIRMO MI ASISTENCIA</span>
+                  <span class="btn-sub-label">Acepto la colaboración y asistiré en la fecha y aula asignadas</span>
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="btn-decision btn-reject"
+              (click)="abrirRechazo()"
+              [disabled]="submitting()">
+              <div class="btn-content">
+                <span class="btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </span>
+                <div class="btn-labels">
+                  <span class="btn-main-label">NO PUEDO ASISTIR (RECHAZAR)</span>
+                  <span class="btn-sub-label">Declino la asignación por motivos personales o profesionales</span>
+                </div>
+              </div>
+            </button>
+          </div>
+        }
+
+        <!-- Formulario opcional de motivo de rechazo -->
+        @if (showRechazoForm()) {
+          <div class="rechazo-panel">
+            <div class="rechazo-header">
+              <span class="rechazo-title">Registrar no disponibilidad / Renuncia</span>
+              <p class="rechazo-desc">Está a punto de declinar su participación en este llamamiento. Si lo desea, puede indicar el motivo de forma opcional:</p>
+            </div>
+
+            <div class="form-group">
+              <label for="motivoInput" class="form-label">Motivo de renuncia (opcional):</label>
+              <textarea
+                id="motivoInput"
+                rows="3"
+                class="form-control"
+                placeholder="Ej.: Motivo de salud, deber inexcusable, desplazamiento sobrevenido..."
+                [ngModel]="motivoRechazo()"
+                (ngModelChange)="motivoRechazo.set($event)"></textarea>
+            </div>
+
+            <div class="rechazo-buttons">
+              <button
+                type="button"
+                class="btn btn-danger-action"
+                (click)="registrarRechazo()"
+                [disabled]="submitting()">
+                @if (submitting()) {
+                  <span class="btn-spinner"></span> Registrando...
+                } @else {
+                  Confirmar no asistencia
+                }
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary-action"
+                (click)="cancelarRechazo()"
+                [disabled]="submitting()">
+                Volver
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Pie de página institucional -->
+  <footer class="confirmacion-footer">
+    <div class="footer-inner">
+      <p>© Junta de Andalucía · Instituto Andaluz de Administración Pública</p>
+      <p>SICOL · Sistema de Información de Colaboradores de Pruebas Selectivas</p>
+    </div>
+  </footer>
+</div>

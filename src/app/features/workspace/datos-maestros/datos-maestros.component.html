@@ -10,7 +10,7 @@
       <p class="eyebrow">Configuración funcional</p>
       <h1>Datos maestros</h1>
     </div>
-    @if (activeSection() !== "informes") {
+    @if (activeSection() && activeSection() !== "informes" && activeSection() !== "smtp") {
       <div class="heading-actions">
         <button class="button button--primary" type="button" (click)="startCreate()">
           <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -55,6 +55,15 @@
       (click)="selectSection('informes')"
     >
       Informes
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeSection() === 'smtp'"
+      [class.is-active]="activeSection() === 'smtp'"
+      (click)="selectSection('smtp')"
+    >
+      Servidor de correo (SMTP)
     </button>
   </div>
 
@@ -224,6 +233,565 @@
           </button>
         </div>
       </form>
+    </section>
+  } @else if (activeSection() === "smtp") {
+    <!-- Sección de Configuración del Servidor SMTP -->
+    <div id="configuracion-smtp" class="smtp-config-container" aria-labelledby="smtp-config-title">
+
+      <!-- Cabecera principal y resumen visual de estado -->
+      <div class="smtp-page-header">
+        <div class="smtp-page-header__titles">
+          <div class="title-with-pill">
+            <h2 id="smtp-config-title">Servidor de correo saliente (SMTP)</h2>
+            @if (smtpConfigForm.controls.activo.value) {
+              <span class="status-indicator-pill status-indicator-pill--active">
+                <span class="status-dot"></span> Servicio Activo
+              </span>
+            } @else {
+              <span class="status-indicator-pill status-indicator-pill--paused">
+                <span class="status-dot"></span> Servicio Pausado
+              </span>
+            }
+          </div>
+          <p class="section-desc">
+            Administre la conectividad del servidor corporativo para el envío de comunicaciones oficiales y avisos a los colaboradores del IAAP.
+          </p>
+        </div>
+
+        <div class="smtp-quick-badges">
+          <div class="quick-badge" [class.is-test]="smtpConfigForm.controls.modoPrueba.value" [class.is-live]="!smtpConfigForm.controls.modoPrueba.value">
+            <span class="quick-badge__label">Entorno:</span>
+            <strong>{{ smtpConfigForm.controls.modoPrueba.value ? "Modo Pruebas (Seguro)" : "Producción Real" }}</strong>
+          </div>
+          <div class="quick-badge" [class.is-configured]="passwordConfigurada()" [class.is-missing]="!passwordConfigurada()">
+            <span class="quick-badge__label">Credenciales:</span>
+            <strong>{{ passwordConfigurada() ? "Guardadas" : "Sin contraseña" }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <form [formGroup]="smtpConfigForm" (ngSubmit)="saveSmtpConfiguration()" novalidate class="smtp-form">
+
+        <!-- ================================================================= -->
+        <!-- 1. HABILITAR / PAUSAR ENVIOS (INTERRUPTOR MAESTRO)                 -->
+        <!-- ================================================================= -->
+        <section class="smtp-card smtp-card--activation" [class.is-active]="smtpConfigForm.controls.activo.value" aria-label="Control de activación de envíos">
+          <div class="smtp-card__body">
+            <div class="activation-control">
+              <label class="switch-toggle" for="smtp-activo">
+                <span class="switch switch--lg">
+                  <input id="smtp-activo" type="checkbox" formControlName="activo">
+                  <span class="slider"></span>
+                </span>
+                <div class="switch-toggle__content">
+                  <div class="switch-toggle__title-row">
+                    <span class="switch-toggle__title">Habilitar servicio de despacho de correos (Pasarela SMTP)</span>
+                    @if (smtpConfigForm.controls.activo.value) {
+                      @if (smtpConfigForm.controls.modoPrueba.value) {
+                        <span class="badge badge--warning-solid">SERVICIO ACTIVO (MODO PRUEBA)</span>
+                      } @else {
+                        <span class="badge badge--success-solid">SERVICIO ACTIVO (PRODUCCIÓN)</span>
+                      }
+                    } @else {
+                      <span class="badge badge--neutral-solid">SERVICIO EN PAUSA (SIMULACIÓN)</span>
+                    }
+                  </div>
+                  <p class="switch-toggle__desc">
+                    @if (smtpConfigForm.controls.activo.value) {
+                      @if (smtpConfigForm.controls.modoPrueba.value) {
+                        El servicio de correo está <strong>habilitado en modo prueba</strong>. Al despachar un lote desde Envíos, los mensajes saldrán a través del servidor SMTP y se <strong>desviarán de forma segura a su buzón de prueba</strong> (ningún colaborador real recibirá correos).
+                      } @else {
+                        El servicio de correo está <strong>habilitado en producción</strong>. Al despachar un lote desde Envíos, los mensajes saldrán a través del servidor SMTP directamente hacia las direcciones corporativas de los colaboradores.
+                      }
+                    } @else {
+                      El servicio está <strong>en pausa (modo simulación)</strong>. Los lotes preparados quedarán guardados en SICOL como <em>PENDIENTE_ENVIO</em> pero <strong>no se emitirá ningún correo</strong> (ni a colaboradores ni al buzón de prueba).
+                    }
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- 2. ENTORNO DE EJECUCIÓN Y MODO DE PRUEBA (SANDBOX SEGURO)          -->
+        <!-- ================================================================= -->
+        <section class="smtp-card smtp-card--test-env" [class.is-test-active]="smtpConfigForm.controls.modoPrueba.value" aria-labelledby="heading-entorno-prueba">
+          <div class="smtp-card__header">
+            <div class="header-with-icon">
+              <div class="header-icon-box header-icon-box--warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 id="heading-entorno-prueba">Entorno de ejecución y modo de prueba (Sandbox)</h3>
+                <p class="section-hint">Protección frente a envíos accidentales a colaboradores reales durante pruebas o formación.</p>
+              </div>
+            </div>
+            @if (smtpConfigForm.controls.modoPrueba.value) {
+              <span class="badge badge--warning">Desvío seguro activo</span>
+            } @else {
+              <span class="badge badge--danger">Envío directo a colaboradores</span>
+            }
+          </div>
+
+          <div class="smtp-card__body">
+            <div class="test-env-content">
+              <label class="switch-toggle" for="smtp-modo-prueba">
+                <span class="switch switch--warning">
+                  <input id="smtp-modo-prueba" type="checkbox" formControlName="modoPrueba">
+                  <span class="slider"></span>
+                </span>
+                <div class="switch-toggle__content">
+                  <span class="switch-toggle__title">Activar Modo de Prueba (Desvío Seguro)</span>
+                  <p class="switch-toggle__desc">
+                    Recomendado para entornos de desarrollo y validación funcional. Toda comunicación saliente se redirigirá exclusivamente al buzón de pruebas especificado, sustituyendo al destinatario original en el transporte.
+                  </p>
+                </div>
+              </label>
+
+              @if (smtpConfigForm.controls.modoPrueba.value) {
+                <div class="test-email-drawer">
+                  <div class="field" style="margin-bottom: 0;">
+                    <label for="smtp-email-prueba">
+                      Dirección de correo para recepción de pruebas <span class="req-star" aria-hidden="true">*</span>
+                    </label>
+                    <div class="input-inline-wrap">
+                      <input
+                        id="smtp-email-prueba"
+                        type="email"
+                        maxlength="255"
+                        formControlName="emailPrueba"
+                        placeholder="tu_correo_de_pruebas@correo.com"
+                        [attr.aria-invalid]="!!smtpConfigErrors()['emailPrueba']"
+                      >
+                      @if (smtpConfigForm.controls.emailPrueba.value) {
+                        <button
+                          class="button button--secondary button--sm btn-copiar-test"
+                          type="button"
+                          (click)="copiarEmailPruebaDestinatario()"
+                          title="Copiar esta dirección al panel de verificación rápida (abajo)"
+                        >
+                          @if (copiedEmailNotice()) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="button-icon-sm" aria-hidden="true">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>¡Copiado abajo!</span>
+                          } @else {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="button-icon-sm" aria-hidden="true">
+                              <path d="M12 5v14M19 12l-7 7-7-7"></path>
+                            </svg>
+                            <span>Usar en test rápido</span>
+                          }
+                        </button>
+                      }
+                    </div>
+                    <small class="field-hint">
+                      Cualquier correo masivo emitido mientras este modo esté activo se entregará en esta bandeja de entrada.
+                    </small>
+                    @if (smtpConfigErrors()["emailPrueba"]) {
+                      <span class="field-error">{{ smtpConfigErrors()["emailPrueba"] }}</span>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div class="danger-warning-notice">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>
+                    <strong>Atención: Modo producción activo.</strong> Las comunicaciones se enviarán a las direcciones de correo particulares de los colaboradores seleccionados en cada convocatoria.
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- 3. PARÁMETROS DE CONEXIÓN DEL SERVIDOR SMTP (EXPANSIBLE / COLAPSABLE)-->
+        <!-- ================================================================= -->
+        <section
+          class="smtp-card smtp-card--connection-params"
+          [class.is-collapsed]="!smtpParamsExpanded()"
+          aria-labelledby="heading-parametros-servidor"
+        >
+          <div
+            class="smtp-card__header smtp-card__header--collapsible"
+            (click)="toggleSmtpParams()"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="toggleSmtpParams()"
+            (keydown.space)="toggleSmtpParams(); $event.preventDefault()"
+            [attr.aria-expanded]="smtpParamsExpanded()"
+            aria-controls="smtp-params-body"
+          >
+            <div class="header-with-icon">
+              <div class="header-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+                  <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+                  <line x1="6" x2="6.01" y1="6" y2="6"/>
+                  <line x1="6" x2="6.01" y1="18" y2="18"/>
+                </svg>
+              </div>
+              <div class="header-titles-group">
+                <div class="header-title-row">
+                  <h3 id="heading-parametros-servidor">Parámetros de conexión del servidor SMTP</h3>
+                  @if (!smtpParamsExpanded()) {
+                    <span class="badge badge--neutral">Plegado</span>
+                  }
+                </div>
+                <p class="section-hint">
+                  @if (!smtpParamsExpanded() && smtpConfigForm.controls.servidorSmtp.value) {
+                    {{ smtpConfigForm.controls.servidorSmtp.value }}:{{ smtpConfigForm.controls.puertoSmtp.value }} ·
+                    {{ smtpConfigForm.controls.usarTls.value ? 'STARTTLS' : 'Sin TLS' }} ·
+                    Remitente: {{ smtpConfigForm.controls.remitenteEmail.value || 'No definido' }}
+                  } @else {
+                    Configuración técnica de red, protocolo de cifrado, autenticación y datos del remitente.
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div class="header-actions-group">
+              <button
+                type="button"
+                class="collapse-trigger-btn"
+                [attr.aria-expanded]="smtpParamsExpanded()"
+                tabindex="-1"
+                aria-hidden="true"
+              >
+                <span>{{ smtpParamsExpanded() ? 'Plegar parámetros' : 'Desplegar y editar' }}</span>
+                <svg
+                  class="chevron-icon"
+                  [class.is-rotated]="smtpParamsExpanded()"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          @if (smtpParamsExpanded()) {
+            <div id="smtp-params-body" class="smtp-card__body smtp-card__body--unified">
+              <!-- Subgrupo 1: Red y Protocolo -->
+              <div class="smtp-subgroup">
+                <div class="smtp-subgroup__header">
+                  <div class="smtp-subgroup__title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="subgroup-icon" aria-hidden="true">
+                      <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+                      <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+                      <line x1="6" x2="6.01" y1="6" y2="6"/>
+                      <line x1="6" x2="6.01" y1="18" y2="18"/>
+                    </svg>
+                    <h4>Red y protocolo</h4>
+                  </div>
+                  <span class="smtp-subgroup__desc">Host, puerto de conexión y cifrado de canal</span>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="field">
+                    <label for="smtp-servidor">Servidor SMTP (Host) <span class="req-star" aria-hidden="true">*</span></label>
+                    <input
+                      id="smtp-servidor"
+                      type="text"
+                      maxlength="255"
+                      formControlName="servidorSmtp"
+                      placeholder="ej. smtp.ejemplo.org o smtp.correo.com"
+                      [attr.aria-invalid]="!!smtpConfigErrors()['servidorSmtp']"
+                    >
+                    @if (smtpConfigErrors()["servidorSmtp"]) {
+                      <span class="field-error">{{ smtpConfigErrors()["servidorSmtp"] }}</span>
+                    }
+                  </div>
+
+                  <div class="field">
+                    <label for="smtp-puerto">Puerto SMTP <span class="req-star" aria-hidden="true">*</span></label>
+                    <input
+                      id="smtp-puerto"
+                      type="number"
+                      min="1"
+                      max="65535"
+                      formControlName="puertoSmtp"
+                      placeholder="587"
+                      [attr.aria-invalid]="!!smtpConfigErrors()['puertoSmtp']"
+                    >
+                    <small class="field-hint">Puertos habituales: 587 (STARTTLS estándar), 465 (SSL/TLS directo), 25 (red corporativa).</small>
+                    @if (smtpConfigErrors()["puertoSmtp"]) {
+                      <span class="field-error">{{ smtpConfigErrors()["puertoSmtp"] }}</span>
+                    }
+                  </div>
+                </div>
+
+                <!-- STARTTLS Toggle -->
+                <div class="tls-config-box">
+                  <label class="switch-toggle" for="smtp-tls">
+                    <span class="switch">
+                      <input id="smtp-tls" type="checkbox" formControlName="usarTls">
+                      <span class="slider"></span>
+                    </span>
+                    <div class="switch-toggle__content">
+                      <div class="switch-toggle__title-row">
+                        <span class="switch-toggle__title">Habilitar protocolo STARTTLS</span>
+                        @if (smtpConfigForm.controls.usarTls.value) {
+                          <span class="badge badge--tls">STARTTLS ACTIVADO</span>
+                        } @else {
+                          <span class="badge badge--neutral">Cifrado directo / Sin TLS</span>
+                        }
+                      </div>
+                      <p class="switch-toggle__desc">
+                        Recomendado para servidores modernos y servicios en la nube en el puerto 587. (Para el puerto 465 se emplea SSL/TLS directo automáticamente).
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Separador entre subgrupos -->
+              <div class="smtp-subgroup-divider" role="separator"></div>
+
+              <!-- Subgrupo 2: Autenticación y Credenciales -->
+              <div class="smtp-subgroup">
+                <div class="smtp-subgroup__header">
+                  <div class="smtp-subgroup__title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="subgroup-icon" aria-hidden="true">
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <h4>Autenticación y credenciales</h4>
+                  </div>
+                  <span class="smtp-subgroup__desc">Cuenta de acceso para el envío autenticado</span>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="field">
+                    <label for="smtp-usuario">Usuario / Email de conexión</label>
+                    <input
+                      id="smtp-usuario"
+                      type="text"
+                      maxlength="255"
+                      formControlName="usuarioSmtp"
+                      placeholder="usuario@ejemplo.org"
+                    >
+                    <small class="field-hint">Dejar en blanco si el servidor SMTP admite envío interno sin autenticación.</small>
+                  </div>
+
+                  <div class="field">
+                    <label for="smtp-password">
+                      Contraseña SMTP
+                      @if (passwordConfigurada()) {
+                        <span class="badge badge--success" style="margin-left: 6px; font-weight: normal; font-size: 0.8rem;">
+                          ✓ Guardada en servidor
+                        </span>
+                      }
+                    </label>
+                    @if (passwordConfigurada() && !showPasswordField()) {
+                      <div class="password-configured-box">
+                        <span class="password-masked">••••••••••••••••</span>
+                        <button class="button button--secondary button--sm" type="button" (click)="toggleShowPassword()">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; margin-right: 4px;" aria-hidden="true">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                          </svg>
+                          Modificar contraseña
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="password-input-wrap">
+                        <input
+                          id="smtp-password"
+                          type="password"
+                          maxlength="500"
+                          formControlName="passwordSmtp"
+                          placeholder="Introduzca la nueva contraseña"
+                          autocomplete="new-password"
+                        >
+                        @if (passwordConfigurada()) {
+                          <button class="button button--ghost button--sm" type="button" (click)="toggleShowPassword()">
+                            Conservar actual
+                          </button>
+                        }
+                      </div>
+                      <small class="field-hint">Por seguridad, la contraseña se almacena en el backend y nunca se envía al navegador.</small>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Separador entre subgrupos -->
+              <div class="smtp-subgroup-divider" role="separator"></div>
+
+              <!-- Subgrupo 3: Identificación del Remitente -->
+              <div class="smtp-subgroup">
+                <div class="smtp-subgroup__header">
+                  <div class="smtp-subgroup__title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="subgroup-icon" aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <h4>Identificación del remitente</h4>
+                  </div>
+                  <span class="smtp-subgroup__desc">Nombre y dirección visible en los correos remitidos</span>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="field">
+                    <label for="smtp-remitente-nombre">Nombre visible del remitente <span class="req-star" aria-hidden="true">*</span></label>
+                    <input
+                      id="smtp-remitente-nombre"
+                      type="text"
+                      maxlength="255"
+                      formControlName="remitenteNombre"
+                      placeholder="Instituto Andaluz de Administración Pública"
+                      [attr.aria-invalid]="!!smtpConfigErrors()['remitenteNombre']"
+                    >
+                    @if (smtpConfigErrors()["remitenteNombre"]) {
+                      <span class="field-error">{{ smtpConfigErrors()["remitenteNombre"] }}</span>
+                    }
+                  </div>
+
+                  <div class="field">
+                    <label for="smtp-remitente-email">Dirección de correo remitente <span class="req-star" aria-hidden="true">*</span></label>
+                    <input
+                      id="smtp-remitente-email"
+                      type="email"
+                      maxlength="255"
+                      formControlName="remitenteEmail"
+                      placeholder="noreply@ejemplo.org"
+                      [attr.aria-invalid]="!!smtpConfigErrors()['remitenteEmail']"
+                    >
+                    @if (smtpConfigErrors()["remitenteEmail"]) {
+                      <span class="field-error">{{ smtpConfigErrors()["remitenteEmail"] }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </section>
+
+        <!-- Barra de Acciones para Guardar -->
+        <div class="smtp-action-bar">
+          <div class="smtp-action-bar__info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="info-icon" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Guarde los cambios antes de probar la conexión si ha modificado el servidor, puertos o credenciales.</span>
+          </div>
+          <button class="button button--primary button--lg" type="submit" [disabled]="smtpConfigSaving()" [attr.aria-busy]="smtpConfigSaving()">
+            @if (smtpConfigSaving()) {
+              <span class="spinner-inline" aria-hidden="true"></span>
+              Guardando configuración…
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px; margin-right: 6px;" aria-hidden="true">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Guardar configuración SMTP
+            }
+          </button>
+        </div>
+
+      </form>
+
+      <!-- ================================================================= -->
+      <!-- 6. PANEL DE VERIFICACIÓN Y DIAGNÓSTICO EN VIVO                     -->
+      <!-- ================================================================= -->
+      <section class="smtp-card smtp-card--diagnostic" aria-labelledby="heading-diagnostico">
+        <div class="smtp-card__header">
+          <div class="header-with-icon">
+            <div class="header-icon-box header-icon-box--diagnostic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 id="heading-diagnostico">Verificación de conectividad inmediata</h3>
+              <p class="section-hint">Pruebe en tiempo real la conexión con el servidor y envíe un correo de comprobación para certificar las credenciales.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="smtp-card__body">
+          <div class="diagnostic-controls">
+            <div class="field" style="flex: 1; min-width: 280px; margin-bottom: 0;">
+              <label for="smtp-test-destinatario">Buzón de destino para el correo de prueba:</label>
+              <input
+                id="smtp-test-destinatario"
+                type="email"
+                [value]="testRecipient()"
+                (input)="updateTestRecipient($any($event.target).value)"
+                placeholder="correo_destino_para_la_prueba@ejemplo.org"
+              >
+            </div>
+            <button
+              class="button button--secondary button--test-smtp"
+              type="button"
+              [disabled]="testingSmtp()"
+              [attr.aria-busy]="testingSmtp()"
+              (click)="probarConexionSmtp()"
+            >
+              @if (testingSmtp()) {
+                <span class="spinner-inline" aria-hidden="true"></span>
+                Verificando conexión…
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width: 18px; height: 18px; margin-right: 6px;">
+                  <path d="m22 2-7 20-4-9-9-4Z"></path>
+                  <path d="M22 2 11 13"></path>
+                </svg>
+                Probar conexión SMTP
+              }
+            </button>
+          </div>
+
+          @if (testSmtpResult(); as res) {
+            <div class="smtp-test-result" [class.is-success]="res.exitoso" [class.is-error]="!res.exitoso">
+              @if (res.exitoso) {
+                <div class="result-header">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="result-icon success" aria-hidden="true">
+                    <path d="M20 6 9 17l-5-5"></path>
+                  </svg>
+                  <strong>Conexión verificada con éxito</strong>
+                </div>
+              } @else {
+                <div class="result-header">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="result-icon error" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="8"></line>
+                  </svg>
+                  <strong>Error en la verificación SMTP</strong>
+                </div>
+              }
+              <p class="result-message">{{ res.mensaje }}</p>
+              <small class="result-time">Comprobado el {{ res.fechaHora }}</small>
+            </div>
+          }
+        </div>
+      </section>
+
+    </div>
+  } @else if (activeSection() === null) {
+    <section class="filter-card" aria-labelledby="master-data-selection-title">
+      <div class="filter-card__heading">
+        <div>
+          <p class="eyebrow">Carga bajo demanda</p>
+          <h2 id="master-data-selection-title">Selecciona una categoría</h2>
+        </div>
+      </div>
+      <div class="filter-card__body">
+        <p>Los datos se consultarán cuando abras una pestaña y se conservarán durante tu estancia en esta pantalla.</p>
+      </div>
     </section>
   } @else {
     <!-- Barra de búsqueda y conteo del Catálogo Activo -->

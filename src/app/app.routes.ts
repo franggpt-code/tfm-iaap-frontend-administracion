@@ -19,10 +19,12 @@ import { InformesComponent } from "./features/workspace/informes/informes.compon
 import { UsuariosComponent } from "./features/workspace/usuarios/usuarios.component";
 import { ZonaPruebasComponent } from "./features/workspace/zona-pruebas/zona-pruebas.component";
 import { MiEspacioComponent } from "./features/portal/mi-espacio.component";
+import { ConfirmacionPublicaComponent } from "./features/public/confirmacion-publica/confirmacion-publica.component";
 
 export const routes: Routes = [
   { path: "", redirectTo: "login", pathMatch: "full" },
   { path: "login", component: LoginComponent, canActivate: [loginGuard] },
+  { path: "confirmacion-asistencia", component: ConfirmacionPublicaComponent },
   { path: "admin", component: DashboardComponent, canActivate: [adminGuard] },
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/convocatorias", component: ImportacionConvocatoriasComponent, canActivate: [adminRoleGuard] },

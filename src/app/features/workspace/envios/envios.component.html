@@ -1,71 +1,1422 @@
 <div class="page-shell envios-page">
   <nav class="breadcrumb" aria-label="Migas de pan">
-    <a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Envios</span>
+    <a routerLink="/admin">Inicio</a>
+    <span aria-hidden="true">/</span>
+    <span>Comunicaciones</span>
   </nav>
 
   <header class="page-heading">
     <div>
-      <p class="eyebrow">Comunicaciones a colaboradores</p>
-      <h1>Envios</h1>
-      <p>Prepara una comunicación por cada asignación y conserva la traza del lote, de sus destinatarios y de la plantilla utilizada.</p>
+      <p class="eyebrow">Módulo de comunicaciones</p>
+      <h1>Comunicaciones y Envíos</h1>
+      <p>Gestión integral de comunicaciones a colaboradores: consulta de traza auditable por proceso, preparación de envíos y repositorio documental.</p>
+    </div>
+    <div class="heading-actions">
+      @if (activeTab() === 'traza') {
+        <button class="button button--primary" type="button" (click)="selectTab('nuevo')">
+          <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Preparar comunicación
+        </button>
+      } @else if (activeTab() === 'documental') {
+        <button class="button button--primary" type="button" (click)="openNewDocModal()">
+          <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Cargar documento
+        </button>
+      }
     </div>
   </header>
 
-  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
-  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+  <!-- Pestañas de navegación del módulo -->
+  <div class="catalog-tabs" role="tablist" aria-label="Secciones de comunicaciones">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'traza'"
+      [class.is-active]="activeTab() === 'traza'"
+      (click)="selectTab('traza')"
+    >
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
+      Traza de comunicaciones
+      <span class="tab-counter">{{ historial().length }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'nuevo'"
+      [class.is-active]="activeTab() === 'nuevo'"
+      (click)="selectTab('nuevo')"
+    >
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+        <path d="m3 7 9 6 9-6"></path>
+      </svg>
+      Preparar comunicación
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'documental'"
+      [class.is-active]="activeTab() === 'documental'"
+      (click)="selectTab('documental')"
+    >
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+      </svg>
+      Repositorio documental
+      <span class="tab-counter">{{ adjuntos().length }}</span>
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--error" role="alert">
+      <strong>No se ha podido completar la operación.</strong> {{ error() }}
+    </div>
+  }
+  @if (success()) {
+    <div class="alert alert--success" role="status">
+      <strong>Operación correcta.</strong> {{ success() }}
+    </div>
+  }
 
   @if (loading()) {
-    <p class="loading-message">Cargando comunicaciones…</p>
+    <p class="loading-message">Cargando comunicaciones y repositorio documental…</p>
   } @else {
-    <section class="step-card" aria-labelledby="exercise-title">
-      <div class="step-heading"><span>1</span><div><h2 id="exercise-title">Seleccionar proceso y ejercicio</h2><p>Solo se muestran ejercicios que ya disponen de asignaciones.</p></div></div>
-      <div class="field">
-        <label for="ejercicio-envio">Ejercicio *</label>
-        <select id="ejercicio-envio" [value]="selectedExamenId()" (change)="selectedExamenId.set($any($event.target).value)">
-          <option value="">Selecciona un ejercicio</option>
-          @for (item of ejercicios(); track item.examenId) {
-            <option [value]="item.examenId">{{ item.procesoCodigoSirhus || 'Proceso' }} · {{ item.procesoNombre }} · {{ item.ejercicio }}.º {{ item.nombreEjercicio }} ({{ item.asignaciones }} asignaciones)</option>
-          }
-        </select>
-      </div>
-      @if (selectedEjercicio(); as item) {
-        <div class="context-summary">
-          <div><span>Fecha</span><strong>{{ dateLabel(item.fechaHora) }}</strong></div>
-          <div><span>Asignaciones</span><strong>{{ item.asignaciones }}</strong></div>
-          <div><span>Histórico</span><strong>{{ item.tieneEnviosPrevios ? 'Comunicación previa: ' + dateLabel(item.ultimoEnvioAt) : 'Sin comunicaciones previas' }}</strong></div>
+
+    <!-- ==================================================================== -->
+    <!-- SECCIÓN 1: TRAZA DE COMUNICACIONES                                   -->
+    <!-- ==================================================================== -->
+    @if (activeTab() === 'traza') {
+      <!-- Cuadro de mando / Métricas resumen -->
+      <section class="kpi-grid" aria-label="Métricas de comunicaciones">
+        <div class="kpi-card">
+          <span class="kpi-label">Lotes preparados</span>
+          <strong class="kpi-value">{{ historial().length }}</strong>
+          <small class="kpi-hint">Comunicaciones auditablemente registradas</small>
         </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Colaboradores notificados</span>
+          <strong class="kpi-value">{{ totalDestinatariosHistorial() }}</strong>
+          <small class="kpi-hint">Total de envíos acumulados</small>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Ejercicios comunicados</span>
+          <strong class="kpi-value">{{ ejerciciosConEnvioCount() }} <small>/ {{ ejercicios().length }}</small></strong>
+          <small class="kpi-hint">{{ ejerciciosPendientesCount() }} pendientes de envío</small>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Documentos en repositorio</span>
+          <strong class="kpi-value">{{ adjuntos().length }}</strong>
+          <small class="kpi-hint">Plantillas y guías reutilizables</small>
+        </div>
+      </section>
+
+      <!-- Barra de Filtros y Control de Vista -->
+      <section class="filter-card" aria-label="Filtros de traza">
+        <div class="filter-card__heading">
+          <div class="view-mode-toggle" role="group" aria-label="Modo de visualización de traza">
+            <button
+              type="button"
+              [class.is-active]="trazaView() === 'procesos'"
+              (click)="trazaView.set('procesos')"
+            >
+              Estado por Procesos y Ejercicios
+            </button>
+            <button
+              type="button"
+              [class.is-active]="trazaView() === 'lotes'"
+              (click)="trazaView.set('lotes')"
+            >
+              Historial de Lotes (Auditoría)
+            </button>
+          </div>
+          <span class="result-count">
+            {{ trazaView() === 'procesos' ? filteredEjerciciosTraza().length + ' ejercicios' : filteredHistorial().length + ' lotes' }}
+          </span>
+        </div>
+
+        <div class="filter-card__fields">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="search"
+              placeholder="Buscar por proceso, ejercicio, remitente o palabra clave…"
+              [value]="trazaSearch()"
+              (input)="trazaSearch.set($any($event.target).value)"
+              aria-label="Buscar en la traza"
+            >
+          </div>
+
+          <div class="filter-select-wrapper">
+            <label for="filter-proceso" class="sr-only">Filtrar por proceso</label>
+            <select
+              id="filter-proceso"
+              [value]="trazaProcessFilter()"
+              (change)="trazaProcessFilter.set($any($event.target).value)"
+            >
+              <option value="">Todos los procesos selectivos</option>
+              @for (p of distinctProcesses(); track p.id) {
+                <option [value]="p.id">{{ p.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vista 1.A: ESTADO POR PROCESOS Y EJERCICIOS -->
+      @if (trazaView() === 'procesos') {
+        <section class="table-card" aria-label="Seguimiento de comunicaciones por proceso">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Proceso Selectivo</th>
+                  <th>Ejercicio y Fecha</th>
+                  <th>Asignaciones</th>
+                  <th>Estado de Comunicación</th>
+                  <th class="th-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredEjerciciosTraza(); track item.examenId) {
+                  <tr>
+                    <td>
+                      <span class="code-badge">{{ item.procesoCodigoSirhus || 'PROCESO' }}</span>
+                      <strong class="item-title">{{ item.procesoNombre }}</strong>
+                    </td>
+                    <td>
+                      <strong>{{ item.ejercicio }}.º {{ item.nombreEjercicio }}</strong>
+                      <br>
+                      <small class="text-muted">{{ dateLabel(item.fechaHora) }}</small>
+                    </td>
+                    <td>
+                      <span class="count-badge">{{ item.asignaciones }} colaboradores</span>
+                    </td>
+                    <td>
+                      @if (item.tieneEnviosPrevios) {
+                        <div class="status-stack">
+                          <span class="status-chip status-chip--sent">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chip-icon" aria-hidden="true">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Comunicación enviada
+                          </span>
+                          <small class="status-date">Última: {{ dateLabel(item.ultimoEnvioAt) }} ({{ item.ultimoEnvioDestinatarios }} dest.)</small>
+                        </div>
+                      } @else {
+                        <div class="status-stack">
+                          <span class="status-chip status-chip--pending">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chip-icon" aria-hidden="true">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="8" x2="12" y2="12"></line>
+                              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            Pendiente de envío
+                          </span>
+                          <small class="status-date">{{ item.asignaciones }} esperando comunicación</small>
+                        </div>
+                      }
+                    </td>
+                    <td class="td-actions">
+                      <button
+                        type="button"
+                        class="button button--secondary button--sm"
+                        (click)="prepareForExercise(item.examenId)"
+                        [title]="item.tieneEnviosPrevios ? 'Preparar nuevo envío para este ejercicio' : 'Preparar comunicación inicial'"
+                      >
+                        {{ item.tieneEnviosPrevios ? 'Nuevo envío' : 'Preparar envío' }}
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty-state">No se encontraron procesos ni ejercicios con los filtros seleccionados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
       }
-    </section>
 
-    <section class="step-card" aria-labelledby="template-title">
-      <div class="step-heading"><span>2</span><div><h2 id="template-title">Modelo de comunicación</h2><p>Los valores se personalizan para cada colaborador al crear el lote.</p></div></div>
-      <p class="tokens"><strong>Campos disponibles:</strong> #NOMBRE#, #DIA#, #CUERPO#, #EDIFICIO#, #AULA#, #PERFIL# y #PROCESO#.</p>
-      <div class="field"><label for="asunto">Asunto *</label><input id="asunto" type="text" maxlength="500" [value]="asunto()" (input)="asunto.set($any($event.target).value)"></div>
-      <div class="field"><label for="cuerpo">Cuerpo del mensaje *</label><textarea id="cuerpo" rows="11" maxlength="8000" [value]="cuerpo()" (input)="cuerpo.set($any($event.target).value)"></textarea></div>
-      <div class="template-actions"><button class="button button--secondary" type="button" [disabled]="savingTemplate() || !asunto().trim() || !cuerpo().trim()" (click)="saveTemplate()">{{ savingTemplate() ? 'Guardando…' : 'Guardar como plantilla predeterminada' }}</button></div>
-    </section>
+      <!-- Vista 1.B: HISTORIAL DE LOTES (Auditoría cronológica) -->
+      @if (trazaView() === 'lotes') {
+        <section class="table-card" aria-label="Historial cronológico de lotes de comunicación">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Proceso y Ejercicio</th>
+                  <th>Fecha de Preparación</th>
+                  <th>Preparado Por</th>
+                  <th>Destinatarios</th>
+                  <th>Adjuntos incluidos</th>
+                  <th class="th-actions">Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredHistorial(); track item.id) {
+                  <tr>
+                    <td>
+                      <span class="code-badge">{{ item.procesoCodigoSirhus || 'PROCESO' }}</span>
+                      <strong>{{ item.procesoNombre }}</strong>
+                      <br>
+                      <small class="text-muted">{{ item.ejercicio }}.º {{ item.nombreEjercicio }}</small>
+                    </td>
+                    <td>
+                      <strong>{{ dateLabel(item.creadoAt) }}</strong>
+                    </td>
+                    <td>
+                      <span>{{ item.creadoPor }}</span>
+                    </td>
+                    <td>
+                      <span class="count-badge count-badge--highlight">{{ item.destinatarios }} colaboradores</span>
+                    </td>
+                    <td>
+                      @if (item.adjuntosNombres) {
+                        <span class="attachment-tag" [title]="item.adjuntosNombres">
+                          {{ item.adjuntosNombres }}
+                        </span>
+                      } @else {
+                        <span class="text-muted">Sin adjuntos</span>
+                      }
+                    </td>
+                    <td class="td-actions">
+                      <button
+                        type="button"
+                        class="button button--secondary button--sm"
+                        (click)="openLoteDetail(item)"
+                        title="Inspeccionar detalle del lote y destinatarios"
+                      >
+                        Ver detalle
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="empty-state">No se ha registrado ningún lote de comunicación todavía.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    }
 
-    <section class="step-card" aria-labelledby="attachments-title">
-      <div class="step-heading"><span>3</span><div><h2 id="attachments-title">Adjuntos comunes</h2><p>Selecciona los documentos que se incorporarán al lote, por ejemplo una guía de colaboración.</p></div></div>
-      <div class="attachment-upload"><label class="button button--secondary" for="nuevo-adjunto">{{ uploading() ? 'Cargando…' : 'Cargar fichero' }}</label><input id="nuevo-adjunto" type="file" [disabled]="uploading()" (change)="onFileSelected($event)"><span>Máximo 10 MB.</span></div>
-      <ul class="attachment-list" aria-label="Adjuntos comunes">
-        @for (adjunto of adjuntos(); track adjunto.id) {
-          <li><label><input type="checkbox" [checked]="selectedAdjuntoIds().includes(adjunto.id)" (change)="toggleAdjunto(adjunto.id)"><span><strong>{{ adjunto.nombre }}</strong><small>{{ adjunto.tipoContenido }} · {{ sizeLabel(adjunto.tamanoBytes) }}</small></span></label><span class="attachment-actions"><button type="button" class="button button--link" (click)="downloadAdjunto(adjunto)">Descargar</button><button type="button" class="button button--link delete-attachment" (click)="deleteAdjunto(adjunto)">Eliminar</button></span></li>
-        } @empty { <li class="empty-state">No hay adjuntos comunes cargados.</li> }
-      </ul>
-    </section>
+    <!-- ==================================================================== -->
+    <!-- SECCIÓN 2: PREPARAR COMUNICACIÓN (Envío optimizado)                  -->
+    <!-- ==================================================================== -->
+    @if (activeTab() === 'nuevo') {
+      <div class="send-workflow">
+        <!-- Paso 1: Selección de ejercicio -->
+        <section class="step-card" aria-labelledby="exercise-title">
+          <div class="step-heading">
+            <span>1</span>
+            <div>
+              <h2 id="exercise-title">Seleccionar proceso y ejercicio</h2>
+              <p>Elige el ejercicio para el que se enviarán las comunicaciones a los colaboradores asignados.</p>
+            </div>
+          </div>
 
-    <section class="send-bar" aria-label="Preparar envío">
-      <div><strong>Preparar comunicación</strong><span>Se registrará un mensaje personalizado por asignación en el buzón de salida y en la traza auditable.</span></div>
-      <button class="button button--primary" type="button" [disabled]="!canCreate()" (click)="crearEnvio()">{{ creating() ? 'Preparando…' : 'Preparar lote' }}</button>
-    </section>
+          <div class="field">
+            <label for="ejercicio-envio">Ejercicio con colaboradores asignados *</label>
+            <select
+              id="ejercicio-envio"
+              [value]="selectedExamenId()"
+              (change)="selectedExamenId.set($any($event.target).value)"
+            >
+              <option value="">Selecciona un ejercicio…</option>
+              @for (item of ejercicios(); track item.examenId) {
+                <option [value]="item.examenId">
+                  {{ item.procesoCodigoSirhus || 'PROCESO' }} · {{ item.procesoNombre }} · {{ item.ejercicio }}.º {{ item.nombreEjercicio }} ({{ item.asignaciones }} colaboradores)
+                </option>
+              }
+            </select>
+          </div>
 
-    <section class="history-section" aria-labelledby="history-title">
-      <div class="section-title"><h2 id="history-title">Traza de comunicaciones</h2><p>Los lotes preparados permanecen asociados al ejercicio y a la persona que los creó.</p></div>
-      <div class="history-table-wrap"><table><thead><tr><th>Proceso y ejercicio</th><th>Preparado</th><th>Por</th><th>Destinatarios</th><th>Estado</th></tr></thead><tbody>
-        @for (item of historial(); track item.id) { <tr><td><strong>{{ item.procesoCodigoSirhus || 'Proceso' }}</strong><br><span>{{ item.procesoNombre }} · {{ item.ejercicio }}.º {{ item.nombreEjercicio }}</span></td><td>{{ dateLabel(item.creadoAt) }}</td><td>{{ item.creadoPor }}</td><td>{{ item.destinatarios }}</td><td><span class="status-chip">Pendiente de envío</span></td></tr> }
-        @empty { <tr><td colspan="5" class="empty-state">Aún no se ha preparado ninguna comunicación.</td></tr> }
-      </tbody></table></div>
-    </section>
+          @if (selectedEjercicio(); as item) {
+            <!-- Resumen contextual del ejercicio -->
+            <div class="context-summary">
+              <div>
+                <span>Fecha de examen</span>
+                <strong>{{ dateLabel(item.fechaHora) }}</strong>
+              </div>
+              <div>
+                <span>Colaboradores asignados</span>
+                <strong>{{ item.asignaciones }} colaboradores</strong>
+              </div>
+              <div>
+                <span>Historial de envíos</span>
+                <strong>{{ item.tieneEnviosPrevios ? 'Enviado previamente' : 'Primer envío' }}</strong>
+              </div>
+            </div>
+
+            <!-- Aviso contextual de envíos previos -->
+            @if (item.tieneEnviosPrevios) {
+              <div class="alert alert--warning" role="note">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                  <strong>Aviso: Este ejercicio ya cuenta con comunicaciones previas.</strong>
+                  <p>Último envío preparado el <strong>{{ dateLabel(item.ultimoEnvioAt) }}</strong> para <strong>{{ item.ultimoEnvioDestinatarios }} destinatarios</strong>. Si preparas este lote, se creará una nueva notificación.</p>
+                </div>
+              </div>
+            } @else {
+              <div class="alert alert--info" role="note">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" class="alert-icon" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div>
+                  <strong>Primer envío para este ejercicio.</strong>
+                  <p>Se notificarán las instrucciones y datos de convocatoria a los <strong>{{ item.asignaciones }} colaboradores</strong> asignados.</p>
+                </div>
+              </div>
+            }
+          }
+        </section>
+
+        <!-- Paso 2: Modelo de comunicación -->
+        <section class="step-card" aria-labelledby="template-title">
+          <div class="step-heading">
+            <span>2</span>
+            <div>
+              <h2 id="template-title">Modelo de comunicación y plantilla</h2>
+              <p>Define el asunto y contenido. Los tokens se sustituyen automáticamente con los datos de cada colaborador.</p>
+            </div>
+          </div>
+
+          <!-- Barra de inserción de tokens -->
+          <div class="tokens-bar">
+            <span class="tokens-label">Insertar variable:</span>
+            <div class="tokens-list">
+              @for (t of tokens; track t.token) {
+                <button
+                  type="button"
+                  class="token-button"
+                  (click)="insertToken(t.token, 'cuerpo')"
+                  [title]="t.description + ' (clic para insertar)'"
+                >
+                  {{ t.token }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="asunto">Asunto del mensaje *</label>
+            <input
+              #asuntoInput
+              id="asunto"
+              type="text"
+              maxlength="500"
+              [value]="asunto()"
+              (input)="asunto.set($any($event.target).value)"
+            >
+          </div>
+
+          <div class="field">
+            <label for="cuerpo">Cuerpo del mensaje *</label>
+            <textarea
+              #cuerpoInput
+              id="cuerpo"
+              rows="11"
+              maxlength="8000"
+              [value]="cuerpo()"
+              (input)="cuerpo.set($any($event.target).value)"
+            ></textarea>
+          </div>
+
+          <div class="template-actions">
+            <button
+              class="button button--secondary"
+              type="button"
+              (click)="showPreview.update(v => !v)"
+            >
+              {{ showPreview() ? 'Ocultar previsualización' : '👁️ Previsualizar mensaje' }}
+            </button>
+            <button
+              class="button button--secondary"
+              type="button"
+              [disabled]="savingTemplate() || !asunto().trim() || !cuerpo().trim()"
+              (click)="saveTemplate()"
+            >
+              {{ savingTemplate() ? 'Guardando…' : 'Guardar como plantilla predeterminada' }}
+            </button>
+          </div>
+
+          <!-- Previsualización interactiva del correo -->
+          @if (showPreview()) {
+            <div class="email-preview-box">
+              <div class="email-preview-header">
+                <span class="badge badge--preview">Vista previa con datos de ejemplo</span>
+                <strong>Para:</strong> María García Pérez &lt;maria.garcia&#64;juntadeandalucia.es&gt;
+              </div>
+              <div class="email-preview-subject">
+                <strong>Asunto:</strong> {{ samplePreview().asunto }}
+              </div>
+              <div class="email-preview-body">
+                <pre>{{ samplePreview().cuerpo }}</pre>
+                <div class="email-preview-actions-visual">
+                  <span class="visual-actions-hint">⚡ Botones visuales interactivos generados en la comunicación:</span>
+                  <div class="visual-buttons-demo">
+                    <a class="btn-demo btn-demo--confirm" href="/confirmacion-asistencia?token=demo-token-123&decision=CONFIRMADA" target="_blank" title="Probar confirmación pública">
+                      <span class="btn-demo-icon">✓</span>
+                      <span>SÍ, CONFIRMO MI ASISTENCIA</span>
+                    </a>
+                    <a class="btn-demo btn-demo--reject" href="/confirmacion-asistencia?token=demo-token-123&decision=RECHAZADA" target="_blank" title="Probar renuncia pública">
+                      <span class="btn-demo-icon">✕</span>
+                      <span>NO PUEDO ASISTIR (RECHAZAR)</span>
+                    </a>
+                  </div>
+                  <small class="demo-subtext">El personal colaborador no necesita recordar contraseñas ni identificarse previamente: su decisión queda registrada en tiempo real en la base de datos de SICOL con un único clic.</small>
+                </div>
+              </div>
+            </div>
+          }
+        </section>
+
+        <!-- Paso 3: Documentación adjunta desde el Repositorio Documental -->
+        <section class="step-card" aria-labelledby="attachments-title">
+          <div class="step-heading">
+            <span>3</span>
+            <div>
+              <h2 id="attachments-title">Documentación adjunta (Repositorio documental)</h2>
+              <p>Selecciona los documentos del repositorio que acompañarán a esta comunicación (ej. guía de actuación o protocolo).</p>
+            </div>
+          </div>
+
+          <div class="attachment-bar-actions">
+            <button
+              class="button button--secondary"
+              type="button"
+              (click)="openNewDocModal()"
+            >
+              <svg class="button-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Cargar nuevo documento al repositorio
+            </button>
+            <span class="attachment-summary-badge">
+              {{ selectedAdjuntoIds().length }} de {{ adjuntos().length }} documentos seleccionados
+              @if (selectedDocsTotalBytes() > 0) {
+                · {{ sizeLabel(selectedDocsTotalBytes()) }}
+              }
+            </span>
+          </div>
+
+          <ul class="attachment-selector-list" aria-label="Documentos disponibles en el repositorio">
+            @for (adjunto of adjuntos(); track adjunto.id) {
+              <li class="attachment-item" [class.is-selected]="selectedAdjuntoIds().includes(adjunto.id)">
+                <label class="attachment-label">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedAdjuntoIds().includes(adjunto.id)"
+                    (change)="toggleAdjunto(adjunto.id)"
+                  >
+                  <div class="doc-icon-wrap" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                  </div>
+                  <div class="doc-info">
+                    <strong class="doc-title">{{ adjunto.titulo }}</strong>
+                    <span class="doc-meta">
+                      {{ adjunto.nombre }} · {{ sizeLabel(adjunto.tamanoBytes) }}
+                      @if (adjunto.descripcion) {
+                        · <span class="doc-desc">{{ adjunto.descripcion }}</span>
+                      }
+                    </span>
+                  </div>
+                </label>
+                <div class="doc-item-actions">
+                  <button
+                    type="button"
+                    class="button button--link"
+                    (click)="downloadDocument(adjunto)"
+                    title="Descargar para revisar"
+                  >
+                    Descargar
+                  </button>
+                </div>
+              </li>
+            } @empty {
+              <li class="empty-state">
+                <p>No hay documentos en el repositorio todavía.</p>
+                <button class="button button--secondary button--sm" type="button" (click)="openNewDocModal()">
+                  Cargar el primer documento
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <!-- Barra final de confirmación y preparación del lote -->
+        <section class="send-bar" aria-label="Preparar comunicación">
+          <div class="send-bar-info">
+            <div class="send-bar-title-row">
+              <strong>Preparar lote de comunicación</strong>
+              @if (smtpConfig(); as smtp) {
+                @if (smtp.activo) {
+                  @if (smtp.modoPrueba) {
+                    <span class="status-pill status-pill--warning" title="Desvío seguro a buzón de pruebas">
+                      <span class="status-dot"></span> Modo de prueba activo
+                    </span>
+                  } @else {
+                    <span class="status-pill status-pill--active" title="Envíos reales a las direcciones de los colaboradores">
+                      <span class="status-dot"></span> Envío real activo
+                    </span>
+                  }
+                } @else {
+                  <span class="status-pill status-pill--paused" title="Lote en modo simulación (sin envío por red)">
+                    <span class="status-dot"></span> Envíos pausados (simulación)
+                  </span>
+                }
+              }
+            </div>
+            <span>
+              @if (selectedEjercicio(); as ej) {
+                Se generará un mensaje personalizado para los <strong>{{ ej.asignaciones }} colaboradores</strong> de «{{ ej.procesoNombre }}» ({{ selectedAdjuntoIds().length }} adjuntos).
+              } @else {
+                Selecciona un ejercicio para habilitar la preparación del lote.
+              }
+            </span>
+          </div>
+          <button
+            class="button button--primary"
+            type="button"
+            [disabled]="!canCreate()"
+            (click)="openConfirmModal()"
+          >
+            {{ creating() ? 'Preparando lote…' : 'Preparar lote' }}
+          </button>
+        </section>
+      </div>
+    }
+
+    <!-- ==================================================================== -->
+    <!-- SECCIÓN 3: REPOSITORIO DOCUMENTAL (CRUD completo)                    -->
+    <!-- ==================================================================== -->
+    @if (activeTab() === 'documental') {
+      <section class="doc-repository-section">
+        <!-- Cabecera de búsqueda y acciones del repositorio -->
+        <div class="filter-card">
+          <div class="filter-card__heading">
+            <div>
+              <h2 class="section-heading-sm">Documentos institucionales</h2>
+              <p class="section-desc-sm">Documentos oficiales, instrucciones y modelos reutilizables en las comunicaciones.</p>
+            </div>
+            <span class="result-count">{{ filteredDocs().length }} documentos</span>
+          </div>
+
+          <div class="filter-card__fields">
+            <div class="search-input-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="search"
+                placeholder="Buscar documentos por título, nombre de archivo o descripción…"
+                [value]="docSearch()"
+                (input)="docSearch.set($any($event.target).value)"
+                aria-label="Buscar en el repositorio documental"
+              >
+            </div>
+            <button class="button button--primary" type="button" (click)="openNewDocModal()">
+              <svg class="button-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Nuevo documento
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de Documentos -->
+        <div class="table-card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Título Identificativo y Descripción</th>
+                  <th>Archivo Físico</th>
+                  <th>Tamaño</th>
+                  <th>Fecha de Modificación</th>
+                  <th class="th-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (doc of filteredDocs(); track doc.id) {
+                  <tr>
+                    <td>
+                      <strong class="doc-title-main">{{ doc.titulo }}</strong>
+                      @if (doc.descripcion) {
+                        <p class="doc-desc-main">{{ doc.descripcion }}</p>
+                      }
+                    </td>
+                    <td>
+                      <div class="doc-file-info">
+                        <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <div>
+                          <strong>{{ doc.nombre }}</strong>
+                          <small class="text-muted">{{ doc.tipoContenido }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="count-badge">{{ sizeLabel(doc.tamanoBytes) }}</span>
+                    </td>
+                    <td>
+                      <small>{{ dateLabel(doc.modificadoAt || doc.creadoAt) }}</small>
+                    </td>
+                    <td class="td-actions">
+                      <div class="button-group-sm">
+                        <button
+                          type="button"
+                          class="button button--secondary button--sm"
+                          (click)="downloadDocument(doc)"
+                          title="Descargar archivo"
+                        >
+                          Descargar
+                        </button>
+                        <button
+                          type="button"
+                          class="button button--secondary button--sm"
+                          (click)="openEditDocModal(doc)"
+                          title="Editar título identificativo y descripción"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="button button--secondary button--sm"
+                          (click)="openReplaceDocModal(doc)"
+                          title="Reemplazar archivo físico conservando el título"
+                        >
+                          Reemplazar
+                        </button>
+                        <button
+                          type="button"
+                          class="button button--secondary button--sm button--danger"
+                          (click)="openDeleteDocModal(doc)"
+                          title="Eliminar documento del repositorio"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty-state">
+                      <p>No se han encontrado documentos en el repositorio con el filtro actual.</p>
+                      <button class="button button--secondary button--sm" type="button" (click)="openNewDocModal()">
+                        Cargar documento
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    }
+
+  }
+
+  <!-- ==================================================================== -->
+  <!-- PANEL LATERAL DERECHO (DRAWER): DETALLE DEL LOTE DE TRAZA            -->
+  <!-- ==================================================================== -->
+  @if (selectedLote(); as lote) {
+    <div class="drawer-backdrop" (click)="closeLoteDetail()"></div>
+    <aside
+      class="trace-drawer"
+      [class.is-expanded]="drawerExpanded()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="trace-drawer-title"
+    >
+      <header class="drawer-header">
+        <div class="drawer-header__titles">
+          <span class="code-badge">{{ lote.procesoCodigoSirhus || 'PROCESO' }}</span>
+          <h2 id="trace-drawer-title">Detalle del lote de comunicación</h2>
+          <p class="drawer-subtitle">{{ lote.procesoNombre }} · {{ lote.ejercicio }}.º {{ lote.nombreEjercicio }}</p>
+        </div>
+        <div class="drawer-header__controls">
+          <button
+            type="button"
+            class="drawer-icon-btn"
+            [title]="drawerExpanded() ? 'Reducir panel' : 'Expandir panel'"
+            [attr.aria-label]="drawerExpanded() ? 'Reducir panel' : 'Expandir panel'"
+            (click)="toggleDrawerExpand()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @if (drawerExpanded()) {
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              } @else {
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              }
+            </svg>
+          </button>
+          <button
+            class="drawer-icon-btn"
+            type="button"
+            (click)="closeLoteDetail()"
+            aria-label="Cerrar panel"
+            title="Cerrar panel"
+          >
+            ✕
+          </button>
+        </div>
+      </header>
+
+      <div class="drawer-body">
+        <!-- 1. Barra de Metadatos del Lote -->
+        <div class="trace-meta-grid">
+          <div class="trace-meta-item">
+            <span class="trace-meta-label">Fecha y hora</span>
+            <strong class="trace-meta-val">{{ dateLabel(lote.creadoAt) }}</strong>
+          </div>
+          <div class="trace-meta-item">
+            <span class="trace-meta-label">Preparado por</span>
+            <strong class="trace-meta-val">{{ lote.creadoPor }}</strong>
+          </div>
+          <div class="trace-meta-item">
+            <span class="trace-meta-label">Destinatarios</span>
+            <strong class="trace-meta-val">{{ lote.destinatarios }} colaboradores</strong>
+          </div>
+          <div class="trace-meta-item">
+            <span class="trace-meta-label">Estado del lote</span>
+            @if (lote.estado === 'ENVIADO') {
+              <span class="status-chip status-chip--confirmed">✓ Enviado</span>
+            } @else if (lote.estado === 'ENVIADO_PARCIAL') {
+              <span class="status-chip status-chip--warning">⚠ Parcial</span>
+            } @else if (lote.estado === 'ERROR_ENVIO') {
+              <span class="status-chip status-chip--rejected">✕ Error envío</span>
+            } @else {
+              <span class="status-chip status-chip--sent">Pendiente de envío</span>
+            }
+          </div>
+        </div>
+
+        <!-- 2. Plantilla empleada -->
+        <section class="drawer-card">
+          <div class="drawer-card__header">
+            <div class="drawer-card__title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <h3>Plantilla empleada en la comunicación</h3>
+            </div>
+          </div>
+          <div class="drawer-card__body">
+            <div class="field">
+              <span class="field-label-text">Asunto del mensaje:</span>
+              <div class="readonly-box readonly-box--subject">{{ lote.asuntoPlantilla || 'Sin asunto registrado' }}</div>
+            </div>
+            <div class="field">
+              <span class="field-label-text">Cuerpo del comunicado:</span>
+              <div class="readonly-textarea-box">{{ lote.cuerpoPlantilla || 'Sin cuerpo registrado' }}</div>
+            </div>
+            @if (lote.adjuntosNombres) {
+              <div class="field">
+                <span class="field-label-text">Documentos adjuntos del repositorio:</span>
+                <div class="readonly-box readonly-box--attachments">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                  <span>{{ lote.adjuntosNombres }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- 3. Destinatarios del lote -->
+        <section class="drawer-card">
+          <div class="drawer-card__header drawer-card__header--between">
+            <div class="drawer-card__title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <h3>Destinatarios del lote</h3>
+              <span class="recipients-count-pill">{{ loteDestinatarios().length }}</span>
+            </div>
+            <div class="search-input-wrapper search-input-wrapper--sm">
+              <input
+                type="search"
+                placeholder="Buscar colaborador…"
+                [value]="destinatarioSearch()"
+                (input)="destinatarioSearch.set($any($event.target).value)"
+              >
+            </div>
+          </div>
+
+          <div class="drawer-card__body drawer-card__body--no-padding">
+            @if (loadingDestinatarios()) {
+              <p class="loading-message">Cargando destinatarios del lote…</p>
+            } @else {
+              <div class="table-responsive recipients-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Colaborador/a</th>
+                      <th>Correo Institucional</th>
+                      <th>Estado</th>
+                      <th class="th-actions">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (d of filteredDestinatarios(); track d.id) {
+                      <tr [class.is-active-row]="selectedDestinatario()?.id === d.id">
+                        <td><strong>{{ d.nombreDestinatario }}</strong></td>
+                        <td><span class="dest-email">{{ d.correoDestinatario }}</span></td>
+                        <td>
+                          @if (d.estado === 'CONFIRMADA') {
+                            <span class="status-chip status-chip--confirmed" title="Asistencia confirmada por el colaborador">
+                              ✓ Confirmada
+                            </span>
+                          } @else if (d.estado === 'RECHAZADA') {
+                            <span class="status-chip status-chip--rejected" [title]="d.motivoRechazo ? 'Motivo: ' + d.motivoRechazo : 'Sin motivo especificado'">
+                              ✕ Rechazada
+                            </span>
+                            @if (d.motivoRechazo) {
+                              <span class="dest-motivo-preview" [title]="d.motivoRechazo">"{{ d.motivoRechazo }}"</span>
+                            }
+                          } @else if (d.estado === 'ENVIADO') {
+                            <span class="status-chip status-chip--sent" title="Correo enviado, pendiente de respuesta">
+                              Enviado
+                            </span>
+                          } @else if (d.estado === 'ERROR_ENVIO') {
+                            <span class="status-chip status-chip--rejected" title="Error en el envío SMTP">
+                              Error envío
+                            </span>
+                          } @else {
+                            <span class="status-chip status-chip--paused">{{ d.estado }}</span>
+                          }
+                        </td>
+                        <td class="td-actions">
+                          <button
+                            type="button"
+                            class="button button--secondary button--sm"
+                            [class.button--primary]="selectedDestinatario()?.id === d.id"
+                            (click)="viewDestinatarioMessage(d)"
+                          >
+                            {{ selectedDestinatario()?.id === d.id ? 'Viendo mensaje' : 'Ver mensaje' }}
+                          </button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="4" class="empty-state">No se encontraron destinatarios con el criterio de búsqueda.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- 4. Detalle de mensaje individual -->
+        @if (selectedDestinatario(); as dest) {
+          <section class="drawer-card dest-message-drawer-card">
+            <div class="drawer-card__header drawer-card__header--between dest-message-header">
+              <div>
+                <span class="dest-message-eyebrow">Mensaje personalizado generado</span>
+                <h3 class="dest-message-recipient-name">{{ dest.nombreDestinatario }}</h3>
+              </div>
+              <div class="dest-header-actions">
+                @if (dest.tokenRespuesta) {
+                  <a [routerLink]="['/confirmacion-asistencia']" [queryParams]="{ token: dest.tokenRespuesta }" target="_blank" class="button button--secondary button--sm" title="Abrir pantalla pública en nueva pestaña">
+                    🔗 Probar enlace de respuesta
+                  </a>
+                }
+                <button type="button" class="button button--ghost button--sm" (click)="closeDestinatarioMessage()">
+                  ✕ Cerrar vista individual
+                </button>
+              </div>
+            </div>
+            <div class="drawer-card__body">
+              <div class="dest-message-meta">
+                <div><span>Asunto:</span> <strong>{{ dest.asunto }}</strong></div>
+                <div><span>Buzón destino:</span> <strong>{{ dest.correoDestinatario }}</strong></div>
+                <div><span>Estado:</span> <strong>{{ dest.estado }}</strong></div>
+              </div>
+
+              @if (dest.estado === 'RECHAZADA' && dest.motivoRechazo) {
+                <div class="dest-motivo-callout">
+                  <strong>Motivo de renuncia especificado:</strong>
+                  <p>{{ dest.motivoRechazo }}</p>
+                </div>
+              }
+
+              <div class="dest-message-body-wrap">
+                <pre class="dest-message-body">{{ dest.cuerpo }}</pre>
+              </div>
+            </div>
+          </section>
+        }
+      </div>
+
+      <footer class="drawer-footer">
+        <button class="button button--secondary" type="button" (click)="closeLoteDetail()">
+          Cerrar panel
+        </button>
+      </footer>
+    </aside>
+  }
+
+  <!-- ==================================================================== -->
+  <!-- MODALES DEL REPOSITORIO DOCUMENTAL                                   -->
+  <!-- ==================================================================== -->
+
+  <!-- Modal 1: Cargar Nuevo Documento -->
+  @if (showNewDocModal()) {
+    <div class="modal-backdrop" (click)="closeNewDocModal()"></div>
+    <dialog open class="confirmation-dialog" aria-labelledby="new-doc-title">
+      <h2 id="new-doc-title">Cargar documento al repositorio</h2>
+      <p>Incorpora una nueva guía o documento institucional que podrá ser adjuntado a cualquier comunicación.</p>
+
+      <div class="field">
+        <label for="new-doc-file">Archivo *</label>
+        <input
+          id="new-doc-file"
+          type="file"
+          [disabled]="uploadingDoc()"
+          (change)="onNewDocFileSelected($event)"
+        >
+        <small class="field-hint">Admite PDF, ODT, DOCX, XLSX, etc. Tamaño máximo 10 MB.</small>
+      </div>
+
+      <div class="field">
+        <label for="new-doc-title-input">Título identificativo *</label>
+        <input
+          id="new-doc-title-input"
+          type="text"
+          maxlength="255"
+          placeholder="Ej: Guía de colaboración 2026"
+          [value]="newDocTitulo()"
+          (input)="newDocTitulo.set($any($event.target).value)"
+        >
+        <small class="field-hint">Nombre claro con el que se identificará este documento en el sistema.</small>
+      </div>
+
+      <div class="field">
+        <label for="new-doc-desc">Descripción / Finalidad (opcional)</label>
+        <textarea
+          id="new-doc-desc"
+          rows="3"
+          maxlength="1000"
+          placeholder="Ej: Instrucciones específicas para el personal colaborador de las sedes de Sevilla."
+          [value]="newDocDescripcion()"
+          (input)="newDocDescripcion.set($any($event.target).value)"
+        ></textarea>
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          class="button button--secondary"
+          type="button"
+          [disabled]="uploadingDoc()"
+          (click)="closeNewDocModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="button button--primary"
+          type="button"
+          [disabled]="uploadingDoc() || !newDocFile() || !newDocTitulo().trim()"
+          (click)="saveNewDocument()"
+        >
+          {{ uploadingDoc() ? 'Cargando documento…' : 'Cargar documento' }}
+        </button>
+      </div>
+    </dialog>
+  }
+
+  <!-- Modal 2: Editar Metadatos del Documento -->
+  @if (editingDoc(); as doc) {
+    <div class="modal-backdrop" (click)="closeEditDocModal()"></div>
+    <dialog open class="confirmation-dialog" aria-labelledby="edit-doc-title">
+      <h2 id="edit-doc-title">Editar metadatos del documento</h2>
+      <p>Modifica el título identificativo y la descripción de «{{ doc.nombre }}».</p>
+
+      <div class="field">
+        <label for="edit-doc-title-input">Título identificativo *</label>
+        <input
+          id="edit-doc-title-input"
+          type="text"
+          maxlength="255"
+          [value]="editDocTitulo()"
+          (input)="editDocTitulo.set($any($event.target).value)"
+        >
+      </div>
+
+      <div class="field">
+        <label for="edit-doc-desc">Descripción / Finalidad (opcional)</label>
+        <textarea
+          id="edit-doc-desc"
+          rows="3"
+          maxlength="1000"
+          [value]="editDocDescripcion()"
+          (input)="editDocDescripcion.set($any($event.target).value)"
+        ></textarea>
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          class="button button--secondary"
+          type="button"
+          [disabled]="savingDocEdit()"
+          (click)="closeEditDocModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="button button--primary"
+          type="button"
+          [disabled]="savingDocEdit() || !editDocTitulo().trim()"
+          (click)="saveDocMetadata()"
+        >
+          {{ savingDocEdit() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </dialog>
+  }
+
+  <!-- Modal 3: Reemplazar Archivo Físico -->
+  @if (replacingDoc(); as doc) {
+    <div class="modal-backdrop" (click)="closeReplaceDocModal()"></div>
+    <dialog open class="confirmation-dialog" aria-labelledby="replace-doc-title">
+      <h2 id="replace-doc-title">Reemplazar archivo del documento</h2>
+      <p>Sustituye el contenido físico del documento <strong>«{{ doc.titulo }}»</strong> manteniendo su identificador y metadatos.</p>
+
+      <div class="doc-current-meta">
+        <div><span>Archivo actual:</span> <strong>{{ doc.nombre }}</strong></div>
+        <div><span>Tamaño actual:</span> <strong>{{ sizeLabel(doc.tamanoBytes) }}</strong></div>
+      </div>
+
+      <div class="field">
+        <label for="replace-doc-file">Seleccionar nuevo archivo *</label>
+        <input
+          id="replace-doc-file"
+          type="file"
+          [disabled]="replacingDocFile()"
+          (change)="onReplaceDocFileSelected($event)"
+        >
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          class="button button--secondary"
+          type="button"
+          [disabled]="replacingDocFile()"
+          (click)="closeReplaceDocModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="button button--primary"
+          type="button"
+          [disabled]="replacingDocFile() || !replaceDocFile()"
+          (click)="saveDocFileReplace()"
+        >
+          {{ replacingDocFile() ? 'Reemplazando…' : 'Reemplazar archivo' }}
+        </button>
+      </div>
+    </dialog>
+  }
+
+  <!-- Modal 4: Confirmación de Eliminación de Documento -->
+  @if (deletingDoc(); as doc) {
+    <div class="modal-backdrop" (click)="closeDeleteDocModal()"></div>
+    <dialog open class="confirmation-dialog" aria-labelledby="delete-doc-title">
+      <h2 id="delete-doc-title">Eliminar documento del repositorio</h2>
+      <p>¿Estás seguro de que deseas eliminar este documento del repositorio?</p>
+
+      <div class="delete-summary-box">
+        <strong>{{ doc.titulo }}</strong>
+        <p>{{ doc.nombre }} · {{ sizeLabel(doc.tamanoBytes) }}</p>
+      </div>
+
+      <p class="delete-warning">
+        Esta acción eliminará el archivo del repositorio. Las comunicaciones ya preparadas conservarán la referencia histórica a este adjunto.
+      </p>
+
+      <div class="dialog-actions">
+        <button
+          class="button button--secondary"
+          type="button"
+          [disabled]="deletingDocLoading()"
+          (click)="closeDeleteDocModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="button button--primary button--danger"
+          type="button"
+          [disabled]="deletingDocLoading()"
+          (click)="confirmDeleteDoc()"
+        >
+          {{ deletingDocLoading() ? 'Eliminando…' : 'Eliminar documento' }}
+        </button>
+      </div>
+    </dialog>
+  }
+
+  <!-- Modal 5: Confirmación de Preparación y Envío de Lote -->
+  @if (showConfirmModal()) {
+    <div class="modal-backdrop" (click)="!creating() && closeConfirmModal()"></div>
+    <dialog open class="confirmation-dialog batch-confirm-dialog" aria-labelledby="confirm-batch-title">
+      <div class="dialog-header">
+        <h2 id="confirm-batch-title">Confirmar envío de comunicaciones</h2>
+        <button
+          type="button"
+          class="dialog-close-btn"
+          aria-label="Cerrar modal"
+          [disabled]="creating()"
+          (click)="closeConfirmModal()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <p class="dialog-intro">
+          Se va a preparar y procesar un lote de comunicaciones personalizadas para el ejercicio seleccionado:
+        </p>
+
+        @if (selectedEjercicio(); as ej) {
+          <!-- Resumen de Destinatarios y Ejercicio -->
+          <div class="batch-summary-card">
+            <div class="batch-summary-header">
+              <div class="batch-summary-info">
+                <span class="batch-summary-badge">{{ ej.procesoCodigoSirhus ?? 'PROCESO' }}</span>
+                <strong class="batch-summary-process">{{ ej.procesoNombre }}</strong>
+                <div class="batch-summary-exam">{{ ej.nombreEjercicio }}</div>
+              </div>
+              <div class="batch-summary-count">
+                <span class="count-number">{{ ej.asignaciones }}</span>
+                <span class="count-label">destinatarios</span>
+              </div>
+            </div>
+
+            <div class="batch-summary-details">
+              <div class="detail-item">
+                <span class="detail-item__label">Asunto:</span>
+                <span class="detail-item__val">{{ asunto() }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-item__label">Adjuntos seleccionados:</span>
+                <span class="detail-item__val">{{ selectedAdjuntoIds().length }} documento(s)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estado de la Pasarela SMTP -->
+          <div class="smtp-alert-box"
+            [class.smtp-alert-box--active]="smtpConfig()?.activo && !smtpConfig()?.modoPrueba"
+            [class.smtp-alert-box--warning]="smtpConfig()?.activo && smtpConfig()?.modoPrueba"
+            [class.smtp-alert-box--paused]="!smtpConfig()?.activo"
+          >
+            <div class="smtp-alert-box__icon">
+              @if (smtpConfig()?.activo) {
+                @if (smtpConfig()?.modoPrueba) {
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                } @else {
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                }
+              } @else {
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="10" y1="15" x2="10" y2="9"/>
+                  <line x1="14" y1="15" x2="14" y2="9"/>
+                </svg>
+              }
+            </div>
+            <div class="smtp-alert-box__content">
+              @if (smtpConfig(); as smtp) {
+                @if (smtp.activo) {
+                  @if (smtp.modoPrueba) {
+                    <strong>Modo de pruebas activo (Desvío seguro a buzón de test)</strong>
+                    <p>
+                      El servicio de correo está activo en modo prueba. Se enviarán los correos a través del servidor SMTP y se redirigirán exclusivamente a su buzón de prueba:
+                      <strong>{{ smtp.emailPrueba || 'No configurada' }}</strong>. Ningún colaborador recibirá correos reales.
+                    </p>
+                  } @else {
+                    <strong>Envío real activo (Producción)</strong>
+                    <p>
+                      El servidor SMTP está operativo. Se enviará un correo electrónico individual y real a cada uno de los
+                      <strong>{{ ej.asignaciones }} colaboradores</strong> asignados a este ejercicio desde <em>{{ smtp.remitenteEmail }}</em>.
+                    </p>
+                  }
+                } @else {
+                  <strong>Pasarela SMTP desactivada (Modo simulación)</strong>
+                  <p>
+                    El servicio SMTP está actualmente en pausa en <em>Datos Maestros</em>. El lote quedará registrado y guardado en SICOL con estado
+                    <em>Pendiente de envío</em>, pero <strong>no se emitirá ningún correo a través de la red</strong> (tampoco al buzón de pruebas).
+                  </p>
+                  <p class="text-muted" style="margin-top: 0.35rem; font-size: 0.8rem;">
+                    Para que los mensajes se envíen (a su correo de prueba o a colaboradores), active el interruptor en <em>Datos Maestros &gt; Servidor SMTP</em>.
+                  </p>
+                }
+              } @else {
+                <strong>Comprobando estado del servidor SMTP…</strong>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          class="button button--secondary"
+          type="button"
+          [disabled]="creating()"
+          (click)="closeConfirmModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="button button--primary"
+          type="button"
+          [disabled]="creating()"
+          (click)="confirmarYEnviarLote()"
+        >
+          {{ creating() ? 'Procesando envío…' : 'Confirmar y enviar lote' }}
+        </button>
+      </div>
+    </dialog>
+  }
+
+  <!-- Modal 6: Confirmación del Resultado de Envío del Lote -->
+  @if (showResultModal() && lastResult(); as res) {
+    <div class="modal-backdrop" (click)="closeResultModal()"></div>
+    <dialog open class="confirmation-dialog batch-result-dialog" aria-labelledby="result-batch-title">
+      <div class="dialog-header">
+        <div class="result-header-title">
+          @if (res.estado === 'ENVIADO') {
+            <span class="result-icon result-icon--success">✓</span>
+            <h2 id="result-batch-title">Lote enviado con éxito</h2>
+          } @else if (res.estado === 'ENVIADO_PARCIAL') {
+            <span class="result-icon result-icon--warning">⚠</span>
+            <h2 id="result-batch-title">Lote enviado con incidencias</h2>
+          } @else if (res.estado === 'ERROR_ENVIO') {
+            <span class="result-icon result-icon--error">✕</span>
+            <h2 id="result-batch-title">Error en el envío del lote</h2>
+          } @else {
+            <span class="result-icon result-icon--paused">ℹ</span>
+            <h2 id="result-batch-title">Lote registrado (Modo simulación)</h2>
+          }
+        </div>
+        <button
+          type="button"
+          class="dialog-close-btn"
+          aria-label="Cerrar modal"
+          (click)="closeResultModal()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        @if (res.mensaje) {
+          <p class="result-message">{{ res.mensaje }}</p>
+        }
+
+        <!-- Tarjetas de métricas del lote -->
+        <div class="result-metrics-grid">
+          <div class="metric-card metric-card--total">
+            <span class="metric-card__value">{{ res.destinatarios }}</span>
+            <span class="metric-card__label">Destinatarios</span>
+          </div>
+
+          <div class="metric-card metric-card--ok">
+            <span class="metric-card__value">{{ res.enviadosOk ?? (res.estado === 'ENVIADO' ? res.destinatarios : 0) }}</span>
+            <span class="metric-card__label">Enviados con éxito</span>
+          </div>
+
+          <div class="metric-card metric-card--error" [class.metric-card--has-errors]="(res.enviadosError ?? 0) > 0">
+            <span class="metric-card__value">{{ res.enviadosError ?? 0 }}</span>
+            <span class="metric-card__label">Errores de entrega</span>
+          </div>
+        </div>
+
+        @if (res.smtpActivo && res.modoPrueba && res.emailPrueba) {
+          <div class="smtp-test-note">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span>Desvío de pruebas aplicado: los mensajes se remitieron al buzón de pruebas <strong>{{ res.emailPrueba }}</strong>.</span>
+          </div>
+        } @else if (!res.smtpActivo) {
+          <div class="smtp-test-note smtp-test-note--paused">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span><strong>Modo simulación (sin emisión):</strong> El lote se ha registrado en SICOL, pero no se ha emitido ningún correo porque el servicio SMTP está en pausa en <em>Datos Maestros &gt; Servidor SMTP</em>.</span>
+          </div>
+        }
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          class="button button--secondary"
+          type="button"
+          (click)="closeResultModal()"
+        >
+          Cerrar
+        </button>
+        <button
+          class="button button--primary"
+          type="button"
+          (click)="irATrazaLote(res.id)"
+        >
+          Ver lote en Traza de comunicaciones →
+        </button>
+      </div>
+    </dialog>
   }
 </div>
