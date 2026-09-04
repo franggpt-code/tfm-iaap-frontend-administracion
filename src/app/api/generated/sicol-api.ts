@@ -949,9 +949,119 @@ export interface paths {
         };
         /** Consultar los parámetros maestros de informes */
         get: operations["getConfiguracionInformes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones/ejercicios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar ejercicios con asignaciones para preparar comunicaciones */
+        get: operations["listEjerciciosParaEnvios"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones/configuracion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar la plantilla predeterminada de comunicaciones */
+        get: operations["getConfiguracionEnvios"];
+        /** Actualizar la plantilla predeterminada de comunicaciones */
+        put: operations["updateConfiguracionEnvios"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones/adjuntos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar adjuntos comunes disponibles */
+        get: operations["listAdjuntosComunicaciones"];
+        put?: never;
+        /** Cargar un adjunto común */
+        post: operations["createAdjuntoComunicacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones/adjuntos/{adjuntoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjuntoId: string;
+            };
+            cookie?: never;
+        };
+        /** Descargar un adjunto común */
+        get: operations["downloadAdjuntoComunicacion"];
+        put?: never;
+        post?: never;
+        /** Eliminar un adjunto común */
+        delete: operations["deleteAdjuntoComunicacion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones/historial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar la traza de comunicaciones preparadas */
+        get: operations["listHistorialEnviosComunicaciones"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/envios/comunicaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         /** Actualizar los parámetros maestros de informes */
         put: operations["updateConfiguracionInformes"];
-        post?: never;
+        /**
+         * Preparar y registrar una comunicación personalizada por asignación
+         * @description Crea la traza inmutable del lote y deja cada destinatario en el buzón de salida para su entrega por el canal corporativo configurado.
+         */
+        post: operations["crearEnvioComunicacion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2493,6 +2603,81 @@ export interface components {
             cargoVistoBueno: string;
             nombreDirectorIaap: string;
             cargoDirectorIaap: string;
+        };
+        ConfiguracionEnvios: {
+            /** @description Plantilla de asunto. Admite */
+            asunto: string;
+            /** @description Plantilla de cuerpo. Admite */
+            cuerpo: string;
+        };
+        ConfiguracionEnviosUpdate: {
+            asunto: string;
+            cuerpo: string;
+        };
+        AdjuntoComunicacion: {
+            /** Format: uuid */
+            id: string;
+            nombre: string;
+            tipoContenido: string;
+            /** Format: int64 */
+            tamanoBytes: number;
+            /** Format: date-time */
+            creadoAt: string;
+        };
+        EjercicioEnvio: {
+            /** Format: uuid */
+            examenId: string;
+            /** Format: uuid */
+            procesoId: string;
+            procesoCodigoSirhus?: string;
+            procesoNombre: string;
+            /** Format: int32 */
+            ejercicio: number;
+            nombreEjercicio: string;
+            /** Format: date-time */
+            fechaHora?: string;
+            /** Format: int32 */
+            asignaciones: number;
+            tieneEnviosPrevios: boolean;
+            /** Format: date-time */
+            ultimoEnvioAt?: string;
+            /** Format: int32 */
+            ultimoEnvioDestinatarios?: number;
+        };
+        EnvioComunicacionCreate: {
+            /** Format: uuid */
+            examenId: string;
+            asunto: string;
+            cuerpo: string;
+            adjuntoIds?: string[];
+        };
+        EnvioComunicacionResultado: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            creadoAt: string;
+            /** Format: int32 */
+            destinatarios: number;
+            /** @example PENDIENTE_ENVIO */
+            estado: string;
+        };
+        EnvioComunicacionHistorial: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            examenId: string;
+            procesoCodigoSirhus?: string;
+            procesoNombre: string;
+            /** Format: int32 */
+            ejercicio: number;
+            nombreEjercicio?: string;
+            /** Format: date-time */
+            creadoAt: string;
+            creadoPor: string;
+            /** Format: int32 */
+            destinatarios: number;
+            /** @example PENDIENTE_ENVIO */
+            estado: string;
         };
         /** @description Resultado agregado de una carga desde plantilla ODS/XLSX. */
         ImportacionDatosBaseResultado: {
@@ -5010,6 +5195,185 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    listEjerciciosParaEnvios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ejercicios con sus asignaciones y la última comunicación preparada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EjercicioEnvio"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getConfiguracionEnvios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plantilla de asunto y cuerpo predeterminada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionEnvios"];
+                };
+            };
+        };
+    };
+    updateConfiguracionEnvios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfiguracionEnviosUpdate"];
+            };
+        };
+        responses: {
+            /** @description Plantilla actualizada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguracionEnvios"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    listAdjuntosComunicaciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Adjuntos reutilizables para las comunicaciones. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdjuntoComunicacion"][];
+                };
+            };
+        };
+    };
+    createAdjuntoComunicacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    fichero: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Adjunto cargado. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdjuntoComunicacion"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+        };
+    };
+    downloadAdjuntoComunicacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjuntoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Archivo adjunto. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteAdjuntoComunicacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adjuntoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Adjunto eliminado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listHistorialEnviosComunicaciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Histórico de lotes de comunicación. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvioComunicacionHistorial"][];
+                };
+            };
+        };
+    };
     updateConfiguracionInformes: {
         parameters: {
             query?: never;
@@ -5034,6 +5398,32 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             500: components["responses"]["InternalError"];
+        };
+    };
+    crearEnvioComunicacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnvioComunicacionCreate"];
+            };
+        };
+        responses: {
+            /** @description Comunicación preparada y registrada. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvioComunicacionResultado"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
         };
     };
     getExamenAulaById: {

@@ -1,0 +1,71 @@
+<div class="page-shell envios-page">
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <a routerLink="/admin">Inicio</a><span aria-hidden="true">/</span><span>Envios</span>
+  </nav>
+
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Comunicaciones a colaboradores</p>
+      <h1>Envios</h1>
+      <p>Prepara una comunicación por cada asignación y conserva la traza del lote, de sus destinatarios y de la plantilla utilizada.</p>
+    </div>
+  </header>
+
+  @if (error()) { <div class="alert alert--error" role="alert"><strong>No se ha podido completar la operación.</strong> {{ error() }}</div> }
+  @if (success()) { <div class="alert alert--success" role="status">{{ success() }}</div> }
+
+  @if (loading()) {
+    <p class="loading-message">Cargando comunicaciones…</p>
+  } @else {
+    <section class="step-card" aria-labelledby="exercise-title">
+      <div class="step-heading"><span>1</span><div><h2 id="exercise-title">Seleccionar proceso y ejercicio</h2><p>Solo se muestran ejercicios que ya disponen de asignaciones.</p></div></div>
+      <div class="field">
+        <label for="ejercicio-envio">Ejercicio *</label>
+        <select id="ejercicio-envio" [value]="selectedExamenId()" (change)="selectedExamenId.set($any($event.target).value)">
+          <option value="">Selecciona un ejercicio</option>
+          @for (item of ejercicios(); track item.examenId) {
+            <option [value]="item.examenId">{{ item.procesoCodigoSirhus || 'Proceso' }} · {{ item.procesoNombre }} · {{ item.ejercicio }}.º {{ item.nombreEjercicio }} ({{ item.asignaciones }} asignaciones)</option>
+          }
+        </select>
+      </div>
+      @if (selectedEjercicio(); as item) {
+        <div class="context-summary">
+          <div><span>Fecha</span><strong>{{ dateLabel(item.fechaHora) }}</strong></div>
+          <div><span>Asignaciones</span><strong>{{ item.asignaciones }}</strong></div>
+          <div><span>Histórico</span><strong>{{ item.tieneEnviosPrevios ? 'Comunicación previa: ' + dateLabel(item.ultimoEnvioAt) : 'Sin comunicaciones previas' }}</strong></div>
+        </div>
+      }
+    </section>
+
+    <section class="step-card" aria-labelledby="template-title">
+      <div class="step-heading"><span>2</span><div><h2 id="template-title">Modelo de comunicación</h2><p>Los valores se personalizan para cada colaborador al crear el lote.</p></div></div>
+      <p class="tokens"><strong>Campos disponibles:</strong> #NOMBRE#, #DIA#, #CUERPO#, #EDIFICIO#, #AULA#, #PERFIL# y #PROCESO#.</p>
+      <div class="field"><label for="asunto">Asunto *</label><input id="asunto" type="text" maxlength="500" [value]="asunto()" (input)="asunto.set($any($event.target).value)"></div>
+      <div class="field"><label for="cuerpo">Cuerpo del mensaje *</label><textarea id="cuerpo" rows="11" maxlength="8000" [value]="cuerpo()" (input)="cuerpo.set($any($event.target).value)"></textarea></div>
+      <div class="template-actions"><button class="button button--secondary" type="button" [disabled]="savingTemplate() || !asunto().trim() || !cuerpo().trim()" (click)="saveTemplate()">{{ savingTemplate() ? 'Guardando…' : 'Guardar como plantilla predeterminada' }}</button></div>
+    </section>
+
+    <section class="step-card" aria-labelledby="attachments-title">
+      <div class="step-heading"><span>3</span><div><h2 id="attachments-title">Adjuntos comunes</h2><p>Selecciona los documentos que se incorporarán al lote, por ejemplo una guía de colaboración.</p></div></div>
+      <div class="attachment-upload"><label class="button button--secondary" for="nuevo-adjunto">{{ uploading() ? 'Cargando…' : 'Cargar fichero' }}</label><input id="nuevo-adjunto" type="file" [disabled]="uploading()" (change)="onFileSelected($event)"><span>Máximo 10 MB.</span></div>
+      <ul class="attachment-list" aria-label="Adjuntos comunes">
+        @for (adjunto of adjuntos(); track adjunto.id) {
+          <li><label><input type="checkbox" [checked]="selectedAdjuntoIds().includes(adjunto.id)" (change)="toggleAdjunto(adjunto.id)"><span><strong>{{ adjunto.nombre }}</strong><small>{{ adjunto.tipoContenido }} · {{ sizeLabel(adjunto.tamanoBytes) }}</small></span></label><span class="attachment-actions"><button type="button" class="button button--link" (click)="downloadAdjunto(adjunto)">Descargar</button><button type="button" class="button button--link delete-attachment" (click)="deleteAdjunto(adjunto)">Eliminar</button></span></li>
+        } @empty { <li class="empty-state">No hay adjuntos comunes cargados.</li> }
+      </ul>
+    </section>
+
+    <section class="send-bar" aria-label="Preparar envío">
+      <div><strong>Preparar comunicación</strong><span>Se registrará un mensaje personalizado por asignación en el buzón de salida y en la traza auditable.</span></div>
+      <button class="button button--primary" type="button" [disabled]="!canCreate()" (click)="crearEnvio()">{{ creating() ? 'Preparando…' : 'Preparar lote' }}</button>
+    </section>
+
+    <section class="history-section" aria-labelledby="history-title">
+      <div class="section-title"><h2 id="history-title">Traza de comunicaciones</h2><p>Los lotes preparados permanecen asociados al ejercicio y a la persona que los creó.</p></div>
+      <div class="history-table-wrap"><table><thead><tr><th>Proceso y ejercicio</th><th>Preparado</th><th>Por</th><th>Destinatarios</th><th>Estado</th></tr></thead><tbody>
+        @for (item of historial(); track item.id) { <tr><td><strong>{{ item.procesoCodigoSirhus || 'Proceso' }}</strong><br><span>{{ item.procesoNombre }} · {{ item.ejercicio }}.º {{ item.nombreEjercicio }}</span></td><td>{{ dateLabel(item.creadoAt) }}</td><td>{{ item.creadoPor }}</td><td>{{ item.destinatarios }}</td><td><span class="status-chip">Pendiente de envío</span></td></tr> }
+        @empty { <tr><td colspan="5" class="empty-state">Aún no se ha preparado ninguna comunicación.</td></tr> }
+      </tbody></table></div>
+    </section>
+  }
+</div>

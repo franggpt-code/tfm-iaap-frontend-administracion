@@ -59,6 +59,13 @@ import {
   ColaboradorPortalPatch,
   ConfirmacionAsignacionPortalUpdate,
   CuadroMandoAdministracion,
+  ConfiguracionEnvios,
+  ConfiguracionEnviosUpdate,
+  AdjuntoComunicacion,
+  EjercicioEnvio,
+  EnvioComunicacionCreate,
+  EnvioComunicacionResultado,
+  EnvioComunicacionHistorial,
 } from "./sicol.types";
 
 @Injectable({ providedIn: "root" })
@@ -211,6 +218,44 @@ export class SicolApiClient {
 
   updateConfiguracionInformes(payload: ConfiguracionInformesUpdate): Observable<ConfiguracionInformes> {
     return this.http.put<ConfiguracionInformes>(`${this.adminUrl}/configuracion-informes`, payload);
+  }
+
+  listEjerciciosParaEnvios(): Observable<EjercicioEnvio[]> {
+    return this.http.get<EjercicioEnvio[]>(`${this.adminUrl}/envios/comunicaciones/ejercicios`);
+  }
+
+  getConfiguracionEnvios(): Observable<ConfiguracionEnvios> {
+    return this.http.get<ConfiguracionEnvios>(`${this.adminUrl}/envios/comunicaciones/configuracion`);
+  }
+
+  updateConfiguracionEnvios(payload: ConfiguracionEnviosUpdate): Observable<ConfiguracionEnvios> {
+    return this.http.put<ConfiguracionEnvios>(`${this.adminUrl}/envios/comunicaciones/configuracion`, payload);
+  }
+
+  listAdjuntosComunicaciones(): Observable<AdjuntoComunicacion[]> {
+    return this.http.get<AdjuntoComunicacion[]>(`${this.adminUrl}/envios/comunicaciones/adjuntos`);
+  }
+
+  createAdjuntoComunicacion(fichero: File): Observable<AdjuntoComunicacion> {
+    const body = new FormData();
+    body.append("fichero", fichero, fichero.name);
+    return this.http.post<AdjuntoComunicacion>(`${this.adminUrl}/envios/comunicaciones/adjuntos`, body);
+  }
+
+  deleteAdjuntoComunicacion(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/envios/comunicaciones/adjuntos/${id}`);
+  }
+
+  downloadAdjuntoComunicacion(id: string): Observable<Blob> {
+    return this.http.get(`${this.adminUrl}/envios/comunicaciones/adjuntos/${id}`, { responseType: "blob" });
+  }
+
+  listHistorialEnviosComunicaciones(): Observable<EnvioComunicacionHistorial[]> {
+    return this.http.get<EnvioComunicacionHistorial[]>(`${this.adminUrl}/envios/comunicaciones/historial`);
+  }
+
+  crearEnvioComunicacion(payload: EnvioComunicacionCreate): Observable<EnvioComunicacionResultado> {
+    return this.http.post<EnvioComunicacionResultado>(`${this.adminUrl}/envios/comunicaciones`, payload);
   }
 
   deleteAsignacion(id: string): Observable<void> {

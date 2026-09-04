@@ -67,6 +67,13 @@ export type ImportacionDatamartResultado = components["schemas"]["ImportacionDat
 export type ImportacionDatamartAviso = components["schemas"]["ImportacionDatamartConvocatoriasAviso"];
 export type CuadroMandoAdministracion = components["schemas"]["CuadroMandoAdministracion"];
 export type CuadroMandoEjercicio = components["schemas"]["CuadroMandoEjercicio"];
+export type ConfiguracionEnvios = components["schemas"]["ConfiguracionEnvios"];
+export type ConfiguracionEnviosUpdate = components["schemas"]["ConfiguracionEnviosUpdate"];
+export type AdjuntoComunicacion = components["schemas"]["AdjuntoComunicacion"];
+export type EjercicioEnvio = components["schemas"]["EjercicioEnvio"];
+export type EnvioComunicacionCreate = components["schemas"]["EnvioComunicacionCreate"];
+export type EnvioComunicacionResultado = components["schemas"]["EnvioComunicacionResultado"];
+export type EnvioComunicacionHistorial = components["schemas"]["EnvioComunicacionHistorial"];
 
 export interface ImportacionArchivos {
   procesoSelectivoId: string;
