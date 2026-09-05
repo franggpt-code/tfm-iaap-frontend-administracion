@@ -14,14 +14,17 @@ import { ProcesosExplorerComponent } from "./features/workspace/procesos/proceso
 import { UbicacionesComponent } from "./features/workspace/ubicaciones/ubicaciones.component";
 import { ColaboradoresComponent } from "./features/workspace/colaboradores/colaboradores.component";
 import { AsignacionesComponent } from "./features/workspace/asignaciones/asignaciones.component";
+import { EnviosComponent } from "./features/workspace/envios/envios.component";
 import { InformesComponent } from "./features/workspace/informes/informes.component";
 import { UsuariosComponent } from "./features/workspace/usuarios/usuarios.component";
 import { ZonaPruebasComponent } from "./features/workspace/zona-pruebas/zona-pruebas.component";
 import { MiEspacioComponent } from "./features/portal/mi-espacio.component";
+import { ConfirmacionPublicaComponent } from "./features/public/confirmacion-publica/confirmacion-publica.component";
 
 export const routes: Routes = [
   { path: "", redirectTo: "login", pathMatch: "full" },
   { path: "login", component: LoginComponent, canActivate: [loginGuard] },
+  { path: "confirmacion-asistencia", component: ConfirmacionPublicaComponent },
   { path: "admin", component: DashboardComponent, canActivate: [adminGuard] },
   { path: "admin/importaciones", component: ImportacionesComponent, canActivate: [adminRoleGuard] },
   { path: "admin/importaciones/convocatorias", component: ImportacionConvocatoriasComponent, canActivate: [adminRoleGuard] },
@@ -34,6 +37,7 @@ export const routes: Routes = [
   { path: "admin/ubicaciones", component: UbicacionesComponent, canActivate: [adminRoleGuard] },
   { path: "admin/colaboradores", component: ColaboradoresComponent, canActivate: [adminGuard] },
   { path: "admin/asignaciones", component: AsignacionesComponent, canActivate: [adminGuard] },
+  { path: "admin/envios", component: EnviosComponent, canActivate: [adminGuard] },
   { path: "admin/informes", component: InformesComponent, canActivate: [adminGuard] },
   { path: "admin/datos-maestros", component: DatosMaestrosComponent, canActivate: [adminRoleGuard] },
   { path: "admin/usuarios", component: UsuariosComponent, canActivate: [adminRoleGuard] },

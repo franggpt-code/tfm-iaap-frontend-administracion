@@ -103,7 +103,18 @@ textarea {
   transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
-.button i {
+.button i,
+.button svg,
+.button-icon {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.button-icon-sm,
+.button--sm svg {
+  width: 0.95rem;
+  height: 0.95rem;
   flex: 0 0 auto;
 }
 
@@ -161,6 +172,25 @@ textarea {
   color: var(--jda-reference-green);
   min-height: auto;
   padding: 0;
+}
+
+.button--ghost {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+
+  &:hover,
+  &:focus {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+}
+
+.button--sm {
+  font-size: 0.82rem;
+  min-height: 34px;
+  padding: 0.25rem 0.65rem;
 }
 
 .filter-toggle {
