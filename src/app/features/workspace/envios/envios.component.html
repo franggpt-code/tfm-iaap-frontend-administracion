@@ -98,27 +98,26 @@
       <!-- Cuadro de mando / Métricas resumen -->
       <section class="kpi-grid" aria-label="Métricas de comunicaciones">
         <div class="kpi-card">
-          <span class="kpi-label">Lotes preparados</span>
-          <strong class="kpi-value">{{ historial().length }}</strong>
-          <small class="kpi-hint">Comunicaciones auditablemente registradas</small>
-        </div>
-        <div class="kpi-card">
-          <span class="kpi-label">Colaboradores notificados</span>
-          <strong class="kpi-value">{{ totalDestinatariosHistorial() }}</strong>
-          <small class="kpi-hint">Total de envíos acumulados</small>
-        </div>
-        <div class="kpi-card">
           <span class="kpi-label">Ejercicios comunicados</span>
-          <strong class="kpi-value">{{ ejerciciosConEnvioCount() }} <small>/ {{ ejercicios().length }}</small></strong>
-          <small class="kpi-hint">{{ ejerciciosPendientesCount() }} pendientes de envío</small>
+          <strong class="kpi-value">{{ ejerciciosConEnvioCount() }}</strong>
+          <small class="kpi-hint">Ejercicios con al menos un lote preparado</small>
         </div>
         <div class="kpi-card">
           <span class="kpi-label">Documentos en repositorio</span>
           <strong class="kpi-value">{{ adjuntos().length }}</strong>
           <small class="kpi-hint">Plantillas y guías reutilizables</small>
         </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Próximos con asignaciones sin comunicar</span>
+          <strong class="kpi-value">{{ proximosConAsignacionesSinComunicarCount() }}</strong>
+          <small class="kpi-hint">Requieren preparar una comunicación</small>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Próximos sin asignar ni comunicar</span>
+          <strong class="kpi-value">{{ proximosSinAsignarNiComunicarCount() }}</strong>
+          <small class="kpi-hint">Pendientes de asignar colaboradores</small>
+        </div>
       </section>
-
       <!-- Barra de Filtros y Control de Vista -->
       <section class="filter-card" aria-label="Filtros de traza">
         <div class="filter-card__heading">
@@ -160,17 +159,17 @@
 
           <div class="filter-select-wrapper">
             <label for="filter-proceso" class="sr-only">Filtrar por proceso</label>
-            <select
-              id="filter-proceso"
-              [value]="trazaProcessFilter()"
-              (change)="trazaProcessFilter.set($any($event.target).value)"
-            >
+            <select id="filter-proceso" [value]="trazaProcessFilter()" (change)="trazaProcessFilter.set($any($event.target).value)">
               <option value="">Todos los procesos selectivos</option>
-              @for (p of distinctProcesses(); track p.id) {
-                <option [value]="p.id">{{ p.label }}</option>
-              }
+              @for (p of distinctProcesses(); track p.id) { <option [value]="p.id">{{ p.label }}</option> }
             </select>
           </div>
+          @if (trazaView() === 'procesos') {
+            <label class="filter-checkbox" for="filter-ejercicios-anteriores">
+              <input id="filter-ejercicios-anteriores" type="checkbox" [checked]="trazaIncludePrevious()" (change)="trazaIncludePrevious.set($any($event.target).checked)">
+              <span>Incluir ejercicios anteriores</span>
+            </label>
+          }
         </div>
       </section>
 
@@ -214,7 +213,7 @@
                           </span>
                           <small class="status-date">Última: {{ dateLabel(item.ultimoEnvioAt) }} ({{ item.ultimoEnvioDestinatarios }} dest.)</small>
                         </div>
-                      } @else {
+                      } @else if (item.asignaciones > 0) {
                         <div class="status-stack">
                           <span class="status-chip status-chip--pending">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chip-icon" aria-hidden="true">
@@ -226,17 +225,21 @@
                           </span>
                           <small class="status-date">{{ item.asignaciones }} esperando comunicación</small>
                         </div>
+                      } @else {
+                        <div class="status-stack">
+                          <span class="status-chip status-chip--pending">Pendiente de asignación</span>
+                          <small class="status-date">Sin colaboradores asignados todavía</small>
+                        </div>
                       }
                     </td>
                     <td class="td-actions">
-                      <button
-                        type="button"
-                        class="button button--secondary button--sm"
-                        (click)="prepareForExercise(item.examenId)"
-                        [title]="item.tieneEnviosPrevios ? 'Preparar nuevo envío para este ejercicio' : 'Preparar comunicación inicial'"
-                      >
-                        {{ item.tieneEnviosPrevios ? 'Nuevo envío' : 'Preparar envío' }}
-                      </button>
+                      @if (item.asignaciones > 0) {
+                        <button type="button" class="button button--secondary button--sm" (click)="prepareForExercise(item.examenId)" [title]="item.tieneEnviosPrevios ? 'Preparar nuevo envío para este ejercicio' : 'Preparar comunicación inicial'">
+                          {{ item.tieneEnviosPrevios ? 'Nuevo envío' : 'Preparar envío' }}
+                        </button>
+                      } @else {
+                        <span class="text-muted">Sin asignar</span>
+                      }
                     </td>
                   </tr>
                 } @empty {

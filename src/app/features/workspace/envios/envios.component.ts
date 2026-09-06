@@ -33,6 +33,7 @@ export class EnviosComponent implements OnInit {
 
   // Datos base
   readonly ejercicios = signal<EjercicioEnvio[]>([]);
+  readonly trazaEjercicios = signal<EjercicioEnvio[]>([]);
   readonly adjuntos = signal<AdjuntoComunicacion[]>([]);
   readonly historial = signal<EnvioComunicacionHistorial[]>([]);
   readonly loading = signal(true);
@@ -43,6 +44,7 @@ export class EnviosComponent implements OnInit {
   readonly trazaView = signal<TrazaViewMode>("procesos");
   readonly trazaSearch = signal("");
   readonly trazaProcessFilter = signal("");
+  readonly trazaIncludePrevious = signal(false);
   readonly selectedLote = signal<EnvioComunicacionHistorial | null>(null);
   readonly loteDestinatarios = signal<DestinatarioEnvioComunicacion[]>([]);
   readonly loadingDestinatarios = signal(false);
@@ -110,7 +112,7 @@ export class EnviosComponent implements OnInit {
 
   readonly distinctProcesses = computed(() => {
     const map = new Map<string, string>();
-    for (const item of this.ejercicios()) {
+    for (const item of this.trazaEjercicios()) {
       if (item.procesoId && !map.has(item.procesoId)) {
         const label = item.procesoCodigoSirhus ? `${item.procesoCodigoSirhus} · ${item.procesoNombre}` : item.procesoNombre;
         map.set(item.procesoId, label);
@@ -122,37 +124,33 @@ export class EnviosComponent implements OnInit {
   readonly filteredEjerciciosTraza = computed(() => {
     const q = this.trazaSearch().toLowerCase().trim();
     const p = this.trazaProcessFilter();
-    return this.ejercicios().filter((item) => {
+    const includePrevious = this.trazaIncludePrevious();
+    return this.trazaEjercicios().filter((item) => {
+      if (!includePrevious && !this.isTodayOrLater(item.fechaHora)) return false;
       if (p && item.procesoId !== p) return false;
       if (!q) return true;
-      const haystack = [
-        item.procesoCodigoSirhus ?? "",
-        item.procesoNombre,
-        item.nombreEjercicio,
-        `${item.ejercicio}`,
-      ].join(" ").toLowerCase();
-      return haystack.includes(q);
-    });
+      return [item.procesoCodigoSirhus ?? "", item.procesoNombre, item.nombreEjercicio, `${item.ejercicio}`]
+        .join(" ").toLowerCase().includes(q);
+    }).sort((left, right) => this.traceDateSort(left.fechaHora) - this.traceDateSort(right.fechaHora));
   });
 
   readonly ejerciciosConEnvioCount = computed(() =>
-    this.ejercicios().filter((item) => item.tieneEnviosPrevios).length,
+    this.trazaEjercicios().filter((item) => item.tieneEnviosPrevios).length,
   );
 
-  readonly ejerciciosPendientesCount = computed(() =>
-    this.ejercicios().filter((item) => !item.tieneEnviosPrevios).length,
+  readonly proximosConAsignacionesSinComunicarCount = computed(() =>
+    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones > 0 && !item.tieneEnviosPrevios).length,
   );
 
-  readonly totalDestinatariosHistorial = computed(() =>
-    this.historial().reduce((acc, curr) => acc + (curr.destinatarios || 0), 0),
+  readonly proximosSinAsignarNiComunicarCount = computed(() =>
+    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones === 0 && !item.tieneEnviosPrevios).length,
   );
-
   readonly filteredHistorial = computed(() => {
     const q = this.trazaSearch().toLowerCase().trim();
     const p = this.trazaProcessFilter();
     return this.historial().filter((item) => {
       if (p) {
-        const matchEj = this.ejercicios().find((e) => e.examenId === item.examenId);
+        const matchEj = this.trazaEjercicios().find((e) => e.examenId === item.examenId);
         if (matchEj && matchEj.procesoId !== p) return false;
       }
       if (!q) return true;
@@ -242,13 +240,15 @@ export class EnviosComponent implements OnInit {
     this.error.set(null);
     forkJoin({
       ejercicios: this.api.listEjerciciosParaEnvios(),
+      trazaEjercicios: this.api.listEjerciciosParaTraza(),
       configuracion: this.api.getConfiguracionEnvios(),
       adjuntos: this.api.listAdjuntosComunicaciones(),
       historial: this.api.listHistorialEnviosComunicaciones(),
       smtpConfig: this.api.getConfiguracionSmtp(),
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: ({ ejercicios, configuracion, adjuntos, historial, smtpConfig }) => {
+      next: ({ ejercicios, trazaEjercicios, configuracion, adjuntos, historial, smtpConfig }) => {
         this.ejercicios.set(ejercicios);
+        this.trazaEjercicios.set(trazaEjercicios);
         this.asunto.set(configuracion.asunto ?? "");
         this.cuerpo.set(configuracion.cuerpo ?? "");
         this.adjuntos.set(adjuntos);
@@ -575,6 +575,21 @@ export class EnviosComponent implements OnInit {
   }
 
   // Formatters
+  private isTodayOrLater(value?: string): boolean {
+    if (!value) return false;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+  }
+
+  private traceDateSort(value?: string): number {
+    if (!value) return Number.MAX_SAFE_INTEGER;
+    const timestamp = new Date(value).getTime();
+    return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+  }
+
   dateLabel(value?: string): string {
     if (!value) return "Fecha pendiente";
     return new Intl.DateTimeFormat("es-ES", { dateStyle: "long", timeStyle: "short" }).format(new Date(value));
@@ -594,11 +609,13 @@ export class EnviosComponent implements OnInit {
   private refreshLists(): void {
     forkJoin({
       ejercicios: this.api.listEjerciciosParaEnvios(),
+      trazaEjercicios: this.api.listEjerciciosParaTraza(),
       historial: this.api.listHistorialEnviosComunicaciones(),
       smtpConfig: this.api.getConfiguracionSmtp(),
     }).subscribe({
-      next: ({ ejercicios, historial, smtpConfig }) => {
+      next: ({ ejercicios, trazaEjercicios, historial, smtpConfig }) => {
         this.ejercicios.set(ejercicios);
+        this.trazaEjercicios.set(trazaEjercicios);
         this.historial.set(historial);
         this.smtpConfig.set(smtpConfig);
       },

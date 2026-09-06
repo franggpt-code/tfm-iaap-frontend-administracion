@@ -1010,6 +1010,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/envios/comunicaciones/traza/ejercicios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar todos los ejercicios para la traza de comunicaciones */
+        get: operations["listEjerciciosParaTraza"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/envios/comunicaciones/configuracion": {
         parameters: {
             query?: never;
@@ -5543,6 +5560,28 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Ejercicios con sus asignaciones y la última comunicación preparada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EjercicioEnvio"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listEjerciciosParaTraza: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ejercicios, con o sin asignaciones, y su última comunicación preparada. */
             200: {
                 headers: {
                     [name: string]: unknown;

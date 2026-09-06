@@ -246,6 +246,10 @@ export class SicolApiClient {
     return this.http.get<EjercicioEnvio[]>(`${this.adminUrl}/envios/comunicaciones/ejercicios`);
   }
 
+  listEjerciciosParaTraza(): Observable<EjercicioEnvio[]> {
+    return this.http.get<EjercicioEnvio[]>(`${this.adminUrl}/envios/comunicaciones/traza/ejercicios`);
+  }
+
   getConfiguracionEnvios(): Observable<ConfiguracionEnvios> {
     return this.http.get<ConfiguracionEnvios>(`${this.adminUrl}/envios/comunicaciones/configuracion`);
   }
