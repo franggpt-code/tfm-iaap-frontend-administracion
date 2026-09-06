@@ -33,6 +33,7 @@ export class EnviosComponent implements OnInit {
 
   // Datos base
   readonly ejercicios = signal<EjercicioEnvio[]>([]);
+  readonly trazaEjercicios = signal<EjercicioEnvio[]>([]);
   readonly adjuntos = signal<AdjuntoComunicacion[]>([]);
   readonly historial = signal<EnvioComunicacionHistorial[]>([]);
   readonly loading = signal(true);
@@ -43,12 +44,15 @@ export class EnviosComponent implements OnInit {
   readonly trazaView = signal<TrazaViewMode>("procesos");
   readonly trazaSearch = signal("");
   readonly trazaProcessFilter = signal("");
+  readonly trazaIncludePrevious = signal(false);
   readonly selectedLote = signal<EnvioComunicacionHistorial | null>(null);
   readonly loteDestinatarios = signal<DestinatarioEnvioComunicacion[]>([]);
   readonly loadingDestinatarios = signal(false);
   readonly destinatarioSearch = signal("");
   readonly selectedDestinatario = signal<DestinatarioEnvioComunicacion | null>(null);
   readonly drawerExpanded = signal(false);
+  readonly externalCommunicationTarget = signal<EjercicioEnvio | null>(null);
+  readonly updatingExternalCommunication = signal(false);
 
   // Preparar Envío
   readonly selectedExamenId = signal("");
@@ -88,8 +92,9 @@ export class EnviosComponent implements OnInit {
   // Tokens disponibles para el modelo
   readonly tokens = [
     { token: "#NOMBRE#", label: "Nombre colaborador/a", description: "Nombre y apellidos completos" },
-    { token: "#PROCESO#", label: "Proceso selectivo", description: "Denominación del proceso" },
-    { token: "#CUERPO#", label: "Cuerpo / Ejercicio", description: "Nombre del ejercicio examinado" },
+    { token: "#PROCESO#", label: "Código SIRHUS", description: "Código SIRHUS de la convocatoria" },
+    { token: "#CUERPO#", label: "Cuerpo / especialidad", description: "Denominación del cuerpo o especialidad" },
+    { token: "#EJERCICIO#", label: "Ejercicio", description: "Denominación del ejercicio seleccionado" },
     { token: "#DIA#", label: "Fecha del ejercicio", description: "Fecha redactada en castellano" },
     { token: "#EDIFICIO#", label: "Sede / Edificio", description: "Centro o ámbito general" },
     { token: "#AULA#", label: "Aula asignada", description: "Aula específica asignada" },
@@ -110,7 +115,7 @@ export class EnviosComponent implements OnInit {
 
   readonly distinctProcesses = computed(() => {
     const map = new Map<string, string>();
-    for (const item of this.ejercicios()) {
+    for (const item of this.trazaEjercicios()) {
       if (item.procesoId && !map.has(item.procesoId)) {
         const label = item.procesoCodigoSirhus ? `${item.procesoCodigoSirhus} · ${item.procesoNombre}` : item.procesoNombre;
         map.set(item.procesoId, label);
@@ -122,37 +127,33 @@ export class EnviosComponent implements OnInit {
   readonly filteredEjerciciosTraza = computed(() => {
     const q = this.trazaSearch().toLowerCase().trim();
     const p = this.trazaProcessFilter();
-    return this.ejercicios().filter((item) => {
+    const includePrevious = this.trazaIncludePrevious();
+    return this.trazaEjercicios().filter((item) => {
+      if (!includePrevious && !this.isTodayOrLater(item.fechaHora)) return false;
       if (p && item.procesoId !== p) return false;
       if (!q) return true;
-      const haystack = [
-        item.procesoCodigoSirhus ?? "",
-        item.procesoNombre,
-        item.nombreEjercicio,
-        `${item.ejercicio}`,
-      ].join(" ").toLowerCase();
-      return haystack.includes(q);
-    });
+      return [item.procesoCodigoSirhus ?? "", item.procesoNombre, item.nombreEjercicio, `${item.ejercicio}`]
+        .join(" ").toLowerCase().includes(q);
+    }).sort((left, right) => this.traceDateSort(left.fechaHora) - this.traceDateSort(right.fechaHora));
   });
 
   readonly ejerciciosConEnvioCount = computed(() =>
-    this.ejercicios().filter((item) => item.tieneEnviosPrevios).length,
+    this.trazaEjercicios().filter((item) => item.tieneEnviosPrevios || item.comunicadoExternamente).length,
   );
 
-  readonly ejerciciosPendientesCount = computed(() =>
-    this.ejercicios().filter((item) => !item.tieneEnviosPrevios).length,
+  readonly proximosConAsignacionesSinComunicarCount = computed(() =>
+    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones > 0 && !item.tieneEnviosPrevios && !item.comunicadoExternamente).length,
   );
 
-  readonly totalDestinatariosHistorial = computed(() =>
-    this.historial().reduce((acc, curr) => acc + (curr.destinatarios || 0), 0),
+  readonly proximosSinAsignarNiComunicarCount = computed(() =>
+    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones === 0 && !item.tieneEnviosPrevios && !item.comunicadoExternamente).length,
   );
-
   readonly filteredHistorial = computed(() => {
     const q = this.trazaSearch().toLowerCase().trim();
     const p = this.trazaProcessFilter();
     return this.historial().filter((item) => {
       if (p) {
-        const matchEj = this.ejercicios().find((e) => e.examenId === item.examenId);
+        const matchEj = this.trazaEjercicios().find((e) => e.examenId === item.examenId);
         if (matchEj && matchEj.procesoId !== p) return false;
       }
       if (!q) return true;
@@ -203,8 +204,9 @@ export class EnviosComponent implements OnInit {
     const rawAsunto = this.asunto();
     const rawCuerpo = this.cuerpo();
     const nombre = "María García Pérez";
-    const proceso = ej ? ej.procesoNombre : "Cuerpo Superior Facultativo (A1.1100)";
-    const cuerpo = ej ? `${ej.ejercicio}.º ${ej.nombreEjercicio}` : "1.er Ejercicio Teórico";
+    const proceso = ej?.procesoCodigoSirhus ?? "L2A11300";
+    const cuerpo = ej?.procesoNombre ?? "CSA ESP RÉGIMEN JURÍDICO";
+    const ejercicio = ej?.nombreEjercicio ?? "Ejercicio 1";
     const dia = ej && ej.fechaHora ? this.dateLabel(ej.fechaHora) : "15 de noviembre de 2026";
     const edificio = "Campus Universitario Reina Mercedes";
     const aula = "Aula 104 - Planta 1";
@@ -219,6 +221,7 @@ export class EnviosComponent implements OnInit {
         .replaceAll("#NOMBRE#", nombre)
         .replaceAll("#PROCESO#", proceso)
         .replaceAll("#CUERPO#", cuerpo)
+        .replaceAll("#EJERCICIO#", ejercicio)
         .replaceAll("#DIA#", dia)
         .replaceAll("#EDIFICIO#", edificio)
         .replaceAll("#AULA#", aula)
@@ -242,13 +245,15 @@ export class EnviosComponent implements OnInit {
     this.error.set(null);
     forkJoin({
       ejercicios: this.api.listEjerciciosParaEnvios(),
+      trazaEjercicios: this.api.listEjerciciosParaTraza(),
       configuracion: this.api.getConfiguracionEnvios(),
       adjuntos: this.api.listAdjuntosComunicaciones(),
       historial: this.api.listHistorialEnviosComunicaciones(),
       smtpConfig: this.api.getConfiguracionSmtp(),
     }).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: ({ ejercicios, configuracion, adjuntos, historial, smtpConfig }) => {
+      next: ({ ejercicios, trazaEjercicios, configuracion, adjuntos, historial, smtpConfig }) => {
         this.ejercicios.set(ejercicios);
+        this.trazaEjercicios.set(trazaEjercicios);
         this.asunto.set(configuracion.asunto ?? "");
         this.cuerpo.set(configuracion.cuerpo ?? "");
         this.adjuntos.set(adjuntos);
@@ -270,6 +275,35 @@ export class EnviosComponent implements OnInit {
     this.activeTab.set("nuevo");
     this.error.set(null);
     this.success.set(null);
+  }
+
+  openExternalCommunicationModal(item: EjercicioEnvio): void {
+    this.externalCommunicationTarget.set(item);
+    this.error.set(null);
+  }
+
+  closeExternalCommunicationModal(): void {
+    if (!this.updatingExternalCommunication()) this.externalCommunicationTarget.set(null);
+  }
+
+  confirmExternalCommunication(): void {
+    const item = this.externalCommunicationTarget();
+    if (!item) return;
+    const comunicadoExternamente = !item.comunicadoExternamente;
+    this.updatingExternalCommunication.set(true);
+    this.error.set(null);
+    this.api.updateComunicacionExternaEjercicio(item.examenId, { comunicadoExternamente })
+      .pipe(finalize(() => this.updatingExternalCommunication.set(false)))
+      .subscribe({
+        next: () => {
+          this.externalCommunicationTarget.set(null);
+          this.success.set(comunicadoExternamente
+            ? "Ejercicio marcado como comunicado externamente. No se incluirá entre los envíos pendientes de SICOL."
+            : "Ejercicio reabierto para preparar comunicaciones desde SICOL.");
+          this.refreshLists();
+        },
+        error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      });
   }
 
   // Operaciones de modelo y tokens
@@ -575,6 +609,21 @@ export class EnviosComponent implements OnInit {
   }
 
   // Formatters
+  private isTodayOrLater(value?: string): boolean {
+    if (!value) return false;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date >= today;
+  }
+
+  private traceDateSort(value?: string): number {
+    if (!value) return Number.MAX_SAFE_INTEGER;
+    const timestamp = new Date(value).getTime();
+    return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+  }
+
   dateLabel(value?: string): string {
     if (!value) return "Fecha pendiente";
     return new Intl.DateTimeFormat("es-ES", { dateStyle: "long", timeStyle: "short" }).format(new Date(value));
@@ -594,11 +643,13 @@ export class EnviosComponent implements OnInit {
   private refreshLists(): void {
     forkJoin({
       ejercicios: this.api.listEjerciciosParaEnvios(),
+      trazaEjercicios: this.api.listEjerciciosParaTraza(),
       historial: this.api.listHistorialEnviosComunicaciones(),
       smtpConfig: this.api.getConfiguracionSmtp(),
     }).subscribe({
-      next: ({ ejercicios, historial, smtpConfig }) => {
+      next: ({ ejercicios, trazaEjercicios, historial, smtpConfig }) => {
         this.ejercicios.set(ejercicios);
+        this.trazaEjercicios.set(trazaEjercicios);
         this.historial.set(historial);
         this.smtpConfig.set(smtpConfig);
       },
