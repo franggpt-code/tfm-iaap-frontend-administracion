@@ -2769,10 +2769,20 @@ export interface components {
             asunto: string;
             /** @description Plantilla de cuerpo. Admite */
             cuerpo: string;
+            /**
+             * Format: uri
+             * @description URL pública base de SICOL para los enlaces de confirmación de asistencia.
+             */
+            urlPortalAsistencia: string;
+            /** @description Texto institucional que se muestra al pie de los correos de comunicación. */
+            pieCorreo: string;
         };
         ConfiguracionEnviosUpdate: {
-            asunto: string;
-            cuerpo: string;
+            asunto?: string;
+            cuerpo?: string;
+            /** Format: uri */
+            urlPortalAsistencia?: string;
+            pieCorreo?: string;
         };
         AdjuntoComunicacion: {
             /** Format: uuid */
