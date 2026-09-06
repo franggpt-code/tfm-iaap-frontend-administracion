@@ -90,8 +90,9 @@ export class EnviosComponent implements OnInit {
   // Tokens disponibles para el modelo
   readonly tokens = [
     { token: "#NOMBRE#", label: "Nombre colaborador/a", description: "Nombre y apellidos completos" },
-    { token: "#PROCESO#", label: "Proceso selectivo", description: "Denominación del proceso" },
-    { token: "#CUERPO#", label: "Cuerpo / Ejercicio", description: "Nombre del ejercicio examinado" },
+    { token: "#PROCESO#", label: "Código SIRHUS", description: "Código SIRHUS de la convocatoria" },
+    { token: "#CUERPO#", label: "Cuerpo / especialidad", description: "Denominación del cuerpo o especialidad" },
+    { token: "#EJERCICIO#", label: "Ejercicio", description: "Denominación del ejercicio seleccionado" },
     { token: "#DIA#", label: "Fecha del ejercicio", description: "Fecha redactada en castellano" },
     { token: "#EDIFICIO#", label: "Sede / Edificio", description: "Centro o ámbito general" },
     { token: "#AULA#", label: "Aula asignada", description: "Aula específica asignada" },
@@ -201,8 +202,9 @@ export class EnviosComponent implements OnInit {
     const rawAsunto = this.asunto();
     const rawCuerpo = this.cuerpo();
     const nombre = "María García Pérez";
-    const proceso = ej ? ej.procesoNombre : "Cuerpo Superior Facultativo (A1.1100)";
-    const cuerpo = ej ? `${ej.ejercicio}.º ${ej.nombreEjercicio}` : "1.er Ejercicio Teórico";
+    const proceso = ej?.procesoCodigoSirhus ?? "L2A11300";
+    const cuerpo = ej?.procesoNombre ?? "CSA ESP RÉGIMEN JURÍDICO";
+    const ejercicio = ej?.nombreEjercicio ?? "Ejercicio 1";
     const dia = ej && ej.fechaHora ? this.dateLabel(ej.fechaHora) : "15 de noviembre de 2026";
     const edificio = "Campus Universitario Reina Mercedes";
     const aula = "Aula 104 - Planta 1";
@@ -217,6 +219,7 @@ export class EnviosComponent implements OnInit {
         .replaceAll("#NOMBRE#", nombre)
         .replaceAll("#PROCESO#", proceso)
         .replaceAll("#CUERPO#", cuerpo)
+        .replaceAll("#EJERCICIO#", ejercicio)
         .replaceAll("#DIA#", dia)
         .replaceAll("#EDIFICIO#", edificio)
         .replaceAll("#AULA#", aula)
