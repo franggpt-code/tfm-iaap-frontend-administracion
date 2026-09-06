@@ -51,6 +51,8 @@ export class EnviosComponent implements OnInit {
   readonly destinatarioSearch = signal("");
   readonly selectedDestinatario = signal<DestinatarioEnvioComunicacion | null>(null);
   readonly drawerExpanded = signal(false);
+  readonly externalCommunicationTarget = signal<EjercicioEnvio | null>(null);
+  readonly updatingExternalCommunication = signal(false);
 
   // Preparar Envío
   readonly selectedExamenId = signal("");
@@ -136,15 +138,15 @@ export class EnviosComponent implements OnInit {
   });
 
   readonly ejerciciosConEnvioCount = computed(() =>
-    this.trazaEjercicios().filter((item) => item.tieneEnviosPrevios).length,
+    this.trazaEjercicios().filter((item) => item.tieneEnviosPrevios || item.comunicadoExternamente).length,
   );
 
   readonly proximosConAsignacionesSinComunicarCount = computed(() =>
-    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones > 0 && !item.tieneEnviosPrevios).length,
+    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones > 0 && !item.tieneEnviosPrevios && !item.comunicadoExternamente).length,
   );
 
   readonly proximosSinAsignarNiComunicarCount = computed(() =>
-    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones === 0 && !item.tieneEnviosPrevios).length,
+    this.trazaEjercicios().filter((item) => this.isTodayOrLater(item.fechaHora) && item.asignaciones === 0 && !item.tieneEnviosPrevios && !item.comunicadoExternamente).length,
   );
   readonly filteredHistorial = computed(() => {
     const q = this.trazaSearch().toLowerCase().trim();
@@ -273,6 +275,35 @@ export class EnviosComponent implements OnInit {
     this.activeTab.set("nuevo");
     this.error.set(null);
     this.success.set(null);
+  }
+
+  openExternalCommunicationModal(item: EjercicioEnvio): void {
+    this.externalCommunicationTarget.set(item);
+    this.error.set(null);
+  }
+
+  closeExternalCommunicationModal(): void {
+    if (!this.updatingExternalCommunication()) this.externalCommunicationTarget.set(null);
+  }
+
+  confirmExternalCommunication(): void {
+    const item = this.externalCommunicationTarget();
+    if (!item) return;
+    const comunicadoExternamente = !item.comunicadoExternamente;
+    this.updatingExternalCommunication.set(true);
+    this.error.set(null);
+    this.api.updateComunicacionExternaEjercicio(item.examenId, { comunicadoExternamente })
+      .pipe(finalize(() => this.updatingExternalCommunication.set(false)))
+      .subscribe({
+        next: () => {
+          this.externalCommunicationTarget.set(null);
+          this.success.set(comunicadoExternamente
+            ? "Ejercicio marcado como comunicado externamente. No se incluirá entre los envíos pendientes de SICOL."
+            : "Ejercicio reabierto para preparar comunicaciones desde SICOL.");
+          this.refreshLists();
+        },
+        error: (error: unknown) => this.error.set(apiErrorMessage(error)),
+      });
   }
 
   // Operaciones de modelo y tokens

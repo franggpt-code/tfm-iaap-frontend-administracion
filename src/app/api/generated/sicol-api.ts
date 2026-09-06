@@ -1027,6 +1027,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/envios/comunicaciones/ejercicios/{examenId}/comunicacion-externa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Marcar o reabrir un ejercicio comunicado por medios ajenos a SICOL */
+        put: operations["updateComunicacionExternaEjercicio"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/envios/comunicaciones/configuracion": {
         parameters: {
             query?: never;
@@ -2834,10 +2851,16 @@ export interface components {
             /** Format: int32 */
             asignaciones: number;
             tieneEnviosPrevios: boolean;
+            /** @description Indica que la comunicación del ejercicio se realizó por medios ajenos a SICOL. */
+            comunicadoExternamente: boolean;
             /** Format: date-time */
             ultimoEnvioAt?: string;
             /** Format: int32 */
             ultimoEnvioDestinatarios?: number;
+        };
+        ComunicacionExternaUpdate: {
+            /** @description Marca el ejercicio como comunicado externamente, o lo reabre para envío desde SICOL. */
+            comunicadoExternamente: boolean;
         };
         EnvioComunicacionCreate: {
             /** Format: uuid */
@@ -5592,6 +5615,36 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    updateComunicacionExternaEjercicio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComunicacionExternaUpdate"];
+            };
+        };
+        responses: {
+            /** @description Estado de comunicación actualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EjercicioEnvio"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getConfiguracionEnvios: {

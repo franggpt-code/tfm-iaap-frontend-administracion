@@ -349,6 +349,13 @@ table {
   white-space: nowrap;
 }
 
+.trace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .item-title {
   display: block;
   margin-top: 0.2rem;
@@ -419,6 +426,12 @@ table {
     background: #fff8e8;
     border: 1px solid #f9dc98;
     color: #8c6000;
+  }
+
+  &.status-chip--external {
+    background: #edf5fb;
+    border: 1px solid #b9d8ed;
+    color: #155b81;
   }
 }
 

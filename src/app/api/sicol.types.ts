@@ -67,6 +67,7 @@ export type ImportacionDatamartResultado = components["schemas"]["ImportacionDat
 export type ImportacionDatamartAviso = components["schemas"]["ImportacionDatamartConvocatoriasAviso"];
 export type CuadroMandoAdministracion = components["schemas"]["CuadroMandoAdministracion"];
 export type CuadroMandoEjercicio = components["schemas"]["CuadroMandoEjercicio"];
+export type ComunicacionExternaUpdate = components["schemas"]["ComunicacionExternaUpdate"];
 export type ConfiguracionEnvios = components["schemas"]["ConfiguracionEnvios"];
 export type ConfiguracionEnviosUpdate = components["schemas"]["ConfiguracionEnviosUpdate"];
 export type AdjuntoComunicacion = components["schemas"]["AdjuntoComunicacion"];

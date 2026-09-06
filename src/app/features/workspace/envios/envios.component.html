@@ -203,7 +203,17 @@
                       <span class="count-badge">{{ item.asignaciones }} colaboradores</span>
                     </td>
                     <td>
-                      @if (item.tieneEnviosPrevios) {
+                      @if (item.comunicadoExternamente) {
+                        <div class="status-stack">
+                          <span class="status-chip status-chip--external">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chip-icon" aria-hidden="true">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Comunicado externamente
+                          </span>
+                          <small class="status-date">Registrado como gestionado por otros medios</small>
+                        </div>
+                      } @else if (item.tieneEnviosPrevios) {
                         <div class="status-stack">
                           <span class="status-chip status-chip--sent">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chip-icon" aria-hidden="true">
@@ -233,13 +243,26 @@
                       }
                     </td>
                     <td class="td-actions">
-                      @if (item.asignaciones > 0) {
-                        <button type="button" class="button button--secondary button--sm" (click)="prepareForExercise(item.examenId)" [title]="item.tieneEnviosPrevios ? 'Preparar nuevo envío para este ejercicio' : 'Preparar comunicación inicial'">
-                          {{ item.tieneEnviosPrevios ? 'Nuevo envío' : 'Preparar envío' }}
-                        </button>
-                      } @else {
-                        <span class="text-muted">Sin asignar</span>
-                      }
+                      <div class="trace-actions">
+                        @if (item.comunicadoExternamente) {
+                          <button type="button" class="button button--secondary button--sm" (click)="openExternalCommunicationModal(item)" title="Volver a habilitar la preparación de envíos en SICOL">
+                            Reabrir envío
+                          </button>
+                        } @else {
+                          @if (item.asignaciones > 0) {
+                            <button type="button" class="button button--secondary button--sm" (click)="prepareForExercise(item.examenId)" [title]="item.tieneEnviosPrevios ? 'Preparar nuevo envío para este ejercicio' : 'Preparar comunicación inicial'">
+                              {{ item.tieneEnviosPrevios ? 'Nuevo envío' : 'Preparar envío' }}
+                            </button>
+                          } @else {
+                            <span class="text-muted">Sin asignar</span>
+                          }
+                          @if (!item.tieneEnviosPrevios) {
+                            <button type="button" class="button button--secondary button--sm" (click)="openExternalCommunicationModal(item)" title="Registrar que la comunicación se realizó fuera de SICOL">
+                              Marcar externa
+                            </button>
+                          }
+                        }
+                      </div>
                     </td>
                   </tr>
                 } @empty {
@@ -1194,6 +1217,33 @@
           (click)="confirmDeleteDoc()"
         >
           {{ deletingDocLoading() ? 'Eliminando…' : 'Eliminar documento' }}
+        </button>
+      </div>
+    </dialog>
+  }
+
+  @if (externalCommunicationTarget(); as item) {
+    <div class="modal-backdrop" (click)="closeExternalCommunicationModal()"></div>
+    <dialog open class="confirmation-dialog" aria-labelledby="external-communication-title">
+      <div class="dialog-header">
+        <h2 id="external-communication-title">{{ item.comunicadoExternamente ? 'Reabrir envío desde SICOL' : 'Registrar comunicación externa' }}</h2>
+        <button type="button" class="dialog-close-btn" aria-label="Cerrar modal" [disabled]="updatingExternalCommunication()" (click)="closeExternalCommunicationModal()">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p>
+          <strong>{{ item.procesoCodigoSirhus || 'PROCESO' }} · {{ item.procesoNombre }}</strong><br>
+          {{ item.ejercicio }}.º {{ item.nombreEjercicio }}
+        </p>
+        @if (item.comunicadoExternamente) {
+          <p>El ejercicio volverá a aparecer entre los pendientes y podrá prepararse un envío desde SICOL.</p>
+        } @else {
+          <p>Se registrará que este ejercicio ya fue comunicado por otros medios. No se enviará ningún correo ni se creará un lote en SICOL.</p>
+        }
+      </div>
+      <div class="dialog-actions">
+        <button class="button button--secondary" type="button" [disabled]="updatingExternalCommunication()" (click)="closeExternalCommunicationModal()">Cancelar</button>
+        <button class="button button--primary" type="button" [disabled]="updatingExternalCommunication()" (click)="confirmExternalCommunication()">
+          {{ updatingExternalCommunication() ? 'Guardando…' : (item.comunicadoExternamente ? 'Reabrir envío' : 'Registrar comunicación externa') }}
         </button>
       </div>
     </dialog>

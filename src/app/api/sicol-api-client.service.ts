@@ -59,6 +59,7 @@ import {
   ColaboradorPortalPatch,
   ConfirmacionAsignacionPortalUpdate,
   CuadroMandoAdministracion,
+  ComunicacionExternaUpdate,
   ConfiguracionEnvios,
   ConfiguracionEnviosUpdate,
   AdjuntoComunicacion,
@@ -248,6 +249,10 @@ export class SicolApiClient {
 
   listEjerciciosParaTraza(): Observable<EjercicioEnvio[]> {
     return this.http.get<EjercicioEnvio[]>(`${this.adminUrl}/envios/comunicaciones/traza/ejercicios`);
+  }
+
+  updateComunicacionExternaEjercicio(examenId: string, payload: ComunicacionExternaUpdate): Observable<EjercicioEnvio> {
+    return this.http.put<EjercicioEnvio>(`${this.adminUrl}/envios/comunicaciones/ejercicios/${examenId}/comunicacion-externa`, payload);
   }
 
   getConfiguracionEnvios(): Observable<ConfiguracionEnvios> {
