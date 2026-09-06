@@ -10,7 +10,7 @@
       <p class="eyebrow">Configuración funcional</p>
       <h1>Datos maestros</h1>
     </div>
-    @if (activeSection() && activeSection() !== "informes" && activeSection() !== "smtp") {
+    @if (activeSection() && activeSection() !== "informes" && activeSection() !== "comunicaciones" && activeSection() !== "smtp") {
       <div class="heading-actions">
         <button class="button button--primary" type="button" (click)="startCreate()">
           <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -55,6 +55,15 @@
       (click)="selectSection('informes')"
     >
       Informes
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeSection() === 'comunicaciones'"
+      [class.is-active]="activeSection() === 'comunicaciones'"
+      (click)="selectSection('comunicaciones')"
+    >
+      Comunicaciones
     </button>
     <button
       type="button"
@@ -230,6 +239,31 @@
         <div class="form-actions field--wide">
           <button class="button button--primary" type="submit" [disabled]="reportConfigSaving()" [attr.aria-busy]="reportConfigSaving()">
             {{ reportConfigSaving() ? "Guardando…" : "Guardar parámetros" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  } @else if (activeSection() === "comunicaciones") {
+    <section id="configuracion-comunicaciones" class="report-config-card" aria-labelledby="communications-config-title">
+      <div class="report-config-card__header">
+        <h2 id="communications-config-title">Enlaces y pie institucional de los correos</h2>
+      </div>
+      <form class="report-config__form" [formGroup]="comunicacionesConfigForm" (ngSubmit)="saveComunicacionesConfiguration()" novalidate>
+        <div class="field field--wide">
+          <label for="communications-base-url">URL pública de confirmación <span class="req-star" aria-hidden="true">*</span></label>
+          <input id="communications-base-url" type="url" maxlength="500" formControlName="urlPortalAsistencia" placeholder="https://sicol.ejemplo.es/sicol" autocomplete="url" [attr.aria-invalid]="!!comunicacionesConfigErrors()['urlPortalAsistencia']">
+          <span class="field-hint">Incluye la URL pública y, si existe, el prefijo de la aplicación. No añadas <code>/confirmacion-asistencia</code> ni parámetros.</span>
+          @if (comunicacionesConfigErrors()["urlPortalAsistencia"]) { <span class="field-error">{{ comunicacionesConfigErrors()["urlPortalAsistencia"] }}</span> }
+        </div>
+        <div class="field field--wide">
+          <label for="communications-footer">Pie institucional del correo <span class="req-star" aria-hidden="true">*</span></label>
+          <textarea id="communications-footer" rows="4" maxlength="2000" formControlName="pieCorreo" [attr.aria-invalid]="!!comunicacionesConfigErrors()['pieCorreo']"></textarea>
+          <span class="field-hint">Se mostrará al final de los correos enviados. Puedes separar las líneas con Intro.</span>
+          @if (comunicacionesConfigErrors()["pieCorreo"]) { <span class="field-error">{{ comunicacionesConfigErrors()["pieCorreo"] }}</span> }
+        </div>
+        <div class="form-actions field--wide">
+          <button class="button button--primary" type="submit" [disabled]="comunicacionesConfigSaving()" [attr.aria-busy]="comunicacionesConfigSaving()">
+            {{ comunicacionesConfigSaving() ? "Guardando…" : "Guardar comunicaciones" }}
           </button>
         </div>
       </form>

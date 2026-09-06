@@ -18,6 +18,8 @@ import {
   PerfilColaboracion,
   PerfilColaboracionCreateUpdate,
   ConfiguracionInformesUpdate,
+  ConfiguracionEnvios,
+  ConfiguracionEnviosUpdate,
   ConfiguracionSmtp,
   ConfiguracionSmtpUpdate,
   PruebaConexionSmtpRequest,
@@ -25,7 +27,7 @@ import {
 } from "../../../api/sicol.types";
 
 type CatalogKey = "oep" | "acceso" | "vinculacion" | "cuerpos" | "perfiles" | "subcategorias";
-type SectionKey = CatalogKey | "informes" | "smtp";
+type SectionKey = CatalogKey | "informes" | "comunicaciones" | "smtp";
 type MasterItem = Oep | TipoAcceso | TipoVinculacion | Cuerpo | PerfilColaboracion | SubcategoriaAsignacion;
 export type MasterSortColumn = "col1" | "col2" | "col3";
 export type SortDirection = "asc" | "desc";
@@ -72,6 +74,7 @@ export class DatosMaestrosComponent implements OnInit {
   readonly saving = signal(false);
   readonly deleting = signal(false);
   readonly reportConfigSaving = signal(false);
+  readonly comunicacionesConfigSaving = signal(false);
   readonly smtpConfigSaving = signal(false);
   readonly testingSmtp = signal(false);
   readonly testSmtpResult = signal<PruebaConexionSmtpResultado | null>(null);
@@ -87,6 +90,7 @@ export class DatosMaestrosComponent implements OnInit {
   readonly success = signal<string | null>(null);
   readonly fieldErrors = signal<Record<string, string>>({});
   readonly reportConfigErrors = signal<Record<string, string>>({});
+  readonly comunicacionesConfigErrors = signal<Record<string, string>>({});
   readonly smtpConfigErrors = signal<Record<string, string>>({});
   readonly deleteTarget = signal<DeleteTarget | null>(null);
 
@@ -119,6 +123,11 @@ export class DatosMaestrosComponent implements OnInit {
     cargoVistoBueno: [""],
     nombreDirectorIaap: [""],
     cargoDirectorIaap: [""],
+  });
+
+  readonly comunicacionesConfigForm = this.fb.nonNullable.group({
+    urlPortalAsistencia: [""],
+    pieCorreo: [""],
   });
 
   readonly smtpConfigForm = this.fb.nonNullable.group({
@@ -210,7 +219,7 @@ export class DatosMaestrosComponent implements OnInit {
     if (section) {
       this.selectSection(section);
       window.setTimeout(() => {
-        const targetId = section === "informes" ? "configuracion-informes" : section === "smtp" ? "configuracion-smtp" : null;
+        const targetId = section === "informes" ? "configuracion-informes" : section === "comunicaciones" ? "configuracion-comunicaciones" : section === "smtp" ? "configuracion-smtp" : null;
         if (targetId) document.getElementById(targetId)?.scrollIntoView({ block: "start" });
       }, 350);
     }
@@ -228,7 +237,7 @@ export class DatosMaestrosComponent implements OnInit {
 
   selectSection(section: SectionKey): void {
     this.activeSection.set(section);
-    if (section !== "informes" && section !== "smtp") {
+    if (section !== "informes" && section !== "comunicaciones" && section !== "smtp") {
       this.selectCatalog(section);
     } else {
       this.cancelForm();
@@ -389,6 +398,37 @@ export class DatosMaestrosComponent implements OnInit {
         this.reportConfigForm.setValue(configuration);
         this.reportConfigErrors.set({});
         this.success.set("Los parámetros de informes se han guardado correctamente.");
+      },
+      error: error => this.error.set(apiErrorMessage(error)),
+    });
+  }
+
+  saveComunicacionesConfiguration(): void {
+    const values = this.comunicacionesConfigForm.getRawValue();
+    const errors: Record<string, string> = {};
+    try {
+      const url = new URL(values.urlPortalAsistencia.trim());
+      if (!["http:", "https:"].includes(url.protocol) || url.search || url.hash) {
+        errors["urlPortalAsistencia"] = "Indica una URL HTTP o HTTPS, sin parámetros ni fragmentos.";
+      }
+    } catch {
+      errors["urlPortalAsistencia"] = "Indica una URL pública válida.";
+    }
+    if (!values.pieCorreo.trim()) errors["pieCorreo"] = "El pie institucional es obligatorio.";
+    this.comunicacionesConfigErrors.set(errors);
+    if (Object.keys(errors).length) return;
+
+    const payload: ConfiguracionEnviosUpdate = {
+      urlPortalAsistencia: values.urlPortalAsistencia.trim().replace(/\/+$/, ""),
+      pieCorreo: values.pieCorreo.trim(),
+    };
+    this.comunicacionesConfigSaving.set(true);
+    this.clearMessages();
+    this.api.updateConfiguracionEnvios(payload).pipe(finalize(() => this.comunicacionesConfigSaving.set(false))).subscribe({
+      next: configuration => {
+        this.applyComunicacionesConfiguration(configuration);
+        this.comunicacionesConfigErrors.set({});
+        this.success.set("La configuración de comunicaciones se ha guardado correctamente.");
       },
       error: error => this.error.set(apiErrorMessage(error)),
     });
@@ -557,6 +597,9 @@ export class DatosMaestrosComponent implements OnInit {
       case "informes":
         this.loadSectionData(section, this.api.getConfiguracionInformes(), value => this.reportConfigForm.setValue(value));
         break;
+      case "comunicaciones":
+        this.loadSectionData(section, this.api.getConfiguracionEnvios(), value => this.applyComunicacionesConfiguration(value));
+        break;
       case "smtp":
         this.loadSectionData(section, this.api.getConfiguracionSmtp(), value => this.applySmtpConfiguration(value));
         break;
@@ -577,6 +620,13 @@ export class DatosMaestrosComponent implements OnInit {
       error: (error: unknown) => {
         if (this.activeSection() === section) this.error.set(apiErrorMessage(error));
       },
+    });
+  }
+
+  private applyComunicacionesConfiguration(configuration: ConfiguracionEnvios): void {
+    this.comunicacionesConfigForm.setValue({
+      urlPortalAsistencia: configuration.urlPortalAsistencia,
+      pieCorreo: configuration.pieCorreo,
     });
   }
 
@@ -604,8 +654,9 @@ export class DatosMaestrosComponent implements OnInit {
 
   private requestedSection(): SectionKey | null {
     const section = this.route.snapshot.queryParamMap.get("seccion");
-    if (section && ([...this.catalogKeys, "informes", "smtp"] as string[]).includes(section)) return section as SectionKey;
+    if (section && ([...this.catalogKeys, "informes", "comunicaciones", "smtp"] as string[]).includes(section)) return section as SectionKey;
     if (this.route.snapshot.fragment === "configuracion-informes") return "informes";
+    if (this.route.snapshot.fragment === "configuracion-comunicaciones") return "comunicaciones";
     if (this.route.snapshot.fragment === "configuracion-smtp") return "smtp";
     return null;
   }
