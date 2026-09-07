@@ -1960,3 +1960,165 @@ table {
     }
   }
 }
+
+/* Selección de destinatarios del nuevo envío */
+.recipient-empty-state {
+  background: var(--jda-surface-muted, #f5f5f5);
+  border: 1px solid var(--jda-neutral-border, #d8d8d8);
+  border-radius: 4px;
+  color: var(--jda-neutral-mid, #666);
+  padding: 1rem;
+}
+
+.recipient-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.recipient-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  strong {
+    color: var(--jda-primary-dark, #033713);
+    font-size: 1rem;
+  }
+
+  span {
+    color: var(--jda-neutral-mid, #666);
+    font-size: 0.85rem;
+  }
+}
+
+.recipient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recipient-search {
+  margin-bottom: 0.75rem;
+
+  label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  input {
+    border: 1px solid var(--jda-neutral-border, #d8d8d8);
+    border-radius: 4px;
+    font: inherit;
+    max-width: 32rem;
+    padding: 0.55rem 0.75rem;
+    width: 100%;
+
+    &:focus {
+      border-color: var(--jda-primary, #00733e);
+      outline: 2px solid rgba(0, 115, 62, 0.2);
+    }
+  }
+}
+
+.recipient-selection-table-wrap {
+  border: 1px solid var(--jda-neutral-border, #d8d8d8);
+  border-radius: 4px;
+  max-height: 24rem;
+  max-width: 100%;
+  overflow: auto;
+
+  table {
+    min-width: 48rem;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tr.is-selected td {
+    background: var(--jda-primary-light, #cfe6d8);
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--jda-primary, #00733e);
+    height: 1rem;
+    width: 1rem;
+  }
+}
+
+.recipient-check-column {
+  text-align: center;
+  width: 5rem;
+}
+
+.recipient-selection-warning {
+  margin-top: 1rem;
+}
+
+/* El detalle de lote mantiene visibles todas las columnas y permite desplazamiento. */
+.trace-drawer {
+  box-sizing: border-box;
+  width: min(64rem, 100vw);
+
+  &.is-expanded {
+    width: min(92rem, 100vw);
+  }
+}
+
+.drawer-card {
+  min-width: 0;
+}
+
+.recipients-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+
+  table {
+    min-width: 48rem;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .dest-email {
+    overflow-wrap: anywhere;
+  }
+}
+
+.email-preview-actions-visual .visual-buttons-demo {
+  .btn-demo--confirm {
+    background: var(--jda-primary, #00733e);
+  }
+
+  .btn-demo--reject {
+    background: var(--jda-error, #d4403a);
+  }
+}
+
+@media (max-width: 768px) {
+  .recipient-actions {
+    width: 100%;
+
+    .button {
+      flex: 1 1 10rem;
+    }
+  }
+
+  .drawer-header,
+  .drawer-body,
+  .drawer-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
