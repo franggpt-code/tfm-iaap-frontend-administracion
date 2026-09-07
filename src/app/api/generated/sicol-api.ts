@@ -2867,6 +2867,8 @@ export interface components {
             examenId: string;
             asunto: string;
             cuerpo: string;
+            /** @description Asignaciones del ejercicio cuyos colaboradores recibirán la comunicación. */
+            asignacionIds: string[];
             adjuntoIds?: string[];
         };
         EnvioComunicacionResultado: {

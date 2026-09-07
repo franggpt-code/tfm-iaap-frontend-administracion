@@ -6,6 +6,7 @@ import { apiErrorMessage } from "../../../api/api-error";
 import { SicolApiClient } from "../../../api/sicol-api-client.service";
 import {
   AdjuntoComunicacion,
+  AsignacionColaborador,
   ConfiguracionSmtp,
   DestinatarioEnvioComunicacion,
   EjercicioEnvio,
@@ -24,6 +25,7 @@ export type TrazaViewMode = "procesos" | "lotes";
 })
 export class EnviosComponent implements OnInit {
   private readonly api = inject(SicolApiClient);
+  private candidatosRequest = 0;
 
   @ViewChild("asuntoInput") asuntoInput?: ElementRef<HTMLInputElement>;
   @ViewChild("cuerpoInput") cuerpoInput?: ElementRef<HTMLTextAreaElement>;
@@ -56,6 +58,10 @@ export class EnviosComponent implements OnInit {
 
   // Preparar Envío
   readonly selectedExamenId = signal("");
+  readonly candidatosEnvio = signal<AsignacionColaborador[]>([]);
+  readonly selectedAsignacionIds = signal<string[]>([]);
+  readonly loadingCandidatos = signal(false);
+  readonly destinatariosSearch = signal("");
   readonly selectedAdjuntoIds = signal<string[]>([]);
   readonly asunto = signal("");
   readonly cuerpo = signal("");
@@ -109,8 +115,35 @@ export class EnviosComponent implements OnInit {
     this.ejercicios().find((item) => item.examenId === this.selectedExamenId()) ?? null,
   );
 
+  readonly filteredCandidatosEnvio = computed(() => {
+    const query = this.destinatariosSearch().trim().toLowerCase();
+    if (!query) return this.candidatosEnvio();
+    return this.candidatosEnvio().filter((item) => [
+      item.colaboradorNombre ?? "",
+      item.perfilDenominacion,
+      item.centroNombre ?? "",
+      item.aulaNombre ?? "",
+      item.subcategoriaGeneral ?? "",
+      item.estadoConfirmacion,
+    ].join(" ").toLowerCase().includes(query));
+  });
+
+  readonly selectedCandidatos = computed(() => {
+    const selected = new Set(this.selectedAsignacionIds());
+    return this.candidatosEnvio().filter((item) => selected.has(item.id));
+  });
+
+  readonly pendingCandidatosCount = computed(() =>
+    this.candidatosEnvio().filter((item) => item.estadoConfirmacion === "PENDIENTE").length,
+  );
+
+  readonly previewAsignacion = computed(() =>
+    this.selectedCandidatos()[0] ?? this.candidatosEnvio()[0] ?? null,
+  );
+
   readonly canCreate = computed(() =>
-    !!this.selectedExamenId() && !!this.asunto().trim() && !!this.cuerpo().trim() && !this.creating(),
+    !!this.selectedExamenId() && this.selectedAsignacionIds().length > 0 &&
+    !!this.asunto().trim() && !!this.cuerpo().trim() && !this.creating(),
   );
 
   readonly distinctProcesses = computed(() => {
@@ -201,20 +234,24 @@ export class EnviosComponent implements OnInit {
 
   readonly samplePreview = computed(() => {
     const ej = this.selectedEjercicio();
+    const asignacion = this.previewAsignacion();
     const rawAsunto = this.asunto();
     const rawCuerpo = this.cuerpo();
-    const nombre = "María García Pérez";
-    const proceso = ej?.procesoCodigoSirhus ?? "L2A11300";
-    const cuerpo = ej?.procesoNombre ?? "CSA ESP RÉGIMEN JURÍDICO";
-    const ejercicio = ej?.nombreEjercicio ?? "Ejercicio 1";
-    const dia = ej && ej.fechaHora ? this.dateLabel(ej.fechaHora) : "15 de noviembre de 2026";
-    const edificio = "Campus Universitario Reina Mercedes";
-    const aula = "Aula 104 - Planta 1";
-    const perfil = "Vocal de aula y control de asistencia";
-
-    const enlaceConfirmar = "http://127.0.0.1:4200/confirmacion-asistencia?token=demo-token-123&decision=CONFIRMADA";
-    const enlaceRechazar = "http://127.0.0.1:4200/confirmacion-asistencia?token=demo-token-123&decision=RECHAZADA";
-    const botonesTexto = `[SÍ, CONFIRMO MI ASISTENCIA]: ${enlaceConfirmar}\n[NO PUEDO ASISTIR (RECHAZAR)]: ${enlaceRechazar}`;
+    const nombre = asignacion?.colaboradorNombre ?? "<nombre de la persona destinataria>";
+    const proceso = asignacion?.procesoCodigoSirhus ?? ej?.procesoCodigoSirhus ?? "<código SIRHUS>";
+    const cuerpo = asignacion?.procesoNombre ?? ej?.procesoNombre ?? "<cuerpo o especialidad>";
+    const ejercicio = asignacion?.examenNombre ?? ej?.nombreEjercicio ?? "<ejercicio>";
+    const fechaHora = asignacion?.fechaHora ?? ej?.fechaHora;
+    const dia = fechaHora ? this.dateLabel(fechaHora) : "<fecha pendiente>";
+    const edificio = asignacion
+      ? asignacion.centroNombre ?? asignacion.subcategoriaGeneral ?? "Ámbito general"
+      : "<sede o ámbito general>";
+    const aula = asignacion
+      ? asignacion.aulaNombre ?? asignacion.subcategoriaGeneral ?? "Ámbito general"
+      : "<aula o ámbito general>";
+    const perfil = asignacion?.perfilDenominacion ?? "<perfil de colaboración>";
+    const enlaceConfirmar = "[enlace personal para confirmar la asistencia]";
+    const enlaceRechazar = "[enlace personal para rechazar la asistencia]";
 
     const replaceVars = (text: string) =>
       text
@@ -226,7 +263,7 @@ export class EnviosComponent implements OnInit {
         .replaceAll("#EDIFICIO#", edificio)
         .replaceAll("#AULA#", aula)
         .replaceAll("#PERFIL#", perfil)
-        .replaceAll("#BOTONES_RESPUESTA#", botonesTexto)
+        .replaceAll("#BOTONES_RESPUESTA#", "")
         .replaceAll("#ENLACE_CONFIRMAR#", enlaceConfirmar)
         .replaceAll("#ENLACE_RECHAZAR#", enlaceRechazar);
 
@@ -271,10 +308,75 @@ export class EnviosComponent implements OnInit {
   }
 
   prepareForExercise(examenId: string): void {
-    this.selectedExamenId.set(examenId);
     this.activeTab.set("nuevo");
     this.error.set(null);
     this.success.set(null);
+    this.onExerciseSelected(examenId);
+  }
+
+  onExerciseSelected(examenId: string): void {
+    const requestId = ++this.candidatosRequest;
+    this.selectedExamenId.set(examenId);
+    this.candidatosEnvio.set([]);
+    this.selectedAsignacionIds.set([]);
+    this.destinatariosSearch.set("");
+    if (!examenId) {
+      this.loadingCandidatos.set(false);
+      return;
+    }
+
+    this.loadingCandidatos.set(true);
+    this.api.listAsignaciones(examenId)
+      .pipe(finalize(() => {
+        if (requestId === this.candidatosRequest) this.loadingCandidatos.set(false);
+      }))
+      .subscribe({
+        next: (asignaciones) => {
+          if (requestId !== this.candidatosRequest || examenId !== this.selectedExamenId()) return;
+          this.candidatosEnvio.set(asignaciones);
+          this.selectedAsignacionIds.set(
+            asignaciones.filter((item) => item.estadoConfirmacion === "PENDIENTE").map((item) => item.id),
+          );
+        },
+        error: (error: unknown) => {
+          if (requestId === this.candidatosRequest) this.error.set(apiErrorMessage(error));
+        },
+      });
+  }
+
+  toggleCandidato(id: string): void {
+    this.selectedAsignacionIds.update((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+    );
+  }
+
+  selectPendingCandidatos(): void {
+    this.selectedAsignacionIds.set(
+      this.candidatosEnvio().filter((item) => item.estadoConfirmacion === "PENDIENTE").map((item) => item.id),
+    );
+  }
+
+  selectAllCandidatos(): void {
+    this.selectedAsignacionIds.set(this.candidatosEnvio().map((item) => item.id));
+  }
+
+  clearCandidatos(): void {
+    this.selectedAsignacionIds.set([]);
+  }
+
+  isCandidatoSelected(id: string): boolean {
+    return this.selectedAsignacionIds().includes(id);
+  }
+
+  candidatoAmbito(item: AsignacionColaborador): string {
+    if (item.aulaNombre) return [item.centroNombre, item.aulaNombre].filter(Boolean).join(" · ");
+    return item.subcategoriaGeneral || "Ámbito general";
+  }
+
+  confirmationLabel(item: AsignacionColaborador): string {
+    if (item.estadoConfirmacion === "CONFIRMADA") return "Confirmada";
+    if (item.estadoConfirmacion === "RECHAZADA") return "Rechazada";
+    return "Pendiente";
   }
 
   openExternalCommunicationModal(item: EjercicioEnvio): void {
@@ -383,6 +485,7 @@ export class EnviosComponent implements OnInit {
       examenId: this.selectedExamenId(),
       asunto: this.asunto().trim(),
       cuerpo: this.cuerpo().trim(),
+      asignacionIds: this.selectedAsignacionIds(),
       adjuntoIds: this.selectedAdjuntoIds(),
     }).pipe(finalize(() => this.creating.set(false))).subscribe({
       next: (result) => {

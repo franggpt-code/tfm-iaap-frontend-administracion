@@ -361,7 +361,7 @@
             <select
               id="ejercicio-envio"
               [value]="selectedExamenId()"
-              (change)="selectedExamenId.set($any($event.target).value)"
+              (change)="onExerciseSelected($any($event.target).value)"
             >
               <option value="">Selecciona un ejercicio…</option>
               @for (item of ejercicios(); track item.examenId) {
@@ -418,10 +418,98 @@
           }
         </section>
 
-        <!-- Paso 2: Modelo de comunicación -->
-        <section class="step-card" aria-labelledby="template-title">
+        <!-- Paso 2: Selección de destinatarios -->
+        <section class="step-card" aria-labelledby="recipients-title">
           <div class="step-heading">
             <span>2</span>
+            <div>
+              <h2 id="recipients-title">Seleccionar personas destinatarias</h2>
+              <p>Por defecto se seleccionan las asignaciones pendientes de confirmación. Puedes incluir o excluir cualquier persona del ejercicio.</p>
+            </div>
+          </div>
+
+          @if (!selectedExamenId()) {
+            <div class="recipient-empty-state">Selecciona primero un ejercicio para consultar sus personas asignadas.</div>
+          } @else if (loadingCandidatos()) {
+            <p class="loading-message" role="status">Cargando personas destinatarias…</p>
+          } @else {
+            <div class="recipient-toolbar">
+              <div class="recipient-summary" aria-live="polite">
+                <strong>{{ selectedAsignacionIds().length }} de {{ candidatosEnvio().length }}</strong>
+                <span>personas seleccionadas · {{ pendingCandidatosCount() }} pendientes de confirmación</span>
+              </div>
+              <div class="recipient-actions" aria-label="Acciones de selección de destinatarios">
+                <button class="button button--secondary button--sm" type="button" (click)="selectPendingCandidatos()">Seleccionar pendientes</button>
+                <button class="button button--secondary button--sm" type="button" (click)="selectAllCandidatos()">Seleccionar todas</button>
+                <button class="button button--ghost button--sm" type="button" (click)="clearCandidatos()">Deseleccionar todas</button>
+              </div>
+            </div>
+
+            <div class="recipient-search">
+              <label for="destinatarios-envio-search">Buscar entre las personas asignadas</label>
+              <input
+                id="destinatarios-envio-search"
+                type="search"
+                placeholder="Nombre, perfil, ubicación o estado…"
+                [value]="destinatariosSearch()"
+                (input)="destinatariosSearch.set($any($event.target).value)"
+              >
+            </div>
+
+            <div class="recipient-selection-table-wrap" role="region" aria-label="Personas destinatarias disponibles" tabindex="0">
+              <table class="recipient-selection-table">
+                <thead>
+                  <tr>
+                    <th class="recipient-check-column">Enviar</th>
+                    <th>Persona</th>
+                    <th>Perfil</th>
+                    <th>Ubicación</th>
+                    <th>Confirmación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of filteredCandidatosEnvio(); track item.id) {
+                    <tr [class.is-selected]="isCandidatoSelected(item.id)">
+                      <td class="recipient-check-column">
+                        <input
+                          type="checkbox"
+                          [checked]="isCandidatoSelected(item.id)"
+                          (change)="toggleCandidato(item.id)"
+                          [attr.aria-label]="'Enviar comunicación a ' + (item.colaboradorNombre || 'persona asignada')"
+                        >
+                      </td>
+                      <td><strong>{{ item.colaboradorNombre || 'Persona asignada' }}</strong></td>
+                      <td>{{ item.perfilDenominacion }}</td>
+                      <td>{{ candidatoAmbito(item) }}</td>
+                      <td>
+                        <span
+                          class="status-chip"
+                          [class.status-chip--confirmed]="item.estadoConfirmacion === 'CONFIRMADA'"
+                          [class.status-chip--rejected]="item.estadoConfirmacion === 'RECHAZADA'"
+                          [class.status-chip--sent]="item.estadoConfirmacion === 'PENDIENTE'"
+                        >{{ confirmationLabel(item) }}</span>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="empty-state">No hay personas que coincidan con el criterio de búsqueda.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (selectedAsignacionIds().length === 0) {
+              <div class="alert alert--warning recipient-selection-warning" role="alert">
+                Debes seleccionar al menos una persona antes de preparar el lote.
+              </div>
+            }
+          }
+        </section>
+
+
+        <!-- Paso 3: Modelo de comunicación -->
+        <section class="step-card" aria-labelledby="template-title">
+          <div class="step-heading">
+            <span>3</span>
             <div>
               <h2 id="template-title">Modelo de comunicación y plantilla</h2>
               <p>Define el asunto y contenido. Los tokens se sustituyen automáticamente con los datos de cada colaborador.</p>
@@ -491,8 +579,8 @@
           @if (showPreview()) {
             <div class="email-preview-box">
               <div class="email-preview-header">
-                <span class="badge badge--preview">Vista previa con datos de ejemplo</span>
-                <strong>Para:</strong> María García Pérez &lt;maria.garcia&#64;juntadeandalucia.es&gt;
+                <span class="badge badge--preview">Vista previa con datos reales de la asignación</span>
+                <strong>Para:</strong> {{ selectedAsignacionIds().length }} personas seleccionadas
               </div>
               <div class="email-preview-subject">
                 <strong>Asunto:</strong> {{ samplePreview().asunto }}
@@ -500,16 +588,16 @@
               <div class="email-preview-body">
                 <pre>{{ samplePreview().cuerpo }}</pre>
                 <div class="email-preview-actions-visual">
-                  <span class="visual-actions-hint">⚡ Botones visuales interactivos generados en la comunicación:</span>
+                  <span class="visual-actions-hint">⚡ Botones de respuesta generados en la comunicación:</span>
                   <div class="visual-buttons-demo">
-                    <a class="btn-demo btn-demo--confirm" href="/confirmacion-asistencia?token=demo-token-123&decision=CONFIRMADA" target="_blank" title="Probar confirmación pública">
+                    <span class="btn-demo btn-demo--confirm">
                       <span class="btn-demo-icon">✓</span>
                       <span>SÍ, CONFIRMO MI ASISTENCIA</span>
-                    </a>
-                    <a class="btn-demo btn-demo--reject" href="/confirmacion-asistencia?token=demo-token-123&decision=RECHAZADA" target="_blank" title="Probar renuncia pública">
+                    </span>
+                    <span class="btn-demo btn-demo--reject">
                       <span class="btn-demo-icon">✕</span>
                       <span>NO PUEDO ASISTIR (RECHAZAR)</span>
-                    </a>
+                    </span>
                   </div>
                   <small class="demo-subtext">El personal colaborador no necesita recordar contraseñas ni identificarse previamente: su decisión queda registrada en tiempo real en la base de datos de SICOL con un único clic.</small>
                 </div>
@@ -518,10 +606,10 @@
           }
         </section>
 
-        <!-- Paso 3: Documentación adjunta desde el Repositorio Documental -->
+        <!-- Paso 4: Documentación adjunta desde el Repositorio Documental -->
         <section class="step-card" aria-labelledby="attachments-title">
           <div class="step-heading">
-            <span>3</span>
+            <span>4</span>
             <div>
               <h2 id="attachments-title">Documentación adjunta (Repositorio documental)</h2>
               <p>Selecciona los documentos del repositorio que acompañarán a esta comunicación (ej. guía de actuación o protocolo).</p>
@@ -620,7 +708,7 @@
             </div>
             <span>
               @if (selectedEjercicio(); as ej) {
-                Se generará un mensaje personalizado para los <strong>{{ ej.asignaciones }} colaboradores</strong> de «{{ ej.procesoNombre }}» ({{ selectedAdjuntoIds().length }} adjuntos).
+                Se generará un mensaje personalizado para <strong>{{ selectedAsignacionIds().length }} personas seleccionadas</strong> de «{{ ej.procesoNombre }}» ({{ selectedAdjuntoIds().length }} adjuntos).
               } @else {
                 Selecciona un ejercicio para habilitar la preparación del lote.
               }
@@ -1281,7 +1369,7 @@
                 <div class="batch-summary-exam">{{ ej.nombreEjercicio }}</div>
               </div>
               <div class="batch-summary-count">
-                <span class="count-number">{{ ej.asignaciones }}</span>
+                <span class="count-number">{{ selectedAsignacionIds().length }}</span>
                 <span class="count-label">destinatarios</span>
               </div>
             </div>
@@ -1339,7 +1427,7 @@
                     <strong>Envío real activo (Producción)</strong>
                     <p>
                       El servidor SMTP está operativo. Se enviará un correo electrónico individual y real a cada uno de los
-                      <strong>{{ ej.asignaciones }} colaboradores</strong> asignados a este ejercicio desde <em>{{ smtp.remitenteEmail }}</em>.
+                      <strong>{{ selectedAsignacionIds().length }} personas seleccionadas</strong> desde <em>{{ smtp.remitenteEmail }}</em>.
                     </p>
                   }
                 } @else {
