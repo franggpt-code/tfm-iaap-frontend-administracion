@@ -70,6 +70,15 @@ export type CuadroMandoEjercicio = components["schemas"]["CuadroMandoEjercicio"]
 export type ComunicacionExternaUpdate = components["schemas"]["ComunicacionExternaUpdate"];
 export type ConfiguracionEnvios = components["schemas"]["ConfiguracionEnvios"];
 export type ConfiguracionEnviosUpdate = components["schemas"]["ConfiguracionEnviosUpdate"];
+export interface PlantillaComunicacionEjercicio {
+  asunto: string;
+  cuerpo: string;
+  personalizada: boolean;
+}
+export interface PlantillaComunicacionUpdate {
+  asunto: string;
+  cuerpo: string;
+}
 export type AdjuntoComunicacion = components["schemas"]["AdjuntoComunicacion"];
 export type AdjuntoComunicacionMetadataUpdate = components["schemas"]["AdjuntoComunicacionMetadataUpdate"];
 export type DestinatarioEnvioComunicacion = components["schemas"]["DestinatarioEnvioComunicacion"];

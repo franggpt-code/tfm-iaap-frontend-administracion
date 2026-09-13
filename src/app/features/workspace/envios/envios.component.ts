@@ -242,7 +242,7 @@ export class EnviosComponent implements OnInit {
     const cuerpo = asignacion?.procesoNombre ?? ej?.procesoNombre ?? "<cuerpo o especialidad>";
     const ejercicio = asignacion?.examenNombre ?? ej?.nombreEjercicio ?? "<ejercicio>";
     const fechaHora = asignacion?.fechaHora ?? ej?.fechaHora;
-    const dia = fechaHora ? this.dateLabel(fechaHora) : "<fecha pendiente>";
+    const dia = fechaHora ? this.dateOnlyLabel(fechaHora) : "<fecha pendiente>";
     const edificio = asignacion
       ? asignacion.centroNombre ?? asignacion.subcategoriaGeneral ?? "Ámbito general"
       : "<sede o ámbito general>";
@@ -324,6 +324,18 @@ export class EnviosComponent implements OnInit {
       this.loadingCandidatos.set(false);
       return;
     }
+
+    this.api.getPlantillaComunicacionEjercicio(examenId).subscribe({
+      next: (plantilla) => {
+        if (requestId !== this.candidatosRequest || examenId !== this.selectedExamenId()) return;
+        this.asunto.set(plantilla.asunto);
+        this.cuerpo.set(plantilla.cuerpo);
+      },
+      error: (error: unknown) => {
+        if (requestId === this.candidatosRequest) this.error.set(apiErrorMessage(error));
+      },
+    });
+
 
     this.loadingCandidatos.set(true);
     this.api.listAsignaciones(examenId)
@@ -444,15 +456,20 @@ export class EnviosComponent implements OnInit {
   }
 
   saveTemplate(): void {
+    const examenId = this.selectedExamenId();
+    if (!examenId) {
+      this.error.set("Seleccione un ejercicio antes de guardar su plantilla.");
+      return;
+    }
     this.savingTemplate.set(true);
     this.error.set(null);
-    this.api.updateConfiguracionEnvios({ asunto: this.asunto().trim(), cuerpo: this.cuerpo().trim() })
+    this.api.updatePlantillaComunicacionEjercicio(examenId, { asunto: this.asunto().trim(), cuerpo: this.cuerpo().trim() })
       .pipe(finalize(() => this.savingTemplate.set(false)))
       .subscribe({
-        next: (config) => {
-          this.asunto.set(config.asunto ?? "");
-          this.cuerpo.set(config.cuerpo ?? "");
-          this.success.set("Plantilla predeterminada guardada correctamente.");
+        next: (plantilla) => {
+          this.asunto.set(plantilla.asunto);
+          this.cuerpo.set(plantilla.cuerpo);
+          this.success.set("Plantilla del ejercicio guardada correctamente.");
         },
         error: (error: unknown) => this.error.set(apiErrorMessage(error)),
       });

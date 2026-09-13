@@ -568,10 +568,10 @@
             <button
               class="button button--secondary"
               type="button"
-              [disabled]="savingTemplate() || !asunto().trim() || !cuerpo().trim()"
+              [disabled]="savingTemplate() || !selectedExamenId() || !asunto().trim() || !cuerpo().trim()"
               (click)="saveTemplate()"
             >
-              {{ savingTemplate() ? 'Guardando…' : 'Guardar como plantilla predeterminada' }}
+              {{ savingTemplate() ? 'Guardando…' : 'Guardar plantilla del ejercicio' }}
             </button>
           </div>
 

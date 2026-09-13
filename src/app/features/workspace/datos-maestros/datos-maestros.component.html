@@ -246,9 +246,21 @@
   } @else if (activeSection() === "comunicaciones") {
     <section id="configuracion-comunicaciones" class="report-config-card" aria-labelledby="communications-config-title">
       <div class="report-config-card__header">
-        <h2 id="communications-config-title">Enlaces y pie institucional de los correos</h2>
+        <h2 id="communications-config-title">Modelo estándar y configuración de los correos</h2>
       </div>
       <form class="report-config__form" [formGroup]="comunicacionesConfigForm" (ngSubmit)="saveComunicacionesConfiguration()" novalidate>
+        <div class="field field--wide">
+          <label for="communications-subject">Asunto del modelo estándar <span class="req-star" aria-hidden="true">*</span></label>
+          <input id="communications-subject" type="text" maxlength="500" formControlName="asunto" [attr.aria-invalid]="!!comunicacionesConfigErrors()['asunto']">
+          <span class="field-hint">Se usará como base en cada ejercicio. Admite variables como <code>#DIA#</code> y <code>#EJERCICIO#</code>.</span>
+          @if (comunicacionesConfigErrors()["asunto"]) { <span class="field-error">{{ comunicacionesConfigErrors()["asunto"] }}</span> }
+        </div>
+        <div class="field field--wide">
+          <label for="communications-body">Cuerpo del modelo estándar <span class="req-star" aria-hidden="true">*</span></label>
+          <textarea id="communications-body" rows="11" maxlength="8000" formControlName="cuerpo" [attr.aria-invalid]="!!comunicacionesConfigErrors()['cuerpo']"></textarea>
+          <span class="field-hint">Cada ejercicio puede guardar una adaptación propia de este modelo.</span>
+          @if (comunicacionesConfigErrors()["cuerpo"]) { <span class="field-error">{{ comunicacionesConfigErrors()["cuerpo"] }}</span> }
+        </div>
         <div class="field field--wide">
           <label for="communications-base-url">URL pública de confirmación <span class="req-star" aria-hidden="true">*</span></label>
           <input id="communications-base-url" type="url" maxlength="500" formControlName="urlPortalAsistencia" placeholder="https://sicol.ejemplo.es/sicol" autocomplete="url" [attr.aria-invalid]="!!comunicacionesConfigErrors()['urlPortalAsistencia']">
