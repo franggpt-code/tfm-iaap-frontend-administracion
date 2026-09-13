@@ -255,6 +255,18 @@ export class SicolApiClient {
     return this.http.put<EjercicioEnvio>(`${this.adminUrl}/envios/comunicaciones/ejercicios/${examenId}/comunicacion-externa`, payload);
   }
 
+  getPlantillaComunicacionEjercicio(examenId: string): Observable<import("./sicol.types").PlantillaComunicacionEjercicio> {
+    return this.http.get<import("./sicol.types").PlantillaComunicacionEjercicio>(`${this.adminUrl}/envios/comunicaciones/ejercicios/${examenId}/plantilla`);
+  }
+
+  updatePlantillaComunicacionEjercicio(examenId: string, payload: import("./sicol.types").PlantillaComunicacionUpdate): Observable<import("./sicol.types").PlantillaComunicacionEjercicio> {
+    return this.http.put<import("./sicol.types").PlantillaComunicacionEjercicio>(`${this.adminUrl}/envios/comunicaciones/ejercicios/${examenId}/plantilla`, payload);
+  }
+
+  deletePlantillaComunicacionEjercicio(examenId: string): Observable<void> {
+    return this.http.delete<void>(`${this.adminUrl}/envios/comunicaciones/ejercicios/${examenId}/plantilla`);
+  }
+
   getConfiguracionEnvios(): Observable<ConfiguracionEnvios> {
     return this.http.get<ConfiguracionEnvios>(`${this.adminUrl}/envios/comunicaciones/configuracion`);
   }

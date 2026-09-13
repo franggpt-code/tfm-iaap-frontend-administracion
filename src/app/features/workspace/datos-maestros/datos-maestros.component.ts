@@ -126,6 +126,8 @@ export class DatosMaestrosComponent implements OnInit {
   });
 
   readonly comunicacionesConfigForm = this.fb.nonNullable.group({
+    asunto: [""],
+    cuerpo: [""],
     urlPortalAsistencia: [""],
     pieCorreo: [""],
   });
@@ -414,11 +416,15 @@ export class DatosMaestrosComponent implements OnInit {
     } catch {
       errors["urlPortalAsistencia"] = "Indica una URL pública válida.";
     }
+    if (!values.asunto.trim()) errors["asunto"] = "El asunto del modelo estándar es obligatorio.";
+    if (!values.cuerpo.trim()) errors["cuerpo"] = "El cuerpo del modelo estándar es obligatorio.";
     if (!values.pieCorreo.trim()) errors["pieCorreo"] = "El pie institucional es obligatorio.";
     this.comunicacionesConfigErrors.set(errors);
     if (Object.keys(errors).length) return;
 
     const payload: ConfiguracionEnviosUpdate = {
+      asunto: values.asunto.trim(),
+      cuerpo: values.cuerpo.trim(),
       urlPortalAsistencia: values.urlPortalAsistencia.trim().replace(/\/+$/, ""),
       pieCorreo: values.pieCorreo.trim(),
     };
@@ -625,6 +631,8 @@ export class DatosMaestrosComponent implements OnInit {
 
   private applyComunicacionesConfiguration(configuration: ConfiguracionEnvios): void {
     this.comunicacionesConfigForm.setValue({
+      asunto: configuration.asunto,
+      cuerpo: configuration.cuerpo,
       urlPortalAsistencia: configuration.urlPortalAsistencia,
       pieCorreo: configuration.pieCorreo,
     });
