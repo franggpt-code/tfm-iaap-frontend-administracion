@@ -81,8 +81,8 @@
             <li><strong>Colaborador/a:</strong> {{ data()?.nombreColaborador }}</li>
             <li><strong>Proceso:</strong> {{ data()?.procesoNombre }}</li>
             <li><strong>Ejercicio:</strong> {{ data()?.examenNombre }}</li>
-            <li><strong>Fecha:</strong> {{ data()?.fechaHora ? (data()?.fechaHora | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</li>
-            <li><strong>Lugar:</strong> {{ data()?.centroNombre }} · {{ data()?.aulaNombre }}</li>
+            <li><strong>Fecha:</strong> {{ data()?.fechaHora ? (data()?.fechaHora | date:'dd/MM/yyyy') : 'Pendiente' }}</li>
+            <li><strong>Lugar:</strong> {{ centroSede() }} · {{ aulaUbicacion() }}</li>
           </ul>
         </div>
       </div>
@@ -130,20 +130,20 @@
             </div>
 
             <div class="detail-item">
-              <span class="detail-label">Fecha y Hora</span>
+              <span class="detail-label">Fecha</span>
               <span class="detail-value date-val">
-                {{ data()?.fechaHora ? (data()?.fechaHora | date:'EEEE, d \'de\' MMMM \'de\' yyyy · HH:mm\'h\'') : 'Pendiente de confirmación' }}
+                {{ data()?.fechaHora ? (data()?.fechaHora | date:'EEEE, d \'de\' MMMM \'de\' yyyy') : 'Pendiente de confirmación' }}
               </span>
             </div>
 
             <div class="detail-item">
               <span class="detail-label">Centro / Sede</span>
-              <span class="detail-value">{{ data()?.centroNombre }}</span>
+              <span class="detail-value">{{ centroSede() }}</span>
             </div>
 
             <div class="detail-item">
               <span class="detail-label">Aula / Ubicación</span>
-              <span class="detail-value">{{ data()?.aulaNombre }}</span>
+              <span class="detail-value">{{ aulaUbicacion() }}</span>
             </div>
 
             <div class="detail-item">
@@ -151,7 +151,7 @@
               <span class="detail-value badge-profile">{{ data()?.perfilDenominacion }}</span>
             </div>
 
-            <div class="detail-item" *ngIf="data()?.subcategoriaGeneral">
+            <div class="detail-item" *ngIf="data()?.subcategoriaGeneral && aulaUbicacion() !== data()?.subcategoriaGeneral">
               <span class="detail-label">Subcategoría</span>
               <span class="detail-value">{{ data()?.subcategoriaGeneral }}</span>
             </div>

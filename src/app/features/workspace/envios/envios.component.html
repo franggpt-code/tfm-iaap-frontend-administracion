@@ -942,38 +942,79 @@
           </div>
         </div>
 
-        <!-- 2. Plantilla empleada -->
-        <section class="drawer-card">
-          <div class="drawer-card__header">
+        <!-- 2. Plantilla empleada (colapsada por defecto) -->
+        <section class="drawer-card drawer-card--collapsible" [class.is-collapsed]="!lotePlantillaExpanded()">
+          <header
+            class="drawer-card__header drawer-card__header--collapsible"
+            (click)="toggleLotePlantilla()"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="toggleLotePlantilla()"
+            (keydown.space)="toggleLotePlantilla(); $event.preventDefault()"
+            [attr.aria-expanded]="lotePlantillaExpanded()"
+            aria-controls="lote-plantilla-body"
+            title="Pulsar para expandir o colapsar la plantilla empleada"
+          >
             <div class="drawer-card__title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="section-icon" aria-hidden="true">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
-              <h3>Plantilla empleada en la comunicación</h3>
-            </div>
-          </div>
-          <div class="drawer-card__body">
-            <div class="field">
-              <span class="field-label-text">Asunto del mensaje:</span>
-              <div class="readonly-box readonly-box--subject">{{ lote.asuntoPlantilla || 'Sin asunto registrado' }}</div>
-            </div>
-            <div class="field">
-              <span class="field-label-text">Cuerpo del comunicado:</span>
-              <div class="readonly-textarea-box">{{ lote.cuerpoPlantilla || 'Sin cuerpo registrado' }}</div>
-            </div>
-            @if (lote.adjuntosNombres) {
-              <div class="field">
-                <span class="field-label-text">Documentos adjuntos del repositorio:</span>
-                <div class="readonly-box readonly-box--attachments">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                  </svg>
-                  <span>{{ lote.adjuntosNombres }}</span>
-                </div>
+              <div class="drawer-card__title-texts">
+                <h3>Plantilla empleada en la comunicación</h3>
+                @if (!lotePlantillaExpanded() && lote.asuntoPlantilla) {
+                  <span class="drawer-card__preview-text" [title]="lote.asuntoPlantilla">
+                    Asunto: {{ lote.asuntoPlantilla }}
+                  </span>
+                }
               </div>
-            }
-          </div>
+            </div>
+
+            <div class="drawer-card__collapse-actions">
+              <span class="collapse-badge">
+                {{ lotePlantillaExpanded() ? 'Ocultar' : 'Ver plantilla' }}
+              </span>
+              <svg
+                class="collapse-chevron"
+                [class.is-expanded]="lotePlantillaExpanded()"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </header>
+
+          @if (lotePlantillaExpanded()) {
+            <div class="drawer-card__body" id="lote-plantilla-body">
+              <div class="field">
+                <span class="field-label-text">Asunto del mensaje:</span>
+                <div class="readonly-box readonly-box--subject">{{ lote.asuntoPlantilla || 'Sin asunto registrado' }}</div>
+              </div>
+              <div class="field">
+                <span class="field-label-text">Cuerpo del comunicado:</span>
+                <div class="readonly-textarea-box">{{ lote.cuerpoPlantilla || 'Sin cuerpo registrado' }}</div>
+              </div>
+              @if (lote.adjuntosNombres) {
+                <div class="field">
+                  <span class="field-label-text">Documentos adjuntos del repositorio:</span>
+                  <div class="readonly-box readonly-box--attachments">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                    <span>{{ lote.adjuntosNombres }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </section>
 
         <!-- 3. Destinatarios del lote -->
