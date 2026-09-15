@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from "@angular/core";
+import { Component, OnInit, computed, inject, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute } from "@angular/router";
@@ -25,6 +25,29 @@ export class ConfirmacionPublicaComponent implements OnInit {
   readonly showRechazoForm = signal(false);
   readonly motivoRechazo = signal<string>("");
   readonly resultado = signal<ResultadoRespuestaAsistenciaPublica | null>(null);
+
+  // Centro / Sede aplicando la misma lógica que el placeholder #EDIFICIO#
+  readonly centroSede = computed(() => {
+    const d = this.data();
+    if (!d) return "";
+    const val = d.centroNombre?.trim();
+    if (!val || val === "Ámbito general") {
+      return "Aula de Organización";
+    }
+    return val;
+  });
+
+  // Aula / Ubicación aplicando la misma lógica que el placeholder #AULA#
+  readonly aulaUbicacion = computed(() => {
+    const d = this.data();
+    if (!d) return "";
+    const aula = d.aulaNombre?.trim();
+    if (aula && aula !== "Ámbito general") {
+      return aula;
+    }
+    const subcat = d.subcategoriaGeneral?.trim();
+    return subcat || "Ámbito general";
+  });
 
   ngOnInit(): void {
     const tokenParam = this.route.snapshot.queryParamMap.get("token");

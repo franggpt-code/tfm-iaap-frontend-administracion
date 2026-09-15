@@ -53,6 +53,7 @@ export class EnviosComponent implements OnInit {
   readonly destinatarioSearch = signal("");
   readonly selectedDestinatario = signal<DestinatarioEnvioComunicacion | null>(null);
   readonly drawerExpanded = signal(false);
+  readonly lotePlantillaExpanded = signal(false);
   readonly externalCommunicationTarget = signal<EjercicioEnvio | null>(null);
   readonly updatingExternalCommunication = signal(false);
 
@@ -548,11 +549,16 @@ export class EnviosComponent implements OnInit {
     this.selectedLote.set(lote);
     this.selectedDestinatario.set(null);
     this.destinatarioSearch.set("");
+    this.lotePlantillaExpanded.set(false);
     this.loadingDestinatarios.set(true);
     this.api.listDestinatariosEnvio(lote.id).pipe(finalize(() => this.loadingDestinatarios.set(false))).subscribe({
       next: (destinatarios) => this.loteDestinatarios.set(destinatarios),
       error: (error: unknown) => this.error.set(apiErrorMessage(error)),
     });
+    setTimeout(() => {
+      const drawerBody = document.querySelector(".trace-drawer .drawer-body");
+      if (drawerBody) drawerBody.scrollTop = 0;
+    }, 0);
   }
 
   closeLoteDetail(): void {
@@ -560,14 +566,25 @@ export class EnviosComponent implements OnInit {
     this.loteDestinatarios.set([]);
     this.selectedDestinatario.set(null);
     this.drawerExpanded.set(false);
+    this.lotePlantillaExpanded.set(false);
   }
 
   toggleDrawerExpand(): void {
     this.drawerExpanded.update((v) => !v);
   }
 
+  toggleLotePlantilla(): void {
+    this.lotePlantillaExpanded.update((v) => !v);
+  }
+
   viewDestinatarioMessage(dest: DestinatarioEnvioComunicacion): void {
     this.selectedDestinatario.set(dest);
+    setTimeout(() => {
+      const card = document.querySelector(".dest-message-drawer-card");
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, 50);
   }
 
   closeDestinatarioMessage(): void {
